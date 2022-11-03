@@ -1,0 +1,31 @@
+{
+  "appId": "com.sinarmas.hrgabib",
+  "appName": "Indobara Smart Services",
+  "webDir": "build",
+  "bundledWebRuntime": false,
+  "plugins": {
+    "GoogleAuth": {
+      "scopes": [
+        "openid",
+        "https://www.googleapis.com/auth/userinfo.profile",
+        "https://www.googleapis.com/auth/userinfo.email"
+      ],
+      "serverClientId": "785423644522-53p49jgrhnc67lpivol1s66rmlil7bag.apps.googleusercontent.com",
+      "forceCodeForRefreshToken": true
+    },
+    "SplashScreen": {
+      "launchShowDuration": 0,
+      "launchAutoHide": false,
+      "androidScaleType": "CENTER_CROP",
+      "splashFullScreen": true,
+      "splashImmersive": true,
+      "layoutName": "launch_screen",
+      "useDialog": true
+    },
+    "PushNotifications": {
+      "presentationOptions": ["badge", "sound", "alert"],
+      "splashImmersive": false,
+      "backgroundColor": "#ffffffff"
+    }
+  }
+}

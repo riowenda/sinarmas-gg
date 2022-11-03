@@ -1,0 +1,9 @@
+.full-Modal {
+    min-width: 11.5rem;
+}
+
+.input[type=checkbox][disabled]{
+    background: red;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}

@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "356285223112",
+    "project_id": "bgs-sm-hrgabib",
+    "storage_bucket": "bgs-sm-hrgabib.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:356285223112:android:9c7cdc82dbc050815295fd",
+        "android_client_info": {
+          "package_name": "com.sinarmas.hrgabib"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "356285223112-kai372chitmj80b8hpim8dugv2gmr06g.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCIelM1QpJtP83txQoXFBl-iPvn0JL8zvA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "356285223112-kai372chitmj80b8hpim8dugv2gmr06g.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

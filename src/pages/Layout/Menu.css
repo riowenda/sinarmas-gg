@@ -1,0 +1,31 @@
+ion-grid{
+  vertical-align: top;
+  height: 100%;
+  padding-top: 1rem;
+}
+ion-row{
+  vertical-align: top;
+}
+ion-toggle{
+  margin-left: -1rem;
+}
+.imgNotif{
+  margin-right: -2rem;
+}
+.labelNotif{
+  margin-top: -1rem;
+}
+.setCenter{
+  text-align: center;
+  vertical-align: bottom;
+  vertical-align: text-bottom;
+}
+.sizeImaze{
+  width: 45%;
+}
+.sizeImaze_{
+  width: 55%;
+}
+ion-col p{
+  margin-top: -0.1rem;
+}

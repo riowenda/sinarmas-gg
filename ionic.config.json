@@ -1,0 +1,7 @@
+{
+  "name": "Indobara Smart Services",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "react"
+}

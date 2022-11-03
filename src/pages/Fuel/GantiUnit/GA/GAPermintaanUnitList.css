@@ -1,0 +1,74 @@
+
+.imgNotif{
+    margin-right: -5rem;
+    margin-top: 0.5rem;
+}
+.labelNotif{
+    margin-top: -1rem;
+}
+.notifBell{
+    float: right;
+}
+.notifLang{
+    padding-top: 1rem;
+    margin-left: -6rem;
+    display: block;
+}
+ion-item .notifLang{
+    padding-top: 1rem;
+   padding-left: -6rem;
+    display: block;
+}
+.labelTop{
+    padding-top: -5rem;
+}
+.h-10 {
+    height: 3rem;
+}
+.w-10 {
+    width: 3rem;
+}
+.h-17 {
+    height: 4.5rem;
+}
+.h-18 {
+    height: 6rem;
+}
+.h-18 {
+    height: 7rem;
+}
+.w-18 {
+    width: 7rem;
+}
+.paddNotif{
+    margin-left: -3rem;
+}
+.spanToTop{
+    margin-top: -0.5rem;
+    color: darkred;
+}
+.relativeTop{
+    margin-top: -2rem;
+}
+.ctn{
+    padding-bottom: 7rem;
+}
+.pr-b{
+    padding-right: 0.08rem;
+}
+.pl-b{
+    padding-left: 0.08rem;
+}
+.koinToTop{
+    margin-top: -2rem;
+    display: block;
+    position: relative;
+}
+.koinToRight{
+    padding-right: -25rem;
+    display: block;
+    position: relative;
+}
+.marginToLeft{
+    margin-left: -0.5rem;
+}

@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Indobara Smart Services</string>
+    <string name="title_activity_main">Indobara Smart Services</string>
+    <string name="package_name">com.sinarmas.hrgabib</string>
+    <string name="custom_url_scheme">com.sinarmas.hrgabib</string>
+    <string name="server_client_id">785423644522-ar1cd7csqkhc821m3lk8gr06q40s1mju.apps.googleusercontent.com</string>
+</resources>
