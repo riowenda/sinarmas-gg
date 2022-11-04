@@ -30,7 +30,8 @@ import './MenuVvip.css';
 import ListHeader from "../../../components/Header/ListHeader";
 const MenuVvipForm: React.FC = () => {
     //form
-    const [jenisTamu, setJenisTamu] = useState<any>();
+    const [jenisTamu, setJenisTamu] = useState<any>("Organik");
+    
     const [requestTamu, setRequestTamu] = useState<any>([]);
     const [requestMenu, setRequestMenu] = useState<any>();
     const [jadwal, setJadwal] = useState<any>([]);
@@ -201,9 +202,7 @@ const MenuVvipForm: React.FC = () => {
                             <IonButton className="mt-3" expand="block" color="medium">Draft</IonButton>
                             <IonButton className="mt-3" expand="block" color="danger">Cancel</IonButton>
                         </div>
-
                     </div>
-                    
                 </div>
             </div>
         </IonContent>

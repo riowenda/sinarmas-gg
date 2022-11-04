@@ -9,6 +9,7 @@ import {
     IonGrid,
     IonIcon,
     IonItem,
+    IonLabel,
     IonList,
     IonPage,
     IonRefresher,
@@ -51,6 +52,7 @@ const MenuVvipHome: React.FC = () => {
 
     const [items, setItems] = useState([]);
     useIonViewDidEnter(() => {
+        console.log("Begin async operation");
         loadDataPref();
     });
 
@@ -123,88 +125,28 @@ const MenuVvipHome: React.FC = () => {
                             <IonButton fill="outline" color="tertiary" onClick={btnPengajuan}>Buat Pesanan</IonButton>
                         </div>
                         <IonList>
-                        {items.map((data, index) => {
-                        return (
-                        <div className="rounded-lg py-1 mb-3 border border-1 border-gray-300" key={data['id']}>
-                            <div className="p-3 m-1 rounded-md">
-                                <div className="grid grid-cols-12">
-                                    <div className="col-start-1 col-end-5 flex items-center justify-start justify-items-start">
-                                        <p className="text-base font-bold text-gray-900">
-                                            {moment(data['request_date']).format('DD MMM yyyy').toString()}
-                                        </p>
+                            {items.map((data, index) => {
+                            return (
+                            <div className="rounded-lg py-1 mb-3 border border-1 border-gray-300" key={data['id']}>
+                                <IonItem routerLink={"/meal/menuvvip/detailpengajuan/" + data['id']} routerDirection="forward" className="border-0" lines="none">
+                                <div className="p-3 m-1 rounded-md">
+                                    <div className="grid grid-cols-12 gap-5">
+                                        <div className="col-start-1 col-end-5 flex items-center justify-start justify-items-start">
+                                            <p className="text-base font-bold text-gray-900">
+                                                {moment(data['request_date']).format('DD MMM yyyy').toString()}
+                                            </p>
+                                        </div>
+                                        <div className="col-end-13 col-span-7 flex items-center justify-end justify-items-end">
+                                            <StatusPengajuan title={data['status']}></StatusPengajuan>
+                                        </div>
                                     </div>
-                                    <div className="col-end-13 col-span-7 flex items-center justify-end justify-items-end">
-                                        <StatusPengajuan title={data['status']}></StatusPengajuan>
-                                    </div>
-                                    
                                 </div>
+                                </IonItem>
                             </div>
-                        </div>
-                        )
-                        })}
+                            )
+                            })}
                         </IonList>
-                        <div className="mt-4">
-                            <IonList>
-                                <div className="p-3 m-1 border-2 border-inherit rounded-md">
-                                    <div className="grid grid-cols-12">
-                                        <div className="col-start-1 col-end-5 flex items-center justify-start justify-items-start">
-                                            28-10-2022
-                                        </div>
-                                        <div className="col-end-13 col-span-4 flex items-center justify-end justify-items-end">
-                                            
-                                            <IonBadge className="ml-2 rounded-full p-2" color="medium" slot="end">13:04</IonBadge>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="p-3 m-1 border-2 border-inherit rounded-md">
-                                    <div className="grid grid-cols-12 gap-4">
-                                        <div className="col-start-1 col-end-5 flex items-center justify-start justify-items-start">
-                                            28-10-2022
-                                        </div>
-                                        <div className="col-end-13 col-span-4 flex items-center justify-end justify-items-end">
-                                            <IonBadge className="rounded-full p-2 text-white bg-amber-500" slot="start">Diantarkan</IonBadge>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="p-3 m-1 border-2 border-inherit rounded-md">
-                                    <div className="grid grid-cols-12">
-                                        <div className="col-start-1 col-end-5 flex items-center justify-start justify-items-start">
-                                            22-10-2022
-                                        </div>
-                                        <div className="col-end-13 col-span-4 flex items-center justify-end justify-items-end">
-                                            <IonBadge className="rounded-full p-2 text-white bg-emerald-600" slot="start">Selesai</IonBadge>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="p-3 m-1 border-2 border-inherit rounded-md">
-                                    <div className="grid grid-cols-12">
-                                        <div className="col-start-1 col-end-6 items-center ">
-                                            <p>20-10-2022</p>
-                                            <i>Alergi Udang</i>
-                                        </div>
-                                        <div className="col-end-13 col-span-4 flex items-center justify-end justify-items-end">
-                                            <IonBadge className="rounded-full p-2 text-white bg-red-500" slot="start">Tidak Pesan</IonBadge>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="p-3 m-1 border-2 border-inherit rounded-md">
-                                    <div className="grid grid-cols-12">
-                                        <div className="col-start-1 col-end-5 flex items-center justify-start justify-items-start">
-                                            18-10-2022
-                                        </div>
-                                        <div className="col-end-13 col-span-4 flex items-center justify-end justify-items-end">
-                                            <IonBadge className="rounded-full p-2 text-white bg-amber-500" slot="start">Diantarkan</IonBadge>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div className="text-center text-indigo-700 mt-4">
-                                    Load More ...
-                                </div>
-                            </IonList>
-                        </div>
                     </div>
-                    
                 </div>
             </div>
         </IonContent>

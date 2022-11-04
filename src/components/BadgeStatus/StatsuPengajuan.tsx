@@ -19,6 +19,9 @@ const StatusPengajuan: React.FC<StatusProps> = ({ title }) => {
             >{title}</IonBadge>
         <IonBadge className="ml-2 rounded-full p-2" color="medium" slot="end">13:04</IonBadge>
         </div>
+    }else if(title === "Approved"){
+        return <IonBadge className="rounded-full p-2" slot="start"
+            color="success">{title}</IonBadge>
     }else{
         return <IonBadge className="rounded-full p-2" slot="start"
             color="danger">{title}</IonBadge>
