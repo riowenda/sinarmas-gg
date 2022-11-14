@@ -49,8 +49,9 @@ const user = { name: "", email: "", nik: "", imageUrl: "" };
 const userUnit = { id: "", noPol: "", noLambung: "" };
 
 const MenuVvipView: React.FC = () => {
-    const [isGa, setIsGa] = useState<boolean>(true);
+    const [isGa, setIsGa] = useState<boolean>(false);
     const [isUser, setIsUser ] = useState<boolean>(false);
+    const [isCatering, setIsCatering ] = useState<boolean>(true);
     const params = useParams<any>();
     const [error, setError] = useState(null);
     const [isLoaded, setIsLoaded] = useState(false);
@@ -72,7 +73,12 @@ const MenuVvipView: React.FC = () => {
           console.log("Async operation has ended");
           event.detail.complete();
         }, 2000);
-      }
+    }
+
+    const handleDelete = (id:any) => {
+        fetch(BASE_API_URL+API_URI+'/vviprequests/'+id, { method: 'DELETE' })
+        .then(response => response.json())
+    }
       
     
       const loadDataPref = () => {
@@ -175,8 +181,8 @@ const MenuVvipView: React.FC = () => {
                         <div>
                             <label className="ml-3">Keterangan</label>
                             <div className="ml-3 mr-2">
-                                <IonTextarea className="text-area" readonly={isGa ? true:false} placeholder="Keterangan" rows={3} 
-                                value={items.description}/>
+                            <textarea rows={3} className="block w-full border border-1 border-gray-300 rounded-md border-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-1" 
+                            readOnly={isGa ? true:false} placeholder="Keterangan" value={items.description}/>
                             </div>
                             <br/>
                             <label className="ml-3">Harga Paket</label>
@@ -188,21 +194,36 @@ const MenuVvipView: React.FC = () => {
                             <div className="grid items-end justify-end justify-items-end mt-3">
                                 <IonText id="open-modal" color="tertiary"><u>Commentar</u></IonText>
                             </div>
-                            <IonButton expand="block" className="mt-4" color="tertiary">Submit</IonButton>
-                            <IonModal id="example-modal" ref={modal} trigger="open-modal" className="">
+                            { !isGa && ( 
+                                <div>
+                                    <IonButton expand="block" className="mt-4" color="tertiary">Submit</IonButton>
+                                </div>
+                            )}
+                            { isCatering && ( 
+                            <div>
+                                <IonButton expand="block" className="mt-4" color="danger" 
+                                onClick={(e) => handleDelete(items.id)}>
+                                    Hapus Pengajuan</IonButton>
+                            </div>
+                            )}
+
+                            <IonModal id="example-modal" ref={modal} trigger="open-modal" className="" initialBreakpoint={0.5} breakpoints={[0, 0.25, 0.5, 0.75]}>
                                 <IonContent className="mr-3 ml-3 mt-3">
                                     <div className="m-3">
-                                    <IonTextarea className="border-2 inherit rounded-lg" readonly={isGa ? true:false} placeholder="Note" rows={3} /><br/>
+                                    <textarea rows={3} className="block w-full border border-1 border-gray-300 rounded-md border-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-1"
+                                    readOnly={isGa ? true:false} placeholder="Note" /><br/>
                                     <label>Reason</label>
-                                    <IonTextarea className="border-2 inherit rounded-lg" readonly={isGa ? true:false} placeholder="Reason" rows={1}  />
+                                    <textarea rows={2} className="block w-full border border-1 border-gray-300 rounded-md border-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-1" 
+                                    readOnly={isGa ? true:false} placeholder="Reason"  />
                                     {isGa && (
                                         <div>
                                             <IonButton color="tertiary" expand="block" className="mt-4">Approve</IonButton>
                                             <IonButton color="danger" expand="block" className="mt-4">Reject</IonButton>
                                         </div>
                                     )}
-                                    <IonButton className="position-bot" color="medium" onClick={() => dismiss()}>
-                                        Kembali</IonButton>
+                                    <button onClick={() => dismiss()} className="inline-flex text-center items-center rounded bg-gray-200 px-2.5 py-3 text-xs font-bold mt-5">
+                                        <span className="text-purple-700">Kembali</span>
+                                    </button>
                                     </div>
                                 </IonContent>
                             </IonModal>

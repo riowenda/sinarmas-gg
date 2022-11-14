@@ -5,20 +5,14 @@ import {
     IonCheckbox,
     IonCol,
     IonContent,
-    IonGrid,
-    IonIcon,
-    IonImg,
-    IonInput,
     IonItem,
     IonPage,
     IonRadio,
     IonRadioGroup,
     IonRefresher,
     IonRefresherContent,
-    IonRow,
     IonSelect,
     IonSelectOption,
-    IonTextarea,
     useIonViewDidEnter,
   } from "@ionic/react";
 import {IonReactRouter} from "@ionic/react-router";
@@ -147,8 +141,9 @@ const MenuVvipForm: React.FC = () => {
                         <br/>
                         <label className="ml-3 text-lg">Request Menu</label><br/>
                         <div className="ml-3 mr-3">
-                            <IonTextarea className="pl-1 pr-1 border-2 inherit" onIonChange={ e => setRequestMenu(e.target.value!)}>
-                            </IonTextarea>
+                            <textarea rows={3} className="block w-full border border-1 border-gray-300 rounded-md border-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-1" 
+                            onChange={ e => setRequestMenu(e.target.value!)}>
+                            </textarea>
                         </div>
                         <br/>
                         <div className="grid grid-cols-4 gap-4">
@@ -200,7 +195,7 @@ const MenuVvipForm: React.FC = () => {
                         <div className="container text-center">
                             <IonButton expand="block" color="tertiary" onClick={(e) => handleSubmit(e)}>Submit</IonButton>
                             <IonButton className="mt-3" expand="block" color="medium">Draft</IonButton>
-                            <IonButton className="mt-3" expand="block" color="danger">Cancel</IonButton>
+                            <IonButton className="mt-3" expand="block" color="danger" onClick={btnBack}>Cancel</IonButton>
                         </div>
                     </div>
                 </div>

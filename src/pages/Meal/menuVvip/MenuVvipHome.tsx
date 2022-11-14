@@ -130,13 +130,13 @@ const MenuVvipHome: React.FC = () => {
                             <div className="rounded-lg py-1 mb-3 border border-1 border-gray-300" key={data['id']}>
                                 <IonItem routerLink={"/meal/menuvvip/detailpengajuan/" + data['id']} routerDirection="forward" className="border-0" lines="none">
                                 <div className="p-3 m-1 rounded-md">
-                                    <div className="grid grid-cols-12 gap-5">
-                                        <div className="col-start-1 col-end-5 flex items-center justify-start justify-items-start">
-                                            <p className="text-base font-bold text-gray-900">
+                                    <div className="grid grid-cols-12 gap-4">
+                                        <div className="col-start-1 col-end-6 flex items-center justify-start justify-items-start">
+                                            <p className="text-base text-gray-900">
                                                 {moment(data['request_date']).format('DD MMM yyyy').toString()}
                                             </p>
                                         </div>
-                                        <div className="col-end-13 col-span-7 flex items-center justify-end justify-items-end">
+                                        <div className="col-end-13 col-span-6 flex items-center justify-end justify-items-end">
                                             <StatusPengajuan title={data['status']}></StatusPengajuan>
                                         </div>
                                     </div>
