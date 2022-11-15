@@ -60,6 +60,7 @@
     "react-dropdown-tree-select": "^2.7.1",
     "react-expanding-textarea": "^2.3.6",
     "react-i18next": "^11.18.5",
+    "react-modern-calendar-datepicker": "^3.1.6",
     "react-qrcode-logo": "^2.8.0",
     "react-router": "^5.2.0",
     "react-router-dom": "^5.2.0",
