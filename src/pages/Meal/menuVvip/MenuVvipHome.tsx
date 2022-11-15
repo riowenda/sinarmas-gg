@@ -1,7 +1,6 @@
 import React, {useState, useEffect} from "react";
 import moment from "moment";
 import { useHistory } from "react-router-dom";
-import { getJsonPref, getPref } from "../../../helper/preferences";
 import {
     IonBadge,
     IonButton,
@@ -18,23 +17,11 @@ import {
     IonText,
     useIonViewDidEnter,
   } from "@ionic/react";
-  import {
-    // BASE_API_URL,
-    // API_URI,
-    PEGAWAI_UNIT_CRUD_URI, PEGAWAI_UNIT_RELEASED_URI,
-    pref_json_pegawai_info_login, pref_pegawai_unit_id,
-    pref_unit, pref_unit_id,
-    pref_identity,
-    pref_user_id,
-    pref_user_role,
-    MEAL_REQ_SELF
-  } from "../../../constant/Index";
 import {IonReactRouter} from "@ionic/react-router";
 import { RefresherEventDetail } from '@ionic/core';
-import {useTranslation, initReactI18next} from "react-i18next";
 import { receiptOutline, restaurantOutline } from "ionicons/icons";
 import ListHeader from "../../../components/Header/ListHeader";
-import StatusPengajuan from "../../../components/BadgeStatus/StatsuPengajuan";
+import BadgeStatus from "../../../components/Badge/BadgeStatus";
 const BASE_API_URL = 'http://182.253.66.235:8000';
 const API_URI = '';
 
@@ -49,11 +36,14 @@ const MenuVvipHome: React.FC = () => {
     const [pegawai, setPegawai] = useState(user);
     const [role, setRole] = useState();
     const [unit, setUnit] = useState(userUnit);
+    const [isGa, setIsGa] = useState(true);
+    const [isCatering, setIsCatering] = useState(false);
+    const [isUser, setIsUser] = useState(false);
 
     const [items, setItems] = useState([]);
     useIonViewDidEnter(() => {
         console.log("Begin async operation");
-        loadDataPref();
+        loadDataMealReq(1);
     });
 
     function doRefresh(event: CustomEvent<RefresherEventDetail>) {
@@ -74,22 +64,7 @@ const MenuVvipHome: React.FC = () => {
         history.push("/meal/menuvvip/form");
       }
     
-      const loadDataPref = () => {
-        getJsonPref(pref_json_pegawai_info_login).then((res) => {
-          setPegawai(res);
-          // console.log(res);
-        });
-        getJsonPref(pref_unit).then((restUnit) => {
-          setUnit(restUnit);
-        });
-        getPref(pref_user_role).then((restRole) => {
-          setRole(restRole);
-        });
-    
-    
-        // getPref(pref_identity).then(res => { setIdentity(res) });
-        getPref(pref_pegawai_unit_id).then(res => { setPegUnitId(res); loadDataMealReq(res); });
-      }
+     
     
       const loadDataMealReq = (user: any) => {
         const url = BASE_API_URL + API_URI + '/vviprequests';
@@ -137,7 +112,7 @@ const MenuVvipHome: React.FC = () => {
                                             </p>
                                         </div>
                                         <div className="col-end-13 col-span-6 flex items-center justify-end justify-items-end">
-                                            <StatusPengajuan title={data['status']}></StatusPengajuan>
+                                            <BadgeStatus title={data['status']}></BadgeStatus>
                                         </div>
                                     </div>
                                 </div>

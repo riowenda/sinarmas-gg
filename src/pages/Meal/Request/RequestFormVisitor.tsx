@@ -12,6 +12,7 @@ import {
 import { RefresherEventDetail } from "@ionic/core";
 import { useTranslation, initReactI18next } from "react-i18next";
 import Select from 'react-select'
+import CreatableSelect from 'react-select/creatable';
 
 import React, { useRef, useState, useCallback } from "react";
 import { useHistory } from "react-router-dom";
@@ -24,16 +25,16 @@ import {
   // API_URI,
   pref_json_pegawai_info_login,
   pref_token,
-  MEAL_REQ_SELF_SAVE
+  MEAL_REQ_VISITOR_SAVE
 } from "../../../constant/Index";
 
 const BASE_API_URL = 'http://182.253.66.235:8000';
 const API_URI = '';
 
 const shifts = [
-  { id: 1, name: 'Pagi' },
-  { id: 2, name: 'Siang' },
-  { id: 3, name: 'Sore' },
+  { value: 1, label: 'Pagi' },
+  { value: 2, label: 'Siang' },
+  { value: 3, label: 'Sore' },
 ]
 
 const locations = [
@@ -41,48 +42,15 @@ const locations = [
   { value: 4, label: 'Kantin 1' },
 ]
 
-const MealRequestForm: React.FC = () => {
+const employees = [
+  { value: 1, label: 'aam' },
+  { value: 2, label: 'iim' },
+  { value: 3, label: 'uum' },
+]
+
+const MealRequestFormVisitor: React.FC = () => {
   useIonViewDidEnter(() => {
     loadDataPref();
-
-    showConfirm({
-      subHeader: 'Pesanan Untuk',
-      inputs: 
-      // shifts.map((x) => ({
-      //   label: x.name,
-      //   type: 'checkbox',
-      //   value: x.id,
-      //   handler: (e) => {toggleActive(index, e.target.checked)},
-      // }))
-
-      [
-        {
-          label: 'Pagi',
-          type: 'checkbox',
-          handler: (e) => {toggleActive(0, e.checked)},
-        },
-        {
-          label: 'Siang',
-          type: 'checkbox',
-          handler: (e) => {toggleActive(1, e.checked)},
-        },
-        {
-          label: 'Sore',
-          type: 'checkbox',
-          handler: (e) => {toggleActive(2, e.checked)},
-        }
-      ],
-      buttons: [{
-        text: 'Buat',
-        role: 'confirm',
-        cssClass: 'alert-button-confirm',
-        // handler: () => { sendRequest() }
-      }, {
-        text: 'Batal',
-        role: 'cancel',
-        cssClass: 'alert-button-cancel'
-      }]
-    })
   });
 
   const history = useHistory();
@@ -104,13 +72,18 @@ const MealRequestForm: React.FC = () => {
 
   const [reqDate, setReqDate] = useState<string>();
   const [shiftActivities, setShiftActivities] = useState(() => shifts.map((x) => false));
-  const [data, setData] = useState(() => shifts.map((x) => ({
+  const [data, setData] = useState({
+    request_date: '',
     shift_id: 0,
     shift_name: '',
     delivery_location_id: 0,
     delivery_location_name: '',
-    reason: ''
-  })))
+    group_name: '',
+    destination: '',
+    order_reason: '',
+    users: [''],
+    non_users: ['']
+  })
 
   const doRefresh = (event: CustomEvent<RefresherEventDetail>) => {
     setTimeout(() => {
@@ -124,16 +97,7 @@ const MealRequestForm: React.FC = () => {
       setToken(res);
       // loadDataTujuan(res);
     });
-    getJsonPref(pref_json_pegawai_info_login).then(res => {
-      setUserInfo(res);
-
-      // setData(prevData => ({
-      //   ...prevData, 
-      //   user_id: res.userId, 
-      //   user_nik: res.nik, 
-      //   user_name: res.name, 
-      // }))
-    });
+    getJsonPref(pref_json_pegawai_info_login).then(res => { setUserInfo(res) });
   }
 
   // const handleSelectChange = async (event: any) => {
@@ -142,32 +106,16 @@ const MealRequestForm: React.FC = () => {
 
   const toggleActive = (index: number, val: any) => {
     const newShiftActivities = [...shiftActivities];
-    newShiftActivities[index] = val;
+    newShiftActivities[index] = !newShiftActivities[index];
     setShiftActivities(newShiftActivities);
   }
 
   const handleSetLocation = (index: number, shiftId: number, shiftName: string, selected: any) => {
-    const newArr = [...data]
-    newArr[index] = {
-      shift_id: shiftId,
-      shift_name: shiftName,
-      delivery_location_id: selected.value,
-      delivery_location_name: selected.label,
-      reason: ''
-    }
-    setData(newArr);
+    
   }
 
   const handleSetReason = (index: number, shiftId: number, shiftName: string, val: any) => {
-    const newArr = [...data]
-    newArr[index] = {
-      shift_id: shiftId,
-      shift_name: shiftName,
-      delivery_location_id: 0,
-      delivery_location_name: '',
-      reason: val
-    }
-    setData(newArr);
+    
   }
 
   const modal = useRef<HTMLIonModalElement>(null);
@@ -195,7 +143,7 @@ const MealRequestForm: React.FC = () => {
     const loading = present({
       message: 'Memproses permintaan ...',
     })
-    const url = BASE_API_URL + API_URI + MEAL_REQ_SELF_SAVE;
+    const url = BASE_API_URL + API_URI + MEAL_REQ_VISITOR_SAVE;
 
     const formData = {
       user_id: userInfo.userId,
@@ -203,10 +151,11 @@ const MealRequestForm: React.FC = () => {
       user_name: userInfo.name,
       user_location_id: 0,
       user_location_name: ' ',
-      request_date: reqDate,
       user_type: userInfo.role.length ? userInfo.role[0] : '',
-      details: [...data]
+      ...data
     }
+
+    formData.users = [...formData.users, ...formData.non_users]
 
     fetch(url, {
       method: 'POST',
@@ -264,30 +213,80 @@ const MealRequestForm: React.FC = () => {
             <div className="p-6">
               <label htmlFor="reqDate" className="block text-sm text-gray-900">Tanggal</label>
               <div className="border-b border-gray-300 py-2 text-gray-900">
-                <input type="date" id="reqDate" className="block w-full" defaultValue={reqDate} onChange={e => setReqDate(e.target.value)} />
+                <input
+                  type="date"
+                  id="reqDate"
+                  className="block w-full"
+                  defaultValue={reqDate}
+                  onChange={({target}) => setData(d => ({...d, request_date: target.value}))}
+                />
               </div>
 
-              {shifts.map((shift, index) => (
-                <div className="rounded-lg py-1 mb-3 border border-1 border-gray-300 bg-gray-100 mt-3" key={index}>
-                  <div className="px-2 py-2">
-                    <div className="flex min-w-0 flex-1 justify-between">
-                      <p className="text-sm text-gray-900 py-2">{shift.name}</p>
-                      <label className="m-2">
-                        <input type="checkbox" className="h-4 w-4 rounded" checked={shiftActivities[index]} onChange={e => toggleActive(index, e.target.checked)} /> Tidak Pesan
-                      </label>
-                    </div>
+              <div className="rounded-lg px-2 py-2 mb-3 border border-1 border-gray-300 bg-gray-100 mt-3">
+                <div className="min-w-0">
+                  <p className="text-sm text-gray-900 py-2">Shift</p>
+                  <Select
+                    placeholder="Shift"
+                    options={shifts}
+                    onChange={(e) => setData(d => ({...d, shift_id: Number(e?.value), shift_name: String(e?.label)}))}
+                  /> 
+                </div>
 
-                    <div className="min-w-0">
-                      <p className="text-sm text-gray-900 py-2">{ shiftActivities[index] ? 'Alasan tidak pilih menu' : 'Diantar ke'}</p>
-                      {shiftActivities[index] 
-                        ? <textarea onChange={(event) => handleSetReason(index, shift.id, shift.name, event.target.value)} rows={3} className="block w-full border border-1 border-gray-300 rounded-md border-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-1" defaultValue={''}/>
-                        : <Select placeholder="Diantar ke" options={locations} onChange={e => handleSetLocation(index, shift.id, shift.name, e)} /> 
+                <div className="min-w-0">
+                  <p className="text-sm text-gray-900 py-2">Diantar ke</p>
+                  <Select
+                    placeholder="Diantar ke"
+                    options={locations}
+                    onChange={(e) => setData(d => ({...d, delivery_location_id: Number(e?.value), delivery_location_name: String(e?.label)}))} 
+                  /> 
+                </div>
+
+                <div className="min-w-0">
+                  <p className="text-sm text-gray-900 py-2">Nama </p>
+                  <Select
+                    isMulti
+                    placeholder="Nama"
+                    options={employees}
+                    onChange={(e) => setData(d => ({ ...d, users: [...e.map((i) => i.label)] }))} 
+                  /> 
+                </div>
+
+                <div className="min-w-0">
+                  <p className="text-sm text-gray-900 py-2">Nama Tamu</p>
+                  <CreatableSelect 
+                    isMulti 
+                    placeholder="Nama Tamu" 
+                    options={[{value:'', label:''}]} 
+                    onChange={(e) => setData(d => ({ ...d, non_users: [...e.map((i) => i.label)] }))} 
+                  /> 
+                </div>
+
+                <div className="min-w-0">
+                  <p className="text-sm text-gray-900 py-2">Jumlah</p>
+                  <div className="border-b border-gray-300 py-2">
+                    <input
+                      value={
+                        (data.users[0] === '' && data.users.length === 1 ? 0 : data.users.length) + 
+                        (data.non_users[0] === '' && data.non_users.length === 1 ? 0 : data.non_users.length)
                       }
-                    </div>
-
+                      readOnly
+                      name="count_users"
+                      id="count_users"
+                      className="block w-full"
+                    />
                   </div>
                 </div>
-              ))}
+
+                <div className="min-w-0">
+                  <p className="text-sm text-gray-900 py-2">Keterangan</p>
+                  <textarea
+                    onChange={({target}) => setData(d => ({...d, order_reason: target.value}))}
+                    rows={3}
+                    className="block w-full border border-1 border-gray-300 rounded-md border-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-1"
+                    defaultValue={data.order_reason}
+                  />
+                </div>
+              </div>
             </div>
 
             <div className='p-6 items-end bg-white'>
@@ -297,51 +296,12 @@ const MealRequestForm: React.FC = () => {
             </div>
           </div>
         </div>
-
-        {/*id="buttonRequest"*/}
-
-        <IonModal ref={modal} trigger="buttonRequest" initialBreakpoint={0.5} breakpoints={[0, 0.25, 0.5, 0.75]}>
-          <IonContent className="ion-padding">
-            <div>
-              <h3 className="text-base font-bold text-gray-900 text-center my-2">Pesanan Untuk</h3>
-
-              <div className="text-gray-900">
-                <label>
-                  <input type="checkbox" checked /> Pagi <br />
-                </label>
-                <label>
-                  <input type="checkbox" checked /> Siang <br />
-                </label>
-                <label>
-                  <input type="checkbox" checked /> Sore <br />
-                </label>
-                <label>
-                  <input type="checkbox" checked /> Supper <br />
-                </label>
-              </div>
-
-              <div className="text-center">
-                <button className="inline-flex text-center items-center rounded bg-gray-200 px-2.5 py-3 text-xs font-bold mt-5">
-                  <span className="text-purple-700">Batal</span>
-                </button>
-
-                <button 
-                  className="inline-flex text-center items-center rounded bg-purple-700 px-2.5 py-3 text-xs font-bold mt-5 ml-4" 
-                  onClick={() => {window.alert('tes')}}
-                >
-                  <span className="text-white">Buat</span>
-                </button>
-              </div>
-
-            </div>
-          </IonContent>
-        </IonModal>
       </IonContent>
     </IonPage>
   );
 };
 
-export default MealRequestForm;
+export default MealRequestFormVisitor;
 function classNames(arg0: string, arg1: string): string | undefined {
   throw new Error("Function not implemented.");
 }

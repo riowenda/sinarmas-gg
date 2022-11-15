@@ -1,0 +1,36 @@
+.text-area{
+    border: solid 1px rgb(84, 84, 84);
+    padding: 2px;
+    border-radius: 5px;
+}
+.my-ul {
+    list-style-type: disc;
+    color: rgb(73, 73, 73);
+  }
+
+.bullet{
+    font-size: 12px;
+}
+.position-bot{
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    margin: 10px;
+}
+
+ion-modal#example-modal {
+    --height: 70%;
+    --border-radius: 16px;
+    --box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  }
+  
+  ion-modal#example-modal::part(backdrop) {
+    background: rgb(46, 50, 56);
+    opacity: 1;
+  }
+  
+  ion-modal#example-modal ion-toolbar {
+    --background: rgb(14 116 144);
+    --color: white;
+  }
+

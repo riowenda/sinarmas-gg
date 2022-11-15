@@ -5,7 +5,7 @@ export const DataMenu = [
         title: 'Fuel'
     },
     {
-        navigate: '/dashboard',
+        navigate: '/meal',
         img: 'assets/icon/meals.png',
         title: 'Meal'
     },

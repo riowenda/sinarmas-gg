@@ -12,7 +12,7 @@ import {
     useIonViewWillLeave,
 } from '@ionic/react';
 
-import './FormUpdateOdo.css';
+// import './FormUpdateOdo.css';
 import { RefresherEventDetail } from '@ionic/core';
 import { useTranslation, initReactI18next } from "react-i18next";
 import React, { useCallback, useEffect, useRef, useState } from "react";

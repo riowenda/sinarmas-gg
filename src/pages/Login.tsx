@@ -28,7 +28,14 @@ import {
 	pref_token,
 	pref_user_email,
 	pref_json_pegawai_info_login,
-	pref_is_google, pref_is_isafe, pref_pegawai_id, pref_unit, pref_unit_id, pref_pegawai_unit_id
+	pref_is_google,
+	pref_is_isafe,
+	pref_pegawai_id,
+	pref_unit,
+	pref_unit_id,
+	pref_pegawai_unit_id,
+	FB_NOTIF_URI,
+	pref_token_fbnotif, FB_NOTIF_REG
 } from '../constant/Index';
 import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
 import { RefresherEventDetail } from "@ionic/core";
@@ -175,6 +182,18 @@ const Login: React.FC = () => {
 	const saveToPreference = (data: any, tipe: string) => {
 		clearPref().then(r => {
 			// clearPref().then(r=>r);
+			// register tokenfirebase
+			const regData = {
+				"pegawai_id": data['id'],
+				"token": getPref(pref_token_fbnotif)
+			}
+			const apiFB = axios.create({
+				baseURL: `${BASE_API_URL}` + `${API_URI}` + `${FB_NOTIF_URI}`
+			})
+			apiFB.post(`${FB_NOTIF_REG}`, regData).then(f =>{
+				alert(f);
+			})
+
 			setPref(pref_identity, data['id']).then(r => r);
 			setPref(pref_user_id, data['id']).then(r => r);
 			setPref(pref_user_role, data['roles'].toString()).then(r => r);

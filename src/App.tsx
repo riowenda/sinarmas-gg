@@ -18,16 +18,25 @@ import PermintaanUnitDetail from "./pages/Fuel/GantiUnit/PermintaanUnitDetail";
 import ApprovemenPermintaanUnitDetail from "./pages/Fuel/GantiUnit/ApprovemenPermintaanUnitDetail";
 import FuelHomepage from "./pages/Fuel/Home/FuelHome";
 import GAFuelHomepage from "./pages/Fuel/Home/GAFuelHome";
+
 import MealHomepage from "./pages/Meal/Home/MealHomepage";
 import RequestList from "./pages/Meal/Request/RequestList";
 import RequestForm from "./pages/Meal/Request/RequestForm";
+import RequestFormDivision from "./pages/Meal/Request/RequestFormDivision";
+import RequestFormVisitor from "./pages/Meal/Request/RequestFormVisitor";
 import MenuSehatHome from "./pages/Meal/menuSehat/MenuSehatHome";
 import MenuSehatForm from "./pages/Meal/menuSehat/MenuSehatForm";
+import MenuSehatView from "./pages/Meal/menuSehat/MenuSehatView";
 import DayoffHome from "./pages/Meal/Dayoff/DayoffHome";
 import DayoffForm from "./pages/Meal/Dayoff/DayoffForm";
+import MealPacketHome from "./pages/Meal/Packet/PacketHome";
+import MealPacketForm from "./pages/Meal/Packet/PacketForm";
+import MealVvipHome from "./pages/Meal/Vvip/VvipHome";
+import MealVvipForm from "./pages/Meal/Vvip/VvipForm";
 import MenuVvipView from "./pages/Meal/menuVvip/MenuVvipView";
 import MenuVvipForm from "./pages/Meal/menuVvip/MenuVvipForm";
 import MenuVvipHome from "./pages/Meal/menuVvip/MenuVvipHome";
+
 import VisitHomepage from "./pages/Visit/VisitHomepage";
 import VisitList from "./pages/Visit/VisitList";
 import RequestVisitList from "./pages/Visit/RequestVisitList";
@@ -105,6 +114,10 @@ import DashboardGA from "./pages/Dashboard/DashboardGA";
 import {SplashScreen} from "@capacitor/splash-screen";
 import QRScan from "./pages/QRScan";
 
+
+// import MenuVvipForm from "./pages/Meal/menuVvip/MenuVvipForm";
+// import MenuVvipHome from "./pages/Meal/menuVvip/MenuVvipHome";
+// import MenuVvipHomeGa from "./pages/Meal/menuVvip/MenuVvipHomeGa";
 
 setupIonicReact({
   hardwareBackButton: true
@@ -214,12 +227,24 @@ const App: React.FC = () => (
           <RequestForm />
         </Route>
 
+        <Route exact path="/meal/request/form-division">
+          <RequestFormDivision />
+        </Route>
+
+        <Route exact path="/meal/request/form-visitor">
+          <RequestFormVisitor />
+        </Route>
+
         <Route exact path="/meal/menusehat">
           <MenuSehatHome />
         </Route>
 
         <Route exact path="/meal/menusehat/form">
           <MenuSehatForm />
+        </Route>
+
+        <Route exact path="/meal/menusehat/detail/:id">
+          <MenuSehatView />
         </Route>
 
         <Route exact path="/meal/dayoff">
@@ -230,16 +255,25 @@ const App: React.FC = () => (
           <DayoffForm />
         </Route>
 
+        <Route exact path="/meal/packet">
+          <MealPacketHome />
+        </Route>
+
+        <Route exact path="/meal/packet/form/:id">
+          <MealPacketForm />
+        </Route>
+
+
         <Route exact path="/meal/menuvvip">
           <MenuVvipHome />
         </Route>
         <Route exact path="/meal/menuvvip/form">
           <MenuVvipForm />
         </Route>
-
         <Route exact path="/meal/menuvvip/detailpengajuan/:id">
           <MenuVvipView />
         </Route>
+
 
         {/* Visit Dashboard */}
         <Route exact path="/visit/homepage">

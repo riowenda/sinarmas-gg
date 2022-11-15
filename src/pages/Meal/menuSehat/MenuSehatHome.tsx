@@ -1,5 +1,7 @@
 import {
   IonContent,
+  IonItem,
+  IonList,
   IonPage,
   IonRefresher,
   IonRefresherContent,
@@ -12,6 +14,8 @@ import React, { useCallback, useState, useEffect } from "react";
 import moment from "moment";
 import { useHistory } from "react-router-dom";
 import { getJsonPref, getPref } from "../../../helper/preferences";
+import ListHeader from "../../../components/Header/ListHeader";
+import BadgeStatus from "../../../components/Badge/BadgeStatus";
 import {
   CursorArrowRaysIcon,
   EnvelopeOpenIcon,
@@ -51,7 +55,7 @@ const DayoffHome: React.FC = () => {
   const [role, setRole] = useState();
   const [unit, setUnit] = useState(userUnit);
 
-  const [items, setItems] = useState<any>([]);
+  const [items, setItems] = useState([]);
 
   const history = useHistory();
   const { t } = useTranslation();
@@ -65,16 +69,12 @@ const DayoffHome: React.FC = () => {
   function doRefresh(event: CustomEvent<RefresherEventDetail>) {
     console.log("Begin async operation");
 
-    loadDataMealReq(1);
+    loadDataMenuSehat(1);
 
     setTimeout(() => {
       console.log("Async operation has ended");
       event.detail.complete();
     }, 2000);
-  }
-
-  const btnBack = () => {
-    history.push("/meal");
   }
 
   const loadDataPref = () => {
@@ -91,11 +91,11 @@ const DayoffHome: React.FC = () => {
 
 
     // getPref(pref_identity).then(res => { setIdentity(res) });
-    getPref(pref_pegawai_unit_id).then(res => { setPegUnitId(res); loadDataMealReq(res); });
+    getPref(pref_pegawai_unit_id).then(res => { setPegUnitId(res); loadDataMenuSehat(res); });
   }
   const url = BASE_API_URL + API_URI + '/healthymenuproposals?dateStart=2022-01-01&dateEnd=2022-12-31';
 
-  const loadDataMealReq = (user: any) => {
+  const loadDataMenuSehat = (user: any) => {
     const url = BASE_API_URL + API_URI + '/healthymenuproposals?dateStart=2022-01-01&dateEnd=2022-12-31';
     fetch(url).then(res => res.json()).then(
       (result) => {
@@ -121,79 +121,39 @@ const DayoffHome: React.FC = () => {
         </IonRefresher>
 
         <div className="bg-red-700">
-          <div className="px-4 py-6">
-              <div className="flex">
-                  <svg onClick={btnBack} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-6 h-6 text-white">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 12h-15m0 0l6.75 6.75M4.5 12l6.75-6.75" />
-                  </svg>
-                  <div className="ml-4">
-                      <h3 className="text-base font-bold text-white">Menu Sehat</h3>
-                  </div>
-              </div>
-          </div>
+          <ListHeader title={"Daftar Menu Sehat"} isReplace={false} link={"/meal/menuSehat/form"} addButton={true} />
 
-          <div className="rounded-2xl bg-white drop-shadow-md mx-5 mb-5 mt-0">
-            <div className="flex w-full items-center justify-between space-x-6 py-4 px-6">
-              <div className="flex-1 truncate">
-                <div className="flex items-center">
-                  <p className="truncate text-sm font-medium text-gray-900">
-                    {/* {pegawai["name"]} <br />
-                    {pegawai["nik"]} */}
-                  </p>
-                  {/*
-                  <p className="truncate text-sm font-medium text-gray-900">
-                  </p>
-                  */}
-                </div>
-              </div>
-            </div>
-            <div className="grid divide-gray-200 border-t border-gray-200  grid-cols-2 divide-y-0 divide-x">
-              <div className="px-6 py-3 text-center text-sm font-medium">
-                <span className="text-gray-600">
-                  Masuk Kerja
-                </span>
-              </div>
-              <div className="px-6 py-3 text-center text-sm font-medium">
-                <span className="text-gray-600">
-                  123 POINTS
-                </span>
-              </div>
-            </div>
-          </div>
-          
           {/*<div className="bg-white rounded-md rounded-lg lg:rounded-lg p-0.5 mb-5">*/}
-          <div className="bg-white rounded-t-3xl px-2 pt-2 pb-6">
-            <h3 className="text-base font-bold text-gray-900 text-center my-2">Daftar Menu Sehat</h3>
-
-
-            <div className="rounded-lg py-1 px-2 mb-3 border border-1 border-purple-500 text-center">
+          <div className="bg-white pt-3 px-2">
+            <div className="rounded-lg py-1 px-2 mb-3 border border-1 border-purple-500 text-center cursor-pointer" onClick={() => {history.push('/meal/menuSehat/form')}}>
               <span className="text-purple-700">Ajukan menu sehat</span>
             </div>
             {/*
             <button className="block text-center rounded-lg bg-white border border-1 border-gray-500 px-2.5 py-3 text-xs font-bold mt-5">
             </button>
             */}
-            {items.map((data:any, index:any) => {
-              return (
-                <div className="rounded-lg py-1 mb-3 border border-1 border-gray-300" key={data['id']}>
-                  <div className="px-2 py-2">
-                    <div className="relative flex space-x-3">
-                      <div className="flex min-w-0 flex-1 justify-between space-x-4">
-                        <div>
-                          <p className="text-base font-bold text-gray-900">
-                            {moment(data['request_date']).format('DD MMM yyyy').toString()}
-                          </p>
-                        </div>
-                        <div className="whitespace-nowrap text-right text-xs bg-blue-500 rounded-lg">
-                          <span className="text-white px-2 font-bold">Active</span>
-                        </div>
+              <IonList>
+                  {items.map((data, index) => {
+                  return (
+                  <div className="rounded-lg py-1 mb-3 border border-1 border-gray-300" key={data['id']}>
+                      <IonItem routerLink={"/meal/menusehat/detailpengajuan/" + data['id']} routerDirection="forward" className="border-0" lines="none">
+                      <div className="p-3 m-1 rounded-md">
+                          <div className="grid grid-cols-12 gap-4">
+                              <div className="col-start-1 col-end-6 flex items-center justify-start justify-items-start">
+                                  <p className="text-base text-gray-900">
+                                      {moment(data['request_date']).format('DD MMM yyyy').toString()}
+                                  </p>
+                              </div>
+                              <div className="col-end-13 col-span-6 flex items-center justify-end justify-items-end">
+                                  <BadgeStatus title={data['status']}></BadgeStatus>
+                              </div>
+                          </div>
                       </div>
-
-                    </div>
+                      </IonItem>
                   </div>
-                </div>
-              )
-            })}
+                  )
+                  })}
+              </IonList>
 
             {/*<h3 className="text-base text-gray-900 text-center my-4">Load more...</h3>*/}
           </div>

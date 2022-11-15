@@ -126,7 +126,7 @@ const MenuSehatForm: React.FC = () => {
                 let imgs = res.base64String;
                 let imgName = (new Date().getTime().toString()) + "." + res.format;
                 // @ts-ignore
-                setFile();
+                setFile(res);
                 fileToDataUri(file)
                 .then(dataUri => {
                     setDataUri(dataUri)

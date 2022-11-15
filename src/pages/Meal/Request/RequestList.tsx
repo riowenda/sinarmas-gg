@@ -122,6 +122,7 @@ const MealList: React.FC = () => {
               </div>
           </div>
 
+          
           <div className="rounded-2xl bg-white drop-shadow-md mx-5 mb-5 mt-0">
             <div className="flex w-full items-center justify-between space-x-6 py-4 px-6">
               <div className="flex-1 truncate">
@@ -151,9 +152,7 @@ const MealList: React.FC = () => {
           <ListHeader title={"Daftar Pesanan"} isReplace={false} link={"/meal/request/form"} addButton={true} />
 
           {/*<div className="bg-white rounded-md rounded-lg lg:rounded-lg p-0.5 mb-5">*/}
-          <div className="bg-white rounded-t-3xl px-2 pt-2 pb-6">
-            <h3 className="text-base font-bold text-gray-900 text-center my-2">Daftar Pesanan</h3>
-
+          <div className="bg-white pt-3 px-2">
             {items.map((data, index) => {
               return (
                 <div className="rounded-lg py-1 mb-3 border border-1 border-gray-300" key={data['id']}>
@@ -161,7 +160,7 @@ const MealList: React.FC = () => {
                     <div className="relative flex space-x-3">
                       <div className="flex min-w-0 flex-1 justify-between space-x-4">
                         <div>
-                          <p className="text-base font-bold text-gray-900">{moment(data['request_date']).format('DD MMM yyyy').toString()}</p>
+                          <p className="text-gray-900">{moment(data['request_date']).format('DD MMM yyyy').toString()}</p>
                           {/*<p className="text-sm text-gray-900">PT. Semesta Transportasi Limbah Indonesia</p>*/}
                         </div>
                         <div className="whitespace-nowrap text-right text-xs bg-green-500 rounded-lg">

@@ -102,7 +102,6 @@ const MealHomepage: React.FC = () => {
   }
 
   // const [showModalSetuju, setShowModalSetuju] = React.useState(false);
-  const modal = useRef<HTMLIonModalElement>(null);
   const modalSubmenu = useRef<HTMLIonModalElement>(null);
 
   return (
@@ -113,7 +112,6 @@ const MealHomepage: React.FC = () => {
         </IonRefresher>
 
         <div className="bg-red-700">
-
           <ListHeader title={"Meal Management"} isReplace={false} />
           {/*
           <div className="px-4 py-6">
@@ -153,202 +151,160 @@ const MealHomepage: React.FC = () => {
           </div>
           */}
           {/*<div className="bg-white rounded-md rounded-lg lg:rounded-lg p-0.5 mb-5">*/}
-          <div className="bg-white rounded-t-3xl px-2 pt-2 pb-6">
-            <div className="flex items-center justify-start overflow-y-scroll text-gray-500 cursor-pointer space-x-3 mx-5 mt-5">
-              <div
-                className="flex flex-col items-center justify-center w-40  h-20  bg-gray-200 rounded-2xl text-gray-800 shadow hover:shadow-md cursor-pointer mb-2 bg-white transition ease-in duration-300"
-                id="buttonRequest"
-              >
-                <svg className="h-8 w-8 text-gray-800"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  strokeWidth="2"  strokeLinecap="round"  strokeLinejoin="round">  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />  <polyline points="14 2 14 8 20 8" />  <line x1="16" y1="13" x2="8" y2="13" />  <line x1="16" y1="17" x2="8" y2="17" />  <polyline points="10 9 9 9 8 9" /></svg>
-                <p className="text-xs mt-1">Request Meal</p>
-              </div>
-              <div
-                className="flex flex-col items-center justify-center w-40  h-20  bg-gray-200 rounded-2xl text-gray-800  shadow hover:shadow-md cursor-pointer mb-2 bg-white transition ease-in duration-300"
-                onClick={btnMealRequestList}
-              >
-                <svg className="h-8 w-8 text-gray-800"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  strokeWidth="2"  strokeLinecap="round"  strokeLinejoin="round">  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />  <polyline points="14 2 14 8 20 8" />  <line x1="16" y1="13" x2="8" y2="13" />  <line x1="16" y1="17" x2="8" y2="17" />  <polyline points="10 9 9 9 8 9" /></svg>
-                <p className="text-xs mt-1">Daftar Pesanan</p>
-              </div>
-              <div
-                className="flex flex-col items-center justify-center w-40  h-20  bg-white rounded-2xl text-gray-800 mb-2 bg-white transition ease-in duration-300"
-              >&nbsp;</div>
-              {/*
-              <div
-                  className="flex flex-col items-center justify-center w-40  h-20  bg-indigo-200  rounded-2xl  text-indigo-500 shadow hover:shadow-md cursor-pointer mb-2 bg-white transition ease-in duration-300">
-                  <svg className="h-8 w-8 text-red-500"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  strokeWidth="2"  strokeLinecap="round"  strokeLinejoin="round">  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />  <polyline points="14 2 14 8 20 8" />  <line x1="16" y1="13" x2="8" y2="13" />  <line x1="16" y1="17" x2="8" y2="17" />  <polyline points="10 9 9 9 8 9" /></svg>
-                  <p className="text-sm mt-1">Menu Sehat</p>
-              </div>
-              <div
-                  className="flex flex-col items-center justify-center w-40  h-20  bg-pink-200   rounded-2xl text-pink-500 shadow hover:shadow-md cursor-pointer mb-2  bg-white transition ease-in duration-300">
-                  <svg className="h-8 w-8 text-red-500"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  strokeWidth="2"  strokeLinecap="round"  strokeLinejoin="round">  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />  <polyline points="14 2 14 8 20 8" />  <line x1="16" y1="13" x2="8" y2="13" />  <line x1="16" y1="17" x2="8" y2="17" />  <polyline points="10 9 9 9 8 9" /></svg>
-                  <p className="text-sm mt-1">Day Off Menu</p>
-              </div>
-              */}
-            </div>
-
-            <p className="text-red-500 font-bold mx-5 my-0 cursor-pointer" id="buttonSubmenu">Menu Lainnya</p>
-
-            <div className="divide-y divide-gray-200 overflow-hidden rounded-lg border border-1 border-gray-300 bg-white my-6 mx-5">
-              <div className="px-4 py-5 p-6">
-                <p className="mb-0 font-sans leading-normal text-sm text-gray-900">Saat Ini anda Mula Tercatat mendapatkan menu sehat mulai tanggal</p>
-                <h5 className="mb-0 font-bold text-gray-900">
-                    9 September 2022
-                </h5>
-              </div>
-            </div>
-
-            <div className="divide-y divide-gray-200 overflow-hidden rounded-lg border border-1 border-gray-300 bg-white my-6 mx-5">
-              <div className="px-4 py-5 p-6">
-                <h3 className="text-md font-bold text-gray-900">
-                  Pesanan Makanan
-                </h3>
-                <div className="grid grid-cols-2 gap-2 mt-4">
-                  <span className="inline-flex items-center text-gray-900">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                      className="w-6 h-5 mr-6 text-green-600"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    Pagi
-                  </span>
-                  <span className="text-right text-gray-900">Kantin BIB</span>
+          <div className="bg-white">
+            <div className="px-4 py-4">
+                <h3 className="font-bold py-2">Status</h3>
+                <div className="flex justify-between items-center overflow-hidden rounded-lg bg-teal-500 text-white border border-1 border-gray-200 text-sm">
+                    <div className="px-4 py-5 p-6">
+                      <p className="mb-0 font-sans leading-normal text-sm">Saat Ini anda Mula Tercatat mendapatkan menu sehat mulai tanggal</p>
+                      <p className="mb-0 font-bold leading-normal text-sm">
+                          9 September 2022
+                      </p>
+                    </div>
+                    {/* <img className='h-20 -ml-6 object-right' src='assets/images/banners/car-mpv-on-visit.png' /> */}
                 </div>
-                <div className="grid grid-cols-2 gap-2 mt-4">
-                  <span className="inline-flex items-center text-gray-900">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                      className="w-6 h-5 mr-6 text-gray-200"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm3 10.5a.75.75 0 000-1.5H9a.75.75 0 000 1.5h6z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    Siang
-                  </span>
-                  <span className="text-right text-gray-900">Kantin BIB</span>
+            </div>
+            <div className="px-4 py-4">
+              <h3 className="font-bold py-2">Menu</h3>
+
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  className="inline-flex items-center rounded-lg bg-gray-100 px-2.5 py-3 text-xs font-bold"
+                  onClick={() => { history.push("/meal/request/form"); }}
+                >
+                  <img className="w-6 ml-2 mr-2" src="assets/icon/meal-menus/request.png" />
+
+                  <span className='ml-1 text-left'>Permintaan Makanan</span>
+                </button>
+
+                <button
+                  className="inline-flex items-center rounded-lg bg-gray-100 px-2.5 py-3 text-xs font-bold"
+                  onClick={() => { history.push("/meal/request"); }}
+                >
+                  <img className="w-6 ml-2 mr-2" src="assets/icon/meal-menus/list.png" />
+                  
+                  <span className='ml-1 text-left'>Daftar Pesanan</span>
+                </button>
+                <p className="text-red-500 font-bold cursor-pointer" id="buttonSubmenu">Menu Lainnya</p>
+              </div>
+
+
+              {/* <div className="divide-y divide-gray-200 overflow-hidden rounded-lg border border-1 border-gray-300 bg-white my-6">
+                <div className="px-4 py-5 p-6">
+                  <p className="mb-0 font-sans leading-normal text-sm text-gray-900">Saat ini anda mendapatkan menu sehat mulai tanggal</p>
+                  <h5 className="mb-0 font-bold text-gray-900">
+                      9 September 2022
+                  </h5>
+                </div>
+              </div> */}
+
+              <div className="divide-y divide-gray-200 overflow-hidden rounded-lg border border-1 border-gray-300 bg-white my-6">
+                <div className="px-4 py-5 p-6">
+                  <h3 className="text-md font-bold text-gray-900">
+                    Pesanan Makanan
+                  </h3>
+                  <div className="grid grid-cols-2 gap-2 mt-4">
+                    <span className="inline-flex items-center text-gray-900">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                        className="w-6 h-5 mr-6 text-green-600"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      Pagi
+                    </span>
+                    <span className="text-right text-gray-900">Kantin BIB</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 mt-4">
+                    <span className="inline-flex items-center text-gray-900">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                        className="w-6 h-5 mr-6 text-gray-200"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm3 10.5a.75.75 0 000-1.5H9a.75.75 0 000 1.5h6z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      Siang
+                    </span>
+                    <span className="text-right text-gray-900">Kantin BIB</span>
+                  </div>
                 </div>
               </div>
-            </div>
 
+            </div>
           </div>
         </div>
 
-        <IonModal ref={modal} trigger="buttonRequest" initialBreakpoint={0.5} breakpoints={[0, 0.25, 0.5, 0.75]}>
-          <IonContent className="ion-padding">
-            <div>
-              <h3 className="text-base font-bold text-gray-900 text-center my-2">Pesanan Untuk</h3>
-
-              <div className="text-gray-900">
-                <label>
-                  <input type="checkbox" checked /> Pagi <br />
-                </label>
-                <label>
-                  <input type="checkbox" checked /> Siang <br />
-                </label>
-                <label>
-                  <input type="checkbox" checked /> Sore <br />
-                </label>
-                <label>
-                  <input type="checkbox" checked /> Supper <br />
-                </label>
-              </div>
-
-              <div className="text-center">
-                <button className="inline-flex text-center items-center rounded bg-gray-200 px-2.5 py-3 text-xs font-bold mt-5">
-                  <span className="text-purple-700">Batal</span>
-                </button>
-
-                <button className="inline-flex text-center items-center rounded bg-purple-700 px-2.5 py-3 text-xs font-bold mt-5 ml-4" onClick={btnRequestForm}>
-                  <span className="text-white">Buat</span>
-                </button>
-              </div>
-
-            </div>
-          </IonContent>
-        </IonModal>
-
         <IonModal ref={modalSubmenu} trigger="buttonSubmenu" initialBreakpoint={0.75} breakpoints={[0, 0.25, 0.5, 0.75]}>
           <IonContent className="ion-padding">
-            <div className="grid grid-cols-2 gap-2 overflow-y-scroll text-gray-500 cursor-pointer mx-5 mt-5">
-              <div
-                className="flex flex-col items-center justify-center py-3  bg-gray-200 rounded-2xl text-gray-800  shadow hover:shadow-md cursor-pointer mb-2 bg-white transition ease-in duration-300"
-                onClick={btnMealRequestList}
+          <div className="grid grid-cols-2 gap-2 overflow-y-scroll cursor-pointer mx-5 mt-5">
+              <button
+                  className="inline-flex items-center rounded-lg bg-gray-100 px-2.5 py-3 text-xs font-bold"
+                  onClick={() => { history.push("/meal/request/form-division"); modalSubmenu.current?.dismiss() }}
               >
-                <svg className="h-8 w-8 text-gray-800"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  strokeWidth="2"  strokeLinecap="round"  strokeLinejoin="round">  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />  <polyline points="14 2 14 8 20 8" />  <line x1="16" y1="13" x2="8" y2="13" />  <line x1="16" y1="17" x2="8" y2="17" />  <polyline points="10 9 9 9 8 9" /></svg>
-                <p className="text-xs mt-1">Packmeal Divisi</p>
-              </div>
-              <div
-                className="flex flex-col items-center justify-center py-3  bg-gray-200 rounded-2xl text-gray-800  shadow hover:shadow-md cursor-pointer mb-2 bg-white transition ease-in duration-300"
-                onClick={btnMealRequestList}
-              >
-                <svg className="h-8 w-8 text-gray-800"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  strokeWidth="2"  strokeLinecap="round"  strokeLinejoin="round">  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />  <polyline points="14 2 14 8 20 8" />  <line x1="16" y1="13" x2="8" y2="13" />  <line x1="16" y1="17" x2="8" y2="17" />  <polyline points="10 9 9 9 8 9" /></svg>
-                <p className="text-xs mt-1">Packmeal Tamu</p>
-              </div>
+                  <img className="w-6 ml-2 mr-2" src="assets/icon/meal-menus/division.png" />
+                  <span className="ml-1 text-left">Packmeal Divisi</span>
+              </button>
 
-              <div
-                className="flex flex-col items-center justify-center py-3  bg-gray-200 rounded-2xl text-gray-800  shadow hover:shadow-md cursor-pointer mb-2 bg-white transition ease-in duration-300"
-                onClick={btnMealRequestList}
+              <button
+                  className="inline-flex items-center rounded-lg bg-gray-100 px-2.5 py-3 text-xs font-bold"
+                  onClick={() => { history.push("/meal/request/form-visitor"); modalSubmenu.current?.dismiss() }}
               >
-                <svg className="h-8 w-8 text-gray-800"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  strokeWidth="2"  strokeLinecap="round"  strokeLinejoin="round">  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />  <polyline points="14 2 14 8 20 8" />  <line x1="16" y1="13" x2="8" y2="13" />  <line x1="16" y1="17" x2="8" y2="17" />  <polyline points="10 9 9 9 8 9" /></svg>
-                <p className="text-xs mt-1">Tidak Makan</p>
-              </div>
+                  <img className="w-6 ml-2 mr-2" src="assets/icon/meal-menus/visitor.png" />
+                  <span className="ml-1 text-left">Pesanan Tamu</span>
+              </button>
 
-              <div
-                className="flex flex-col items-center justify-center py-3  bg-gray-200 rounded-2xl text-gray-800  shadow hover:shadow-md cursor-pointer mb-2 bg-white transition ease-in duration-300"
-                onClick={btnMenuSehat}
+              <button
+                  className="inline-flex items-center rounded-lg bg-gray-100 px-2.5 py-3 text-xs font-bold"
+                  onClick={btnMealRequestList}
               >
-                <svg className="h-8 w-8 text-gray-800"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  strokeWidth="2"  strokeLinecap="round"  strokeLinejoin="round">  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />  <polyline points="14 2 14 8 20 8" />  <line x1="16" y1="13" x2="8" y2="13" />  <line x1="16" y1="17" x2="8" y2="17" />  <polyline points="10 9 9 9 8 9" /></svg>
-                <p className="text-xs mt-1">Menu Sehat</p>
-              </div>
+                  <img className="w-6 ml-2 mr-2" src="assets/icon/meal-menus/noteat.png" />
+                  <span className="ml-1 text-left">Tidak Makan</span>
+              </button>
 
-              <div
-                className="flex flex-col items-center justify-center py-3  bg-gray-200 rounded-2xl text-gray-800  shadow hover:shadow-md cursor-pointer mb-2 bg-white transition ease-in duration-300"
-                onClick={btnDayOff}
+              <button
+                  className="inline-flex items-center rounded-lg bg-gray-100 px-2.5 py-3 text-xs font-bold"
+                  onClick={() => { history.push("/meal/menusehat"); modalSubmenu.current?.dismiss() }}
               >
-                <svg className="h-8 w-8 text-gray-800"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  strokeWidth="2"  strokeLinecap="round"  strokeLinejoin="round">  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />  <polyline points="14 2 14 8 20 8" />  <line x1="16" y1="13" x2="8" y2="13" />  <line x1="16" y1="17" x2="8" y2="17" />  <polyline points="10 9 9 9 8 9" /></svg>
-                <p className="text-xs mt-1">Day Off Menu</p>
-              </div>
+                  <img className="w-6 ml-2 mr-2" src="assets/icon/meal-menus/healthy.png" />
+                  <span className="ml-1 text-left">Menu Sehat</span>
+              </button>
 
-              <div
-                className="flex flex-col items-center justify-center py-3  bg-gray-200 rounded-2xl text-gray-800  shadow hover:shadow-md cursor-pointer mb-2 bg-white transition ease-in duration-300"
-                onClick={btnMealRequestList}
+              <button
+                  className="inline-flex items-center rounded-lg bg-gray-100 px-2.5 py-3 text-xs font-bold"
+                  onClick={() => { history.push("/meal/dayoff"); modalSubmenu.current?.dismiss() }}
               >
-                <svg className="h-8 w-8 text-gray-800"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  strokeWidth="2"  strokeLinecap="round"  strokeLinejoin="round">  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />  <polyline points="14 2 14 8 20 8" />  <line x1="16" y1="13" x2="8" y2="13" />  <line x1="16" y1="17" x2="8" y2="17" />  <polyline points="10 9 9 9 8 9" /></svg>
-                <p className="text-xs mt-1">Menu VVIP</p>
-              </div>
+                  <img className="w-6 ml-2 mr-2" src="assets/icon/meal-menus/dayoff.png" />
+                  <span className="ml-1 text-left">Day Off</span>
+              </button>
 
-              <div
-                className="flex flex-col items-center justify-center py-3  bg-gray-200 rounded-2xl text-gray-800  shadow hover:shadow-md cursor-pointer mb-2 bg-white transition ease-in duration-300"
-                onClick={btnMealRequestList}
+              <button
+                  className="inline-flex items-center rounded-lg bg-gray-100 px-2.5 py-3 text-xs font-bold"
+                  onClick={() => { history.push("/meal/menuvvip"); modalSubmenu.current?.dismiss() }}
               >
-                <svg className="h-8 w-8 text-gray-800"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  strokeWidth="2"  strokeLinecap="round"  strokeLinejoin="round">  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />  <polyline points="14 2 14 8 20 8" />  <line x1="16" y1="13" x2="8" y2="13" />  <line x1="16" y1="17" x2="8" y2="17" />  <polyline points="10 9 9 9 8 9" /></svg>
-                <p className="text-xs mt-1">Paket Harga</p>
-              </div>
-              
-              {/*
-              <div
-                  className="flex flex-col items-center justify-center w-40  h-20  bg-indigo-200  rounded-2xl  text-indigo-500 shadow hover:shadow-md cursor-pointer mb-2 bg-white transition ease-in duration-300">
-                  <svg className="h-8 w-8 text-red-500"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  strokeWidth="2"  strokeLinecap="round"  strokeLinejoin="round">  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />  <polyline points="14 2 14 8 20 8" />  <line x1="16" y1="13" x2="8" y2="13" />  <line x1="16" y1="17" x2="8" y2="17" />  <polyline points="10 9 9 9 8 9" /></svg>
-                  <p className="text-sm mt-1">Menu Sehat</p>
-              </div>
-              <div
-                  className="flex flex-col items-center justify-center w-40  h-20  bg-pink-200   rounded-2xl text-pink-500 shadow hover:shadow-md cursor-pointer mb-2  bg-white transition ease-in duration-300">
-                  <svg className="h-8 w-8 text-red-500"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  strokeWidth="2"  strokeLinecap="round"  strokeLinejoin="round">  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />  <polyline points="14 2 14 8 20 8" />  <line x1="16" y1="13" x2="8" y2="13" />  <line x1="16" y1="17" x2="8" y2="17" />  <polyline points="10 9 9 9 8 9" /></svg>
-                  <p className="text-sm mt-1">Day Off Menu</p>
-              </div>
-              */}
-            </div>
+                  <img className="w-6 ml-2 mr-2" src="assets/icon/meal-menus/vvip.png" />
+                  <span className="ml-1 text-left">Menu VVIP</span>
+              </button>
+
+              <button
+                  className="inline-flex items-center rounded-lg bg-gray-100 px-2.5 py-3 text-xs font-bold"
+                  onClick={() => { history.push("/meal/packet"); modalSubmenu.current?.dismiss() }}
+              >
+                  <img className="w-6 ml-2 mr-2" src="assets/icon/meal-menus/packet.png" />
+                  <span className="ml-1 text-left">Menu Paket</span>
+              </button>
+          </div>
           </IonContent>
         </IonModal>
       </IonContent>

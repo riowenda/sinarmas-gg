@@ -98,7 +98,7 @@ const Dashboard: React.FC = () => {
   const menuGA = () => {
     history.push("/fuel/");
   };
-
+  
   const listNotifikasi = () => {
     history.push("/notifikasi");
   };

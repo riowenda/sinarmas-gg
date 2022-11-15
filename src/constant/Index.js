@@ -1,6 +1,5 @@
 // export const BASE_API_URL = "https://dev-backendsvr-01.borneo-indobara.com";
-// export const BASE_API_URL = 'http://localhost:8080';
-export const BASE_API_URL = "http://35.219.126.93:8080";
+export const BASE_API_URL = 'http://localhost:8080';
 export const API_URI = "/api";
 export const AUTH_URI = "/auth";
 export const LOGIN_URI = "/login";
@@ -65,6 +64,8 @@ export const PO_DO_CREATE_URI = "/createDeliverOrder";
 export const PO_DO_APPROVEMENT_LOGISTIC_URI = "/processDOByLogistic";
 export const PO_DO_CONFIRMATION_FUELMAN_URI = "/do/confirmation-fuelman";
 export const PO_CONFIRMATION_GA_URI = "/do/confirmation-ga";
+export const DO_REQ_URI = "/fuel-do";
+export const DO_REQ_CREATE = "/request";
 
 //MD-FOR-FUEL
 export const MD_OTHER_COUPON_URI = "/other-coupon";
@@ -82,6 +83,15 @@ export const MD_SISTEM_KERJA_URI = "/commons/list-sistem-kerja-type";
 export const MD_QUALITY_URI = "/quality";
 
 export const MEAL_REQ_SELF = "/mealrequests/self";
+export const MEAL_REQ_SELF_SAVE = "/mealrequests/self";
+export const MEAL_REQ_DIVISION_SAVE = "/mealrequests/division";
+export const MEAL_REQ_VISITOR_SAVE = "/mealrequests/visitor";
+export const MEAL_PACKET = "/packetproposals";
+export const MEAL_PACKET_SAVE = "/packetproposals";
+
+// FIREBASE URI
+export const FB_NOTIF_URI = "/notification"
+export const FB_NOTIF_REG = "/rgister"
 
 export const GOOGLE_AUTH_SCOPE = [
   "openid",
@@ -115,3 +125,4 @@ export const pref_unit = "unit";
 export const pref_unit_id = "unit_id";
 export const pref_pegawai_unit_id = "pegawai_unit_id"; //untuk kebutuhan identitas unit yang sedang digunakan oleh si pegawai
 export const pref_fuel_station_id = "fuel_station_id";
+export const pref_token_fbnotif = "";

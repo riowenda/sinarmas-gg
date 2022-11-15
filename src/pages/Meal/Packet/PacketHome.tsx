@@ -11,8 +11,9 @@ import { useTranslation, initReactI18next } from "react-i18next";
 import React, { useCallback, useState } from "react";
 import moment from "moment";
 import { useHistory } from "react-router-dom";
-import { getJsonPref, getPref } from "../../../helper/preferences";
+import { getPref } from "../../../helper/preferences";
 import ListHeader from "../../../components/Header/ListHeader";
+import BadgeStatus from "../../../components/Badge/BadgeStatus";
 import {
   CursorArrowRaysIcon,
   EnvelopeOpenIcon,
@@ -33,16 +34,15 @@ import {
   pref_identity,
   pref_user_id,
   pref_user_role,
-  MEAL_REQ_SELF
+  MEAL_PACKET
 } from "../../../constant/Index";
 
 const BASE_API_URL = 'http://182.253.66.235:8000';
 const API_URI = '';
 
 const user = { name: "", email: "", nik: "", imageUrl: "" };
-const userUnit = { id: "", noPol: "", noLambung: "" };
 
-const DayoffHome: React.FC = () => {
+const MealPacket: React.FC = () => {
 
   const [error, setError] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -50,7 +50,6 @@ const DayoffHome: React.FC = () => {
   const [pegUnitId, setPegUnitId] = useState();
   const [pegawai, setPegawai] = useState(user);
   const [role, setRole] = useState();
-  const [unit, setUnit] = useState(userUnit);
 
   const [items, setItems] = useState([]);
 
@@ -79,24 +78,15 @@ const DayoffHome: React.FC = () => {
   }
 
   const loadDataPref = () => {
-    getJsonPref(pref_json_pegawai_info_login).then((res) => {
-      setPegawai(res);
-      // console.log(res);
-    });
-    getJsonPref(pref_unit).then((restUnit) => {
-      setUnit(restUnit);
-    });
-    getPref(pref_user_role).then((restRole) => {
+    getPref(pref_identity).then(res => { setIdentity(res) });
+    getPref(pref_pegawai_unit_id).then(res => { setPegUnitId(res); loadDataMealReq(res); });
+    getPref(pref_user_role).then(restRole => {
       setRole(restRole);
     });
-
-
-    // getPref(pref_identity).then(res => { setIdentity(res) });
-    getPref(pref_pegawai_unit_id).then(res => { setPegUnitId(res); loadDataMealReq(res); });
   }
 
   const loadDataMealReq = (user: any) => {
-    const url = BASE_API_URL + API_URI + '/dayoffs';
+    const url = BASE_API_URL + API_URI + MEAL_PACKET;
     fetch(url).then(res => res.json()).then(
       (result) => {
         // console.log(result.data);
@@ -121,43 +111,66 @@ const DayoffHome: React.FC = () => {
         </IonRefresher>
 
         <div className="bg-red-700">
-          <ListHeader title={"Day Off"} isReplace={false} link={"/meal/dayoff/form"} addButton={true} />
-          
-          {/*<div className="bg-white rounded-md rounded-lg lg:rounded-lg p-0.5 mb-5">*/}
-          <div className="bg-white px-2 pt-2">
-            <h3 className="font-bold text-gray-900 text-center my-2">Permohonan mengaktikan menu saat day off</h3>
+          {/*
+          <div className="px-4 py-6">
+              <div className="flex">
+                  <svg onClick={btnBack} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-6 h-6 text-white">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 12h-15m0 0l6.75 6.75M4.5 12l6.75-6.75" />
+                  </svg>
+                  <div className="ml-4">
+                      <h3 className="text-base font-bold text-white">Daftar Pesanan</h3>
+                  </div>
+              </div>
+          </div>
 
-            <div className="rounded-lg py-1 px-2 mb-3 border border-1 border-purple-500 text-center cursor-pointer" onClick={() => { history.push('/meal/dayoff/form') }}>
-              <span className="text-purple-700">Buat Permohonan</span>
+          
+          <div className="rounded-2xl bg-white drop-shadow-md mx-5 mb-5 mt-0">
+            <div className="flex w-full items-center justify-between space-x-6 py-4 px-6">
+              <div className="flex-1 truncate">
+                <div className="flex items-center">
+                  <p className="truncate text-sm font-medium text-gray-900">
+                    Ahmad Mujiburahman <br />
+                    1234567890123452
+                  </p>
+                </div>
+              </div>
             </div>
-            {/*
-            <button className="block text-center rounded-lg bg-white border border-1 border-gray-500 px-2.5 py-3 text-xs font-bold mt-5">
-            </button>
-            */}
+            <div className="grid divide-gray-200 border-t border-gray-200  grid-cols-2 divide-y-0 divide-x">
+              <div className="px-6 py-3 text-center text-sm font-medium">
+                <span className="text-gray-600">
+                  Masuk Kerja
+                </span>
+              </div>
+              <div className="px-6 py-3 text-center text-sm font-medium">
+                <span className="text-gray-600">
+                  123 POINTS
+                </span>
+              </div>
+            </div>
+          </div>
+          */}
+
+          <ListHeader title={"Daftar Pesanan"} isReplace={false} link={"/meal/request/form"} addButton={true} />
+
+          {/*<div className="bg-white rounded-md rounded-lg lg:rounded-lg p-0.5 mb-5">*/}
+          <div className="bg-white pt-3 px-2">
             {items.map((data, index) => {
               return (
-                <div className="rounded-lg py-1 mb-3 border border-1 border-gray-300" key={data['id']}>
+                <div 
+                  className="rounded-lg py-1 mb-3 border border-1 border-gray-300 cursor-pointer" 
+                  key={data['id']} 
+                  onClick={() => { history.push("/meal/packet/form/" + data['id']) } }
+                >
                   <div className="px-2 py-2">
                     <div className="relative flex space-x-3">
                       <div className="flex min-w-0 flex-1 justify-between space-x-4">
                         <div>
-                          <p className="font-bold text-gray-900">
-                            {moment(data['date_start']).format('DD MMM yyyy').toString()} sd.
-                            {moment(data['date_end']).format('DD MMM yyyy').toString()}
-                          </p>
+                          <p className="text-gray-900">{moment(data['request_date']).format('DD MMM yyyy').toString()}</p>
                           {/*<p className="text-sm text-gray-900">PT. Semesta Transportasi Limbah Indonesia</p>*/}
                         </div>
-                        <div className="whitespace-nowrap text-right text-xs bg-yellow-500 rounded-lg">
-                          <span className="text-white px-2 font-bold">{data['status']}</span>
-                        </div>
+                        <BadgeStatus title={data['status']} />
                       </div>
-
                     </div>
-                    <p>
-                      {data['day_count']} hari <br />
-                      Alasan Pengajuan <br />
-                      {data['user_reason']}
-                    </p>
                   </div>
                 </div>
               )
@@ -171,7 +184,7 @@ const DayoffHome: React.FC = () => {
   );
 };
 
-export default DayoffHome;
+export default MealPacket;
 function classNames(arg0: string, arg1: string): string | undefined {
   throw new Error("Function not implemented.");
 }

@@ -14,7 +14,7 @@ import { useTranslation, initReactI18next } from "react-i18next";
 import Select from 'react-select'
 
 import React, { useRef, useState, useCallback } from "react";
-import { useHistory } from "react-router-dom";
+import { useHistory, useParams } from "react-router-dom";
 // import { } from "@heroicons/react/24/outline";
 import {getJsonPref, getPref} from "../../../helper/preferences";
 import ListHeader from "../../../components/Header/ListHeader";
@@ -24,7 +24,8 @@ import {
   // API_URI,
   pref_json_pegawai_info_login,
   pref_token,
-  MEAL_REQ_SELF_SAVE
+  MEAL_PACKET,
+  MEAL_PACKET_SAVE
 } from "../../../constant/Index";
 
 const BASE_API_URL = 'http://182.253.66.235:8000';
@@ -43,8 +44,131 @@ const locations = [
 
 const MealRequestForm: React.FC = () => {
   useIonViewDidEnter(() => {
-    loadDataPref();
+    loadDataById();
+  });
 
+  const history = useHistory();
+  const { id } = useParams<{ id: string }>();
+
+  const { t } = useTranslation();
+  const [present, dismiss] = useIonLoading();
+  const [showConfirm] = useIonAlert();
+  const [toast] = useIonToast();
+
+  const [error, setError] = useState(null);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  const [item, setItem] = useState(null);
+
+  const [token, setToken] = useState(null);
+  const [userInfo, setUserInfo] = useState({
+    email: '',
+    identity: '',
+    imageUrl: '',
+    name: '',
+    nik: '',
+    role: [],
+    userId: ''
+  })
+
+  const [visitorType, setVisitorType] = useState<string>();
+  const [shiftActivities, setShiftActivities] = useState(() => shifts.map((x) => false));
+  const [data, setData] = useState(() => ({
+    id: '',
+    user_id: '',
+    user_name: '',
+    packet_category_id: '',
+    packet_category_name: '',
+    request_date: '',
+    shift_id: '',
+    shift_name: '',
+    menu_lists: '',
+    price: '',
+    status: '',
+    reason: '',
+    handled_at: '',
+    deleted_at: '',
+    created_at: '',
+    updated_at: '',
+  }))
+
+  const doRefresh = (event: CustomEvent<RefresherEventDetail>) => {
+    setTimeout(() => {
+      console.log("Async operation has ended");
+      event.detail.complete();
+    }, 2000);
+  }
+
+  // const loadDataPref = () => {
+  //   getPref(pref_token).then(res => {
+  //     setToken(res);
+  //     // loadDataTujuan(res);
+  //   });
+  //   getJsonPref(pref_json_pegawai_info_login).then(res => {
+  //     setUserInfo(res);
+
+  //     // setData(prevData => ({
+  //     //   ...prevData, 
+  //     //   user_id: res.userId, 
+  //     //   user_nik: res.nik, 
+  //     //   user_name: res.name, 
+  //     // }))
+  //   });
+  // }
+
+  const loadDataById = () => {
+    const url = BASE_API_URL + API_URI + MEAL_PACKET + '/' + id;
+    fetch(url).then(res => res.json()).then(
+      (result) => {
+        // console.log(result.data);
+        setData(result)
+        setIsLoaded(true);
+      },
+      // Note: it's important to handle errors here
+      // instead of a catch() block so that we don't swallow
+      // exceptions from actual bugs in components.
+      (error) => {
+        setIsLoaded(true);
+        setError(error);
+      }
+    )
+  }
+
+  // const handleSelectChange = async (event: any) => {
+  //   console.log(event)
+  // }
+
+  const toggleActive = (index: number, val: any) => {
+    const newShiftActivities = [...shiftActivities];
+    newShiftActivities[index] = val;
+    setShiftActivities(newShiftActivities);
+  }
+
+  // const handleSetLocation = (index: number, shiftId: number, shiftName: string, selected: any) => {
+  //   const newArr = [...data]
+  //   newArr[index] = {
+  //     shift_id: shiftId,
+  //     shift_name: shiftName,
+  //     delivery_location_id: selected.value,
+  //     delivery_location_name: selected.label,
+  //     reason: ''
+  //   }
+  //   setData(newArr);
+  // }
+
+  // const handleSetReason = (index: number, shiftId: number, shiftName: string, val: any) => {
+  //   const newArr = [...data]
+  //   newArr[index] = {
+  //     shift_id: shiftId,
+  //     shift_name: shiftName,
+  //     delivery_location_id: 0,
+  //     delivery_location_name: '',
+  //     reason: val
+  //   }
+  //   setData(newArr);
+  // }
+
+  const showConfimForm = () => {
     showConfirm({
       subHeader: 'Pesanan Untuk',
       inputs: 
@@ -83,91 +207,6 @@ const MealRequestForm: React.FC = () => {
         cssClass: 'alert-button-cancel'
       }]
     })
-  });
-
-  const history = useHistory();
-  const { t } = useTranslation();
-  const [present, dismiss] = useIonLoading();
-  const [showConfirm] = useIonAlert();
-  const [toast] = useIonToast();
-
-  const [token, setToken] = useState(null);
-  const [userInfo, setUserInfo] = useState({
-    email: '',
-    identity: '',
-    imageUrl: '',
-    name: '',
-    nik: '',
-    role: [],
-    userId: ''
-  })
-
-  const [reqDate, setReqDate] = useState<string>();
-  const [shiftActivities, setShiftActivities] = useState(() => shifts.map((x) => false));
-  const [data, setData] = useState(() => shifts.map((x) => ({
-    shift_id: 0,
-    shift_name: '',
-    delivery_location_id: 0,
-    delivery_location_name: '',
-    reason: ''
-  })))
-
-  const doRefresh = (event: CustomEvent<RefresherEventDetail>) => {
-    setTimeout(() => {
-      console.log("Async operation has ended");
-      event.detail.complete();
-    }, 2000);
-  }
-
-  const loadDataPref = () => {
-    getPref(pref_token).then(res => {
-      setToken(res);
-      // loadDataTujuan(res);
-    });
-    getJsonPref(pref_json_pegawai_info_login).then(res => {
-      setUserInfo(res);
-
-      // setData(prevData => ({
-      //   ...prevData, 
-      //   user_id: res.userId, 
-      //   user_nik: res.nik, 
-      //   user_name: res.name, 
-      // }))
-    });
-  }
-
-  // const handleSelectChange = async (event: any) => {
-  //   console.log(event)
-  // }
-
-  const toggleActive = (index: number, val: any) => {
-    const newShiftActivities = [...shiftActivities];
-    newShiftActivities[index] = val;
-    setShiftActivities(newShiftActivities);
-  }
-
-  const handleSetLocation = (index: number, shiftId: number, shiftName: string, selected: any) => {
-    const newArr = [...data]
-    newArr[index] = {
-      shift_id: shiftId,
-      shift_name: shiftName,
-      delivery_location_id: selected.value,
-      delivery_location_name: selected.label,
-      reason: ''
-    }
-    setData(newArr);
-  }
-
-  const handleSetReason = (index: number, shiftId: number, shiftName: string, val: any) => {
-    const newArr = [...data]
-    newArr[index] = {
-      shift_id: shiftId,
-      shift_name: shiftName,
-      delivery_location_id: 0,
-      delivery_location_name: '',
-      reason: val
-    }
-    setData(newArr);
   }
 
   const modal = useRef<HTMLIonModalElement>(null);
@@ -195,7 +234,7 @@ const MealRequestForm: React.FC = () => {
     const loading = present({
       message: 'Memproses permintaan ...',
     })
-    const url = BASE_API_URL + API_URI + MEAL_REQ_SELF_SAVE;
+    const url = BASE_API_URL + API_URI + MEAL_PACKET_SAVE;
 
     const formData = {
       user_id: userInfo.userId,
@@ -203,9 +242,9 @@ const MealRequestForm: React.FC = () => {
       user_name: userInfo.name,
       user_location_id: 0,
       user_location_name: ' ',
-      request_date: reqDate,
+      request_date: '',
       user_type: userInfo.role.length ? userInfo.role[0] : '',
-      details: [...data]
+      // details: [...data]
     }
 
     fetch(url, {
@@ -262,32 +301,29 @@ const MealRequestForm: React.FC = () => {
           <div className="bg-white">
           {/*<div className="bg-white rounded-t-3xl px-2 pt-2 pb-6">*/}
             <div className="p-6">
-              <label htmlFor="reqDate" className="block text-sm text-gray-900">Tanggal</label>
-              <div className="border-b border-gray-300 py-2 text-gray-900">
-                <input type="date" id="reqDate" className="block w-full" defaultValue={reqDate} onChange={e => setReqDate(e.target.value)} />
+              <label htmlFor="visitorType" className="block text-sm text-gray-900">Pemohon</label>
+              <div className="border-b border-gray-300 py-1 text-gray-900">
+                {data.user_name}
               </div>
 
-              {shifts.map((shift, index) => (
-                <div className="rounded-lg py-1 mb-3 border border-1 border-gray-300 bg-gray-100 mt-3" key={index}>
-                  <div className="px-2 py-2">
-                    <div className="flex min-w-0 flex-1 justify-between">
-                      <p className="text-sm text-gray-900 py-2">{shift.name}</p>
-                      <label className="m-2">
-                        <input type="checkbox" className="h-4 w-4 rounded" checked={shiftActivities[index]} onChange={e => toggleActive(index, e.target.checked)} /> Tidak Pesan
-                      </label>
-                    </div>
+              <label htmlFor="visitorType" className="block mt-3 text-sm text-gray-900">Kategori Paket</label>
+              <div className="border-b border-gray-300 py-1 text-gray-900">
+                {data.packet_category_name}
+              </div>
 
-                    <div className="min-w-0">
-                      <p className="text-sm text-gray-900 py-2">{ shiftActivities[index] ? 'Alasan tidak pilih menu' : 'Diantar ke'}</p>
-                      {shiftActivities[index] 
-                        ? <textarea onChange={(event) => handleSetReason(index, shift.id, shift.name, event.target.value)} rows={3} className="block w-full border border-1 border-gray-300 rounded-md border-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-1" defaultValue={''}/>
-                        : <Select placeholder="Diantar ke" options={locations} onChange={e => handleSetLocation(index, shift.id, shift.name, e)} /> 
-                      }
-                    </div>
+              <label htmlFor="visitorType" className="block mt-3 text-sm text-gray-900">Shift</label>
+              <div className="border-b border-gray-300 py-1 text-gray-900">
+                {data.shift_name}
+                {/*
+                <Select
+                  isMulti
+                  placeholder="Tamu VVIP"
+                  options={employees}
+                  onChange={(e) => setData(d => ({ ...d, users: [...e.map((i) => i.label)] }))} 
+                /> 
+                */}
+              </div>
 
-                  </div>
-                </div>
-              ))}
             </div>
 
             <div className='p-6 items-end bg-white'>

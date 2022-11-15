@@ -5,40 +5,46 @@ import {
     IonCheckbox,
     IonCol,
     IonContent,
+    IonGrid,
+    IonIcon,
+    IonImg,
+    IonInput,
     IonItem,
     IonPage,
     IonRadio,
     IonRadioGroup,
     IonRefresher,
     IonRefresherContent,
+    IonRow,
     IonSelect,
     IonSelectOption,
+    IonTextarea,
     useIonViewDidEnter,
   } from "@ionic/react";
 import {IonReactRouter} from "@ionic/react-router";
-import { Camera, CameraResultType, CameraSource, Photo} from "@capacitor/camera";
+import { Camera, CameraResultType, CameraSource } from "@capacitor/camera";
 import { RefresherEventDetail } from '@ionic/core';
 import {useTranslation, initReactI18next} from "react-i18next";
 import { camera, receiptOutline, restaurantOutline } from "ionicons/icons";
-import ListHeader from "../../../components/Header/ListHeader";
+import './MenuVvip.css';
 const MenuVvipForm: React.FC = () => {
     //form
-    const [jenisTamu, setJenisTamu] = useState<any>("Organik");
-    
-    const [requestTamu, setRequestTamu] = useState<any>([]);
-    const [requestMenu, setRequestMenu] = useState<any>();
+    const [jenisTamu, setJenisTamu] = useState<string>();
+    const [tamuVvip, setTamuVvip] = useState<any>([]);
+    const [requestTamu, setRequestTamu] = useState<string>();
+    const [requestMenu, setRequestMenu] = useState<string>();
     const [jadwal, setJadwal] = useState<any>([]);
     
     const handleJenisTamu = (e: any) => {
         if(e==="organik"){
-            setJenisTamu('Organik')
+            setJenisTamu('organik')
         }
         else{
-            setJenisTamu('External')
+            setJenisTamu('external')
         }
     }
     const handleRequestTamu = (e: any) => {
-        setRequestTamu(e)
+        console.log(e);
     }
     const handleJadwal = (e: any, value:any) => {
         if(e.target.checked){
@@ -48,62 +54,44 @@ const MenuVvipForm: React.FC = () => {
         }
     }
     const [file, setFile] = useState<any>();
-    const [sendImage, setSendImage] = useState<any>();
-    const [fileName, setFileName] = useState<any>();
+    const [dataUri, setDataUri] = useState<any>('')
     const handleFile = async () => {
-        const image = await Camera.getPhoto({
-            quality: 30,
-            allowEditing: false,
-            resultType: CameraResultType.Uri,
-            source: CameraSource.Camera
-        });
-        setFile(image.webPath);
-        let imgName = (new Date().getTime().toString()) + "." + image.format;
-        setFileName(imgName);
-        const response = await fetch(image.webPath!);
-        const blob = await response.blob();
-        setSendImage(blob);
-
-    };
-    const today = new Date();
-    const handleSubmit = async (e:any) => {
-        e.preventDefault();
-        const BASE_API_URL = 'http://182.253.66.235:8000/';
-        const API_URI = '';
-        const url = BASE_API_URL + API_URI + 'vviprequests';
-        const form = new FormData();
-        form.append("visitor_category", jenisTamu);
-        form.append("request_date", today. getFullYear()+'-'+(today. getMonth()+1)+'-'+today. getDate());
-        form.append("shift_id", "1");
-        form.append("shift_name", jadwal);
-        form.append("description", requestMenu);
-        form.append("image", sendImage, fileName);
-        requestTamu.map((day:any, index:any) => {
-            form.append("visitor_lists["+index+"]", day);
+        await Camera.getPhoto({
+            resultType: CameraResultType.Base64,
+            source: CameraSource.Camera,
+            quality: 30
         })
-        try {
-          let res = await fetch(url, {
-            method: "POST",
-            body: form
-          });
-          let resJson = await res.json();
-          if (res.status === 200) {
-            window.location.href = "/menuvvip/detailpengajuan?id="+resJson.id;
-          } else {
-            window.location.href = "/menuvvip/detailpengajuan?id="+resJson.id;
-          }
-          
-        } catch (err) {
-          console.log(err);
-        }
+            .then((res) => {
+                console.log(res);
+                let imgs = res.base64String;
+                let imgName = (new Date().getTime().toString()) + "." + res.format;
+                // @ts-ignore
+                setFile(res);
+                fileToDataUri(file)
+                .then(dataUri => {
+                    setDataUri(dataUri)
+                })
+            })
+            .catch((err) => {
+                console.log(err);
+            });
+    };
+    const fileToDataUri = (file: Blob) => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (event:any) => {
+          resolve(event.target.result)
+        };
+        reader.readAsDataURL(file);
+    })
+    const handleBefore = () => {
+        console.log(jadwal);
     }
 
 
     const history = useHistory();
     const btnBack = () => {
-        history.push("/meal/menuvvip");
+    history.push("/meal/menuvvip");
     }
-    
     return (
         <IonPage>
         <IonContent fullscreen>
@@ -111,7 +99,47 @@ const MenuVvipForm: React.FC = () => {
             <IonRefresherContent></IonRefresherContent>
           </IonRefresher>
             <div className="bg-red-700">
-                <ListHeader title="Pengajuan Menu Sehat"></ListHeader>
+                <div className="px-4 py-6">
+                    <div className="flex">
+                        <svg onClick={btnBack} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-6 h-6 text-white">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 12h-15m0 0l6.75 6.75M4.5 12l6.75-6.75" />
+                        </svg>
+                        <div className="ml-4">
+                            <h3 className="text-base font-bold text-white">Pengajuan Menu VVIP</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="rounded-2xl bg-white drop-shadow-md mx-5 mb-5 mt-0">
+                    <div className="flex w-full items-center justify-between space-x-6 py-4 px-6">
+                    <div className="flex-1 truncate">
+                        <div className="flex items-center">
+                        <p className="truncate text-sm font-medium text-gray-900">
+                            {/* {pegawai["name"]} <br />
+                            {pegawai["nik"]} */}
+                            Irvan Nofiansyah <br/>
+                            123456789
+                        </p>
+                        {/*
+                        <p className="truncate text-sm font-medium text-gray-900">
+                        </p>
+                        */}
+                        </div>
+                    </div>
+                    </div>
+                    <div className="grid divide-gray-200 border-t border-gray-200  grid-cols-2 divide-y-0 divide-x">
+                    <div className="px-6 py-3 text-center text-sm font-medium">
+                        <span className="text-gray-600">
+                        Masuk Kerja
+                        </span>
+                    </div>
+                    <div className="px-6 py-3 text-center text-sm font-medium">
+                        <span className="text-gray-600">
+                        123 POINTS
+                        </span>
+                    </div>
+                    </div>
+                </div>
                 <div className="bg-white rounded-t-3xl px-2 pt-2 pb-6">
                     <div className="container">
                         <label className="ml-3 text-lg">Jenis Tamu</label><br/>
@@ -140,9 +168,8 @@ const MenuVvipForm: React.FC = () => {
                         <br/>
                         <label className="ml-3 text-lg">Request Menu</label><br/>
                         <div className="ml-3 mr-3">
-                            <textarea rows={3} className="block w-full border border-1 border-gray-300 rounded-md border-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-1" 
-                            onChange={ e => setRequestMenu(e.target.value!)}>
-                            </textarea>
+                            <IonTextarea className="pl-1 pr-1 border-2 inherit" onIonChange={ e => setRequestMenu(e.target.value!)}>
+                            </IonTextarea>
                         </div>
                         <br/>
                         <div className="grid grid-cols-4 gap-4">
@@ -173,7 +200,7 @@ const MenuVvipForm: React.FC = () => {
                                 </label>
                                 {file ?
                                     <><div className="group block rounded-lg aspect-auto bg-gray-100 overflow-hidden">
-                                        <img className="object-cover pointer-events-none" src={file} ></img>
+                                        <img className="object-cover pointer-events-none" src={`data:image/jpeg;base64,${file.base64String}`} ></img>
                                     </div></>
                                     :
                                     <div className="rounded-md border-2 border-dashed border-gray-300 py-10">
@@ -192,11 +219,13 @@ const MenuVvipForm: React.FC = () => {
                         </div>
                         <br/>
                         <div className="container text-center">
-                            <IonButton expand="block" color="tertiary" onClick={(e) => handleSubmit(e)}>Submit</IonButton>
+                            <IonButton expand="block" color="tertiary" onClick={() => handleBefore()}>Submit</IonButton>
                             <IonButton className="mt-3" expand="block" color="medium">Draft</IonButton>
-                            <IonButton className="mt-3" expand="block" color="danger" onClick={btnBack}>Cancel</IonButton>
+                            <IonButton className="mt-3" expand="block" color="danger">Cancel</IonButton>
                         </div>
+
                     </div>
+                    
                 </div>
             </div>
         </IonContent>

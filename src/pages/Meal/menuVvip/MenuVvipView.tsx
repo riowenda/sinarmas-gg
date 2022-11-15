@@ -1,6 +1,5 @@
 import React, {useState, useEffect, useRef} from "react";
 import { useHistory, useParams } from "react-router-dom";
-import { getJsonPref, getPref } from "../../../helper/preferences";
 import {
     IonButton,
     IonButtons,
@@ -23,24 +22,15 @@ import {
     IonSelect,
     IonSelectOption,
     IonText,
-    IonTextarea,
+    useIonAlert,
+    useIonToast,
     useIonViewDidEnter,
   } from "@ionic/react";
-  import {
-    // BASE_API_URL,
-    // API_URI,
-    PEGAWAI_UNIT_CRUD_URI, PEGAWAI_UNIT_RELEASED_URI,
-    pref_json_pegawai_info_login, pref_pegawai_unit_id,
-    pref_unit, pref_unit_id,
-    pref_identity,
-    pref_user_id,
-    pref_user_role
-  } from "../../../constant/Index";
+
 import {IonReactRouter} from "@ionic/react-router";
 import { RefresherEventDetail } from '@ionic/core';
 import {useTranslation, initReactI18next} from "react-i18next";
 import { camera, ellipse, receiptOutline, restaurantOutline } from "ionicons/icons";
-import './MenuVvip.css';
 import ListHeader from "../../../components/Header/ListHeader";
 const BASE_API_URL = 'http://182.253.66.235:8000';
 const API_URI = '';
@@ -49,9 +39,9 @@ const user = { name: "", email: "", nik: "", imageUrl: "" };
 const userUnit = { id: "", noPol: "", noLambung: "" };
 
 const MenuVvipView: React.FC = () => {
-    const [isGa, setIsGa] = useState<boolean>(false);
+    const [isGa, setIsGa] = useState<boolean>(true);
     const [isUser, setIsUser ] = useState<boolean>(false);
-    const [isCatering, setIsCatering ] = useState<boolean>(true);
+    const [isCatering, setIsCatering ] = useState<boolean>(false);
     const params = useParams<any>();
     const [error, setError] = useState(null);
     const [isLoaded, setIsLoaded] = useState(false);
@@ -63,7 +53,7 @@ const MenuVvipView: React.FC = () => {
 
     const [items, setItems] = useState<any>();
     useIonViewDidEnter(() => {
-        loadDataPref();
+        loadDataMealReq(1);
     });
 
     function doRefresh(event: CustomEvent<RefresherEventDetail>) {
@@ -74,37 +64,31 @@ const MenuVvipView: React.FC = () => {
           event.detail.complete();
         }, 2000);
     }
-
+    const [deleteConfirm] = useIonAlert();
+    const [submitConfirm] = useIonAlert();
     const handleDelete = (id:any) => {
         fetch(BASE_API_URL+API_URI+'/vviprequests/'+id, { method: 'DELETE' })
         .then(response => response.json())
     }
       
     
-      const loadDataPref = () => {
-        getJsonPref(pref_json_pegawai_info_login).then((res) => {
-          setPegawai(res);
-          // console.log(res);
-        });
-        getJsonPref(pref_unit).then((restUnit) => {
-          setUnit(restUnit);
-        });
-        getPref(pref_user_role).then((restRole) => {
-          setRole(restRole);
-        });
-        // getPref(pref_identity).then(res => { setIdentity(res) });
-        getPref(pref_pegawai_unit_id).then(res => { setPegUnitId(res); loadDataMealReq(res); });
-      }
+      
       const history = useHistory();
     const btnBack = () => {
-    history.push("/meal/menuvvip/form");
+    history.push("/meal/menuvvip");
     }
-      const loadDataMealReq = (user: any) => {
+    const loadDataMealReq = (user: any) => {
         const url = BASE_API_URL + API_URI + '/vviprequests' +'/'+ params.id;
         fetch(url).then(res => res.json()).then(
           (result) => {
             setItems(result);
             setIsLoaded(true);
+            setPrice(result.price);
+            if(result.reason == "null"){
+                setReason("");
+            }else{
+                setReason(result.reason);
+            }
           },
           // Note: it's important to handle errors here
           // instead of a catch() block so that we don't swallow
@@ -115,6 +99,131 @@ const MenuVvipView: React.FC = () => {
           }
         )
       }
+    const [menuId, setMenuId] = useState<any>();
+    const [description, setDescription] = useState<any>();
+    const [notifUpdate, setNotifUpdate] = useState(false);
+    const [reason, setReason] = useState<any>();
+    const [price, setPrice] = useState<any>();
+    const [note, setNote] = useState<any>();
+    const urlencoded = new URLSearchParams();
+    const [updateBerhasil] = useIonToast();
+    urlencoded.append("menu_id", params.id);
+    urlencoded.append("type_id", "5");
+    urlencoded.append("reason", reason);
+    urlencoded.append("price", price);
+    urlencoded.append("description", description);
+    const handleUpdate = () => {
+        const url = BASE_API_URL + API_URI + '/menuconfirms';
+        urlencoded.append("status", "Proposed");
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: urlencoded,
+        }).then(res => res.json())
+        .then(res => {
+            console.log(res);
+            if(res.message == "Ok"){
+                updateBerhasil({
+                    message: "Update Berhasil",
+                    duration: 2000,
+                    position: "top",
+                    color: "success",
+                    buttons: [
+                        {
+                            text: "Close",
+                            role: "cancel",
+                            handler: () => {
+                                console.log("Cancel clicked");
+                            },
+                        },
+                    ],
+                });
+                loadDataMealReq(1);
+            }else{
+                updateBerhasil({
+                    message: res.message,
+                    duration: 2000,
+                    position: "top",
+                    color: "danger",
+                    buttons: [
+                        {
+                            text: "Close",
+                            role: "cancel",
+                            handler: () => {
+                                console.log("Cancel clicked");
+                            },
+                        },
+                    ],
+                });
+            }
+        })
+    }
+    const [approveConfirm] = useIonAlert();
+    const [gagalSubmit] = useIonAlert();
+    const [rejectConfirm] = useIonAlert();
+    
+      
+    const handleApprove = () => {
+        const url = BASE_API_URL + API_URI + '/menuconfirms';
+        urlencoded.append("status", "Approved");
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: urlencoded,
+        }).then(res => res.json())
+        .then(res => {
+            console.log(res);
+            if(res.message == "Ok"){
+                window.location.reload();
+                updateBerhasil({
+                    message: "Berhasil Approve",
+                    duration: 2000,
+                    position: "top",
+                    color: "success",
+                    buttons: [
+                        {
+                            text: "X",
+                            role: "cancel",
+                            handler: () => {
+                                console.log("Cancel clicked");
+                            },
+                        },
+                    ],
+                });
+            }else{
+                gagalSubmit({
+                    header: 'Gagal',
+                    message: res.message,
+                    buttons: [
+                        'OK'
+                    ],
+                    onDidDismiss: () => console.log('dismissed')
+                });
+            }
+            
+        }
+        )
+    }
+
+    const handleReject = () => {
+        const url = BASE_API_URL + API_URI + '/menuconfirms';
+        urlencoded.append("status", "Rejected");
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: urlencoded,
+        }).then(res => res.json())
+        .then(res => {
+            console.log(res);
+        }
+        )
+    }
     const modal = useRef<HTMLIonModalElement>(null);
     function dismiss() {
         modal.current?.dismiss();
@@ -154,7 +263,9 @@ const MenuVvipView: React.FC = () => {
                                 {items.visitor_lists.map((item:any) => {
                                 return (
                                 <div>
-                                <IonIcon className="bullet" icon={ellipse}></IonIcon> {item} <br/>
+                                <ul className="list-disc">
+                                    <li>{item}</li>
+                                </ul> 
                                 </div>
                                 )})}
                             </div>
@@ -162,8 +273,7 @@ const MenuVvipView: React.FC = () => {
                                 <label className="ml-3">Request Menu</label>
                             </div>
                             <div>
-                                <IonIcon className="bullet" icon={ellipse}></IonIcon> Ikan <br/>
-                                <IonIcon className="bullet" icon={ellipse}></IonIcon> Sayur
+                                {items.description}
                             </div>
                             <div>
                                 <label className="ml-3">Jadwal</label>
@@ -186,9 +296,10 @@ const MenuVvipView: React.FC = () => {
                             </div>
                             <br/>
                             <label className="ml-3">Harga Paket</label>
-                            <div className="ml-3 mr-2">
-                                <IonInput className=" text-area" readonly={isGa ? true:false} placeholder="Harga Paket"
-                                value={items.price} />
+                            <div className="ml-3 mr-2 col-span-12">
+                                <IonInput className="block w-full border border-1 border-gray-300 rounded-md border-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-1"
+                                readonly={isGa ? true:false} placeholder="Harga Paket"
+                                value={price} onIonChange={(e) => setPrice(e.target.value)}/>
                             </div>
                             <br/>
                             <div className="grid items-end justify-end justify-items-end mt-3">
@@ -196,13 +307,37 @@ const MenuVvipView: React.FC = () => {
                             </div>
                             { !isGa && ( 
                                 <div>
-                                    <IonButton expand="block" className="mt-4" color="tertiary">Submit</IonButton>
+                                    <IonButton expand="block" className="mt-4" color="tertiary" 
+                                    onClick={()=>submitConfirm({
+                                        header: 'Submit',
+                                        message: 'Apakah anda yakin ingin mengajukan ini?',
+                                        buttons: [
+                                            {
+                                                text: 'Tidak',
+                                                role: 'cancel',
+                                                cssClass: 'secondary',
+                                            }
+                                            ,{
+                                                text: 'Ya',
+                                                handler: () => {
+                                                    handleUpdate();
+                                                }
+                                            }
+                                        ],
+                                    })}>Submit</IonButton>
                                 </div>
                             )}
                             { isCatering && ( 
                             <div>
                                 <IonButton expand="block" className="mt-4" color="danger" 
-                                onClick={(e) => handleDelete(items.id)}>
+                                onClick={() => deleteConfirm({
+                                    header: 'Hapus',
+                                    message: 'Apakah anda yakin ingin menghapus pengajuan ini?',
+                                    buttons: [
+                                        { text: 'Batal', role: 'cancel' },
+                                        { text: 'Hapus', handler: (e) => handleDelete(items.id) }
+                                    ],
+                                })}>
                                     Hapus Pengajuan</IonButton>
                             </div>
                             )}
@@ -211,14 +346,46 @@ const MenuVvipView: React.FC = () => {
                                 <IonContent className="mr-3 ml-3 mt-3">
                                     <div className="m-3">
                                     <textarea rows={3} className="block w-full border border-1 border-gray-300 rounded-md border-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-1"
-                                    readOnly={isGa ? true:false} placeholder="Note" /><br/>
+                                     placeholder="Note" 
+                                    onChange={(e)=>setNote(e.target.value)} value={note}/><br/>
                                     <label>Reason</label>
                                     <textarea rows={2} className="block w-full border border-1 border-gray-300 rounded-md border-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-1" 
-                                    readOnly={isGa ? true:false} placeholder="Reason"  />
+                                     placeholder="Reason"  
+                                    onChange={(e)=> setReason(e.target.value)} value={reason} required/>
                                     {isGa && (
                                         <div>
-                                            <IonButton color="tertiary" expand="block" className="mt-4">Approve</IonButton>
-                                            <IonButton color="danger" expand="block" className="mt-4">Reject</IonButton>
+                                            <IonButton color="tertiary" expand="block" className="mt-4"
+                                            onClick={()=> approveConfirm({
+                                                header : "Approve Pengajuan",
+                                                message : "Apa anda yakin ingin approve pengajuan ini?",
+                                                buttons : [
+                                                    {
+                                                        text : "Tidak",
+                                                        role : "cancel",
+                                                        cssClass : "secondary",
+                                                    },
+                                                    {
+                                                        text : "Ya",
+                                                        handler : () => handleApprove()
+                                                    }
+                                                ]
+                                            })}>Approve</IonButton>
+                                            <IonButton color="danger" expand="block" className="mt-4"
+                                            onClick={()=>rejectConfirm({
+                                                header : "Reject Pengajuan",
+                                                message : "Apa anda yakin ingin reject pengajuan ini?",
+                                                buttons : [
+                                                    {
+                                                        text : "Tidak",
+                                                        role : "cancel",
+                                                        cssClass : "secondary",
+                                                    },
+                                                    {
+                                                        text : "Ya",
+                                                        handler : () => handleReject()
+                                                    }
+                                                ]
+                                            })}>Reject</IonButton>
                                         </div>
                                     )}
                                     <button onClick={() => dismiss()} className="inline-flex text-center items-center rounded bg-gray-200 px-2.5 py-3 text-xs font-bold mt-5">
