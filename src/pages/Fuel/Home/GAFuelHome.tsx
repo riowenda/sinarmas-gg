@@ -1,56 +1,91 @@
 import {
-    IonBadge,
     IonContent,
     IonPage,
     IonRefresher,
-    IonRefresherContent, useIonViewDidEnter, useIonViewDidLeave, useIonViewWillEnter, useIonViewWillLeave,
+    IonRefresherContent,
+    IonSegment,
+    IonSegmentButton,
+    useIonAlert, useIonLoading, useIonToast,
+    useIonViewDidEnter,
+    useIonViewDidLeave,
+    useIonViewWillEnter,
+    useIonViewWillLeave,
 } from '@ionic/react';
 
 import './GAFuelHome.css';
 import { RefresherEventDetail } from '@ionic/core';
-import { useTranslation, withTranslation, Trans, initReactI18next, ReactI18NextChild } from "react-i18next";
-import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import React, { useState } from "react";
 import {
     API_URI,
-    BASE_API_URL,
-    P2H_LIST_GA_URI,
-    TEMP_UNIT_ALL_GA_URI,
     pref_json_pegawai_info_login,
-    TEMP_UNIT_URI,
-    TAKEOVER_ALL_GA_URI,
-    pref_user_role,
-    FUEL_REQ_UNIT_URI,
-    FUEL_REQ_FINANCE_LIST_URI,
-    FUEL_REQ_GA_LIST_URI,
-    OTHER_COUPON_URI,
-    OTHER_COUPON_GA_LIST_URI,
-    OTHER_COUPON_FINANCE_LIST_URI
+    AUTH_FUEL_GA,
+    AUTH_FUEL_FINANCE,
+    pref_unit,
+    PEGAWAI_UNIT_CRUD_URI,
+    PEGAWAI_UNIT_RELEASED_URI,
+    pref_unit_id,
+    pref_pegawai_unit_id,
+    AUTH_FUEL_REQUEST,
+    AUTH_FUEL_LOGISTIC,
+    pref_token,
+    pref_identity,
+    AUTH_FUEL_OTHER_REQUEST,
+    pref_json_simper
 } from "../../../constant/Index";
-import { useHistory, useLocation } from "react-router-dom";
-import { getJsonPref, getPref } from "../../../helper/preferences";
-import HeaderGA from "../../Dashboard/HeaderGA";
-import i18n from "i18next";
-import { Capacitor } from "@capacitor/core";
-import { App } from "@capacitor/app";
+import { useHistory } from "react-router-dom";
+import {getFuelMenu, getJsonPref, getPref, removePref, setJsonPref} from "../../../helper/Preferences";
 import ListHeader from "../../../components/Header/ListHeader";
+import FuelHomeComponent from './FuelHomeComponent';
+import {
+    CountChange,
+    CountDO,
+    CountFuel,
+    CountOdo, CountOtherFuel,
+    CountP2H,
+    CountPO,
+    CountTemporary
+} from "../../../api/KuponAPI/CountApi";
+import LogisticFuelHomeComponent from "./LogisticFuelHomeComponent";
+import {PO} from "../../../api/PODOFuelAPI/PO";
+import {DO} from "../../../api/PODOFuelAPI/DO";
+import {BaseAPI} from "../../../api/ApiManager";
+import {PegawaiSimperAPI} from "../../../api";
 
 const user = { name: "", nik: "", imageUrl: "" }
+const userUnit = { id: "", noPol: "", noLambung: "", vendor: { name: "" }, jenisUnit: { name: "" } };
+
 const GAFuelHome: React.FC = () => {
-    const changeLanguage = (lng: string | undefined) => {
-        i18n.changeLanguage(lng);
-    };
     const { t } = useTranslation();
     const history = useHistory();
+    const [unit, setUnit] = useState<any>(userUnit);
     const [pegawai, setPegawai] = useState(user);
     const [countP2H, setCountP2H] = useState<number>(0);
     const [countGantiUnit, setCountGantiUnit] = useState<number>(0);
     const [countTempUnit, setCountTempUnit] = useState<number>(0);
     const [countFuelUnit, setCountFuelUnit] = useState<number>(0);
     const [countFuelNonUnit, setCountFuelNonUnit] = useState<number>(0);
+    const [countFinFuelUnit, setCountFinFuelUnit] = useState<number>(0);
+    const [countFinFuelNonUnit, setCountFinFuelNonUnit] = useState<number>(0);
+    const [countOdo, setCountOdo] = useState<number>(0);
+    const [countPo, setCountPo] = useState<number>(0);
+    const [countDo, setCountDo] = useState<number>(0);
+    const [logCountPo, setLogCountPo] = useState<number>(0);
+    const [logCountDo, setLogCountDo] = useState<number>(0);
     const [isLoaded, setIsLoaded] = useState(false);
-    const [items, setItems] = useState([]);
     const [role, setRole] = useState();
-    const location = useLocation();
+    const [selectedSegment, setSelectedSegment] = useState();
+    const [pegawaiUnitId, setPegawaiUnitId] = useState<any>("");
+    const [presentAlert] = useIonAlert();
+    const [showConfirm] = useIonAlert();
+    const [toast] = useIonToast();
+    const [present, dismiss] = useIonLoading();
+    const [identity, setIdentity] = useState("");
+    const [token, setToken] = useState("");
+    const [menu, setMenu] = useState<any>();
+    const [countMenu, setCountMenu] = useState(0);
+    const [simper, setSimper] = useState<any>();
+    const [allowOperation, setAllowOperation] = useState<boolean>(false);
 
     /* BEGIN LIFECYCLE APPS */
 
@@ -78,6 +113,8 @@ const GAFuelHome: React.FC = () => {
     });
     /* END LIFECYCLE APPS */
 
+
+
     function doRefresh(event: CustomEvent<RefresherEventDetail>) {
         console.log('Begin async operation');
         loadDataPref();
@@ -88,174 +125,246 @@ const GAFuelHome: React.FC = () => {
     }
 
     const loadDataPref = () => {
+        getPref(pref_token).then(tkn => {
+            setToken(tkn);
+        });
+        getPref(pref_identity).then(i => {
+            setIdentity(i);
+        });
+        getJsonPref(pref_unit).then(rest => {
+            setUnit(rest);
+        });
         getJsonPref(pref_json_pegawai_info_login).then(res => {
             setPegawai(res);
+            getSimper(res.nik);
         });
-        getPref(pref_user_role).then(restRole => {
+        getPref(pref_pegawai_unit_id).then(res => {
+            setPegawaiUnitId(res);
+        });
+        getFuelMenu().then(menu => {
+            let restRole = "";
+
+            if(menu.includes(AUTH_FUEL_GA)){
+                restRole = 'GA';
+                // @ts-ignore
+                setSelectedSegment('request');
+            } else if(menu.includes(AUTH_FUEL_FINANCE)){
+                restRole = 'FINANCE';
+                // @ts-ignore
+                setSelectedSegment('finance');
+            } else if(menu.includes(AUTH_FUEL_LOGISTIC)){
+                restRole = 'LOGISTIC';
+                // @ts-ignore
+                setSelectedSegment('logistic');
+            }
+
+            countMenuUser(menu);
+
+            // console.log(menu)
+            // @ts-ignore
+            setMenu(menu);
+
+            // @ts-ignore
             setRole(restRole);
+
             if (restRole === 'GA') {
                 loadDataP2H();
                 loadDataTempUnit();
                 loadDataGantiUnit();
+                loadDataFuelUnit(restRole);
+                loadDataFuelNonUnit(restRole);
+                loadDataOdo();
+                loadDataPo();
+                loadDataDo();
             }
-            loadDataFuelUnit(restRole);
-            loadDataFuelNonUnit(restRole);
+        });
+    }
+
+    const getSimper = (nik: any) => {
+        PegawaiSimperAPI(nik).then(s => {
+            console.log(s);
+            try{
+                let msg = s["message"];
+                if(msg == null){
+                    console.log("xxxxx")
+                    allowTransaction(s);
+                } else {
+                    console.log("zzzz")
+                    allowTransaction(null);
+                }
+            }catch (error) {
+                setJsonPref(pref_json_simper, null).then(r => r);
+                allowTransaction(null);
+            }
+        }).catch(e => {
+            getJsonPref(pref_json_simper).then(s => {
+                allowTransaction(s);
+            })
+        })
+    }
+
+    const allowTransaction = (data : any) => {
+        let dt = {nomor: null, tanggal: null, isExpired: true, allowFuelUnitOperation: false, adaSimper: false}
+        if(data != null){
+            let registerNumber = data['registerNumber'];
+            let expDate = data['expDate'];
+            let exp = new Date(expDate);
+            let now = new Date();
+            let isExpired = (exp < now);
+            dt = {nomor: registerNumber, tanggal: expDate, isExpired: isExpired, allowFuelUnitOperation: !isExpired, adaSimper: true}
+            setAllowOperation(!isExpired);
+            setSimper(dt);
+            setJsonPref(pref_json_simper,data).then(r => r);
+        }else{
+            setJsonPref(pref_json_simper,dt).then(r => r);
+            setAllowOperation(false);
+            setSimper(dt);
+        }
+    }
+
+    const countMenuUser = (menus : any) => {
+        let m = 0;
+        if(menus.includes(AUTH_FUEL_GA)){
+            m = m + 1;
+        }
+        if(menus.includes(AUTH_FUEL_FINANCE)){
+            m = m + 1;
+            loadDataFuelUnit("FINANCE");
+            loadDataFuelNonUnit("FINANCE");
+        }
+        if(menus.includes(AUTH_FUEL_LOGISTIC)){
+            m = m + 1;
+            getCountPo();
+            getCountDo();
+        }
+        if(menus.includes(AUTH_FUEL_REQUEST) || menus.includes(AUTH_FUEL_OTHER_REQUEST) ){
+            m = m + 1;
+        }
+        setCountMenu(m);
+    }
+
+    const getCountPo = () => {
+        let data = PO("count_open", "").then(result => {
+            console.log(result);
+            if(result){
+                try {
+                    // @ts-ignore
+                    setLogCountPo(result.data);
+                } catch (error) {
+
+                }
+            }
+        });
+    }
+
+    const getCountDo = () => {
+        let data = DO("count_open", "").then(result => {
+            // console.log(result);
+            if(result){
+                try {
+                    // @ts-ignore
+                    setLogCountDo(result.data);
+                } catch (error) {
+
+                }
+            }
+        });
+    }
+
+    const loadDataOdo = () => {
+        CountOdo().then((data) => {
+            if (data.status === "SUCCESS" && data.message === "") {
+                setCountOdo(data.data);
+            } else {
+                setCountOdo(0);
+            }
+        });
+    }
+
+    const loadDataPo = () => {
+        CountPO().then((data) => {
+            if (data.status === "SUCCESS" && data.message === "") {
+                setCountPo(data.data);
+            } else {
+                setCountPo(0);
+            }
+        });
+    }
+
+    const loadDataDo = () => {
+        CountDO().then((data) => {
+            if (data.status === "SUCCESS" && data.message === "") {
+                setCountDo(data.data);
+            } else {
+                setCountDo(0);
+            }
         });
     }
 
     const loadDataGantiUnit = () => {
-        const url = BASE_API_URL + API_URI + TAKEOVER_ALL_GA_URI;
-        fetch(url, {
-            headers: {
-                "Content-Type": "application/json"
+        CountChange().then((data) => {
+            if (data.status === "SUCCESS" && data.message === "") {
+                setCountGantiUnit(data.data);
+            } else {
+                setCountGantiUnit(0);
             }
-        })
-            .then(res => res.json())
-            .then(
-                (result) => {
-                    //console.log("Ganti Unit: ", result.status);
-                    if (result.status === 'SUCCESS') {
-                        let res = result.data;
-                        // @ts-ignore
-                        setCountGantiUnit((res.filter((x: { [x: string]: { [x: string]: null; }; }) => x['status'] == 'PROPOSED')).length);
-                        setIsLoaded(true);
-                    } else {
-                        // @ts-ignore
-                        setCountGantiUnit(0);
-                        setIsLoaded(true);
-                    }
-                },
-                (error) => {
-                    setIsLoaded(true);
-                }
-            )
+        });
     }
+
     const loadDataP2H = () => {
-        const url = BASE_API_URL + API_URI + P2H_LIST_GA_URI;
-        fetch(url, {
-            headers: {
-                "Content-Type": "application/json"
+        CountP2H().then((data) => {
+            if (data.status === "SUCCESS" && data.message === "") {
+                setCountP2H(data.data);
+            } else {
+                setCountP2H(0);
             }
-        })
-            .then(res => res.json())
-            .then(
-                (result) => {
-                    //console.log("P2H: ", result.status);
-                    if (result != null && !result.isEmpty) {
-                        let res = result;
-                    //setItems(result.filter((x: { [x: string]: { [x: string]: null; }; }) => x['unit']['jenisUnit'] !== null && x['unit']['tipeUnit'] !== null));
-                        // @ts-ignore
-                        setCountP2H((res.filter((x: { [x: string]: { [x: string]: null; }; }) => x['status'] == 'PROPOSED')).length);
-                        setIsLoaded(true);
-                    }else{
-                        setIsLoaded(true);
-                        // @ts-ignore
-                        setCountP2H(0);
-                    }
-                },
-                (error) => {
-                    setIsLoaded(true);
-                }
-            )
+        });
     }
 
     const loadDataTempUnit = () => {
-        const url = BASE_API_URL + API_URI + TEMP_UNIT_URI + TEMP_UNIT_ALL_GA_URI;
-        fetch(url, {
-            headers: {
-                "Content-Type": "application/json"
+        CountTemporary().then((data) => {
+            if (data.status === "SUCCESS" && data.message === "") {
+                setCountTempUnit(data.data);
+            } else {
+                setCountTempUnit(0);
             }
-        })
-            .then(res => res.json())
-            .then(
-                (result) => {
-                    if (result.status === 'SUCCESS') {
-                        let res = result.data;
-                        // @ts-ignore
-                        let data = res.filter((x: { [x: string]: { [x: string]: null; }; }) => x['status'] == 'PROPOSED');
-                        setCountTempUnit(data.length);
-                        setIsLoaded(true);
-                        // console.log(data.length)
-                    } else {
-                        // @ts-ignore
-                        setCountTempUnit(0);
-                        setIsLoaded(true);
-                    }
-                },
-                (error) => {
-                    setIsLoaded(true);
-                }
-            )
+        });
     }
 
     const loadDataFuelUnit = (role: any) => {
-        const url = BASE_API_URL + API_URI + FUEL_REQ_UNIT_URI + (role === "GA" ? FUEL_REQ_GA_LIST_URI : FUEL_REQ_FINANCE_LIST_URI);
-        fetch(url, {
-            headers: {
-                "Content-Type": "application/json"
-            }
-        })
-            .then(res => res.json())
-            .then(
-                (result) => {
-                    if (result.status === 'SUCCESS') {
-                        let res = result.data;
-                        let data = null;
-                        if (role === "GA") {
-                            // @ts-ignore
-                            data = res.filter((x: { [x: string]: { [x: string]: null; }; }) => x['status'] == 'PROPOSED');
-                        } else {
-                            // @ts-ignore
-                            data = res.filter((x: { [x: string]: { [x: string]: null; }; }) => x['status'] == "APPROVED");
-                        }
-                        setCountFuelUnit(data.length);
-                        setIsLoaded(true);
-                        // console.log(data.length)
-                    } else {
-                        // @ts-ignore
-                        setCountFuelUnit(0);
-                        setIsLoaded(true);
-                    }
-                },
-                (error) => {
-                    setIsLoaded(true);
+        CountFuel(role).then((data) => {
+            if (data.status === "SUCCESS" && data.message === "") {
+                if(role === "GA") {
+                    setCountFuelUnit(data.data);
+                } else {
+                    setCountFinFuelUnit(data.data);
                 }
-            )
+            } else {
+                if(role === "GA") {
+                    setCountFuelUnit(0);
+                } else {
+                    setCountFinFuelUnit(0);
+                }
+            }
+        });
     }
 
     const loadDataFuelNonUnit = (role: any) => {
-        const url = BASE_API_URL + API_URI + OTHER_COUPON_URI + (role === "GA" ? OTHER_COUPON_GA_LIST_URI : OTHER_COUPON_FINANCE_LIST_URI);
-        fetch(url, {
-            headers: {
-                "Content-Type": "application/json"
-            }
-        })
-            .then(res => res.json())
-            .then(
-                (result) => {
-                    if (result.status === 'SUCCESS') {
-                        let res = result.data;
-                        let data = null;
-                        if (role === "GA") {
-                            // @ts-ignore
-                            data = res.filter((x: { [x: string]: { [x: string]: null; }; }) => x['status'] == 'PROPOSED');
-                        } else {
-                            // @ts-ignore
-                            data = res.filter((x: { [x: string]: { [x: string]: null; }; }) => x['status'] == "APPROVED");
-                        }
-                        setCountFuelNonUnit(data.length);
-                        setIsLoaded(true);
-                        // console.log(data.length)
-                    } else {
-                        // @ts-ignore
-                        setCountFuelNonUnit(0);
-                        setIsLoaded(true);
-                    }
-                },
-                (error) => {
-                    setIsLoaded(true);
+        CountOtherFuel(role).then((data) => {
+            if (data.status === "SUCCESS" && data.message === "") {
+                if(role === "GA") {
+                    setCountFuelNonUnit(data.data);
+                } else {
+                    setCountFinFuelNonUnit(data.data);
                 }
-            )
+            } else {
+                if(role === "GA") {
+                    setCountFuelNonUnit(0);
+                } else {
+                    setCountFinFuelNonUnit(0);
+                }
+            }
+        });
     }
 
     const btnDaftarPermintaanUnitSementara = () => {
@@ -268,18 +377,16 @@ const GAFuelHome: React.FC = () => {
         history.push("/fuel/ga/unit/daftar-permintaan");
     };
     const btnListReqFuel = () => {
-        if (role === "GA") {
-            history.push("/fuel/req-fuel/ga-daftar-permintaan");
-        } else if (role === "FINANCE") {
-            history.push("/fuel/req-fuel/finance-daftar-permintaan");
-        }
+        history.push("/fuel/req-fuel/ga-daftar-permintaan");
     };
     const btnListNonFuel = () => {
-        if (role === "GA") {
-            history.push("/fuel/req-other/ga-daftar-permintaan");
-        } else if (role === "FINANCE") {
-            history.push("/fuel/req-other/finance-daftar-permintaan");
-        }
+        history.push("/fuel/req-other/ga-daftar-permintaan");
+    };
+    const btnListFinReqFuel = () => {
+        history.push("/fuel/req-fuel/finance-daftar-permintaan");
+    };
+    const btnListFinNonFuel = () => {
+        history.push("/fuel/req-other/finance-daftar-permintaan");
     };
 
     const btnListPO = () => {
@@ -287,9 +394,117 @@ const GAFuelHome: React.FC = () => {
         history.push("/fuel/po");
     }
 
+    const btnListOdo = () => {
+        // history.goBack();
+        history.push("/fuel/ga-list-perbaikan-odo");
+    }
+
     const btnBack = () => {
         // history.goBack();
         history.push("/dashboard");
+    }
+
+    const segmentChanged = (event: any) => {
+        // history.goBack();
+        setSelectedSegment(event);
+
+    }
+
+    const handleOnClick = () => {
+        lepasUnit();
+    }
+
+    const lepasUnit = () => {
+        let keterangan = "Anda yakin ingin melepas Unit?";
+        presentAlert({
+            subHeader: keterangan,
+            backdropDismiss: false,
+            buttons: [
+                {
+                    text: 'Batal',
+                    cssClass: 'alert-button-cancel',
+                },
+                {
+                    text: 'Ya',
+                    cssClass: 'alert-button-confirm',
+                    handler: () => {
+                        console.log("sini");
+                        sendRequest();
+                    }
+                },
+            ],
+        })
+    };
+
+    const sendRequest = () => {
+        const loading = present({
+            message: 'Memproses permintaan ...',
+            backdropDismiss: false
+        })
+        const url = BaseAPI() + API_URI + PEGAWAI_UNIT_CRUD_URI + PEGAWAI_UNIT_RELEASED_URI;
+
+        // @ts-ignore
+        const data = { id: pegawaiUnitId }
+        fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Identity': identity, 'Authorization':`Bearer ${token}` },
+            body: JSON.stringify(data)
+        })
+            .then(res => res.json())
+            .then(
+                (result) => {
+                    if (result.status === 'SUCCESS') {
+                        dismiss();
+                        showAlertConfirmed();
+                    } else {
+                        dismiss();
+                        showConfirm({
+                            subHeader: 'Tidak dapat memproses pelepasan unit',
+                            backdropDismiss: false,
+                            buttons: [
+                                {
+                                    text: 'OK',
+                                    cssClass: 'alert-button-confirm',
+                                },
+                            ],
+                        })
+                    }
+                },
+                // Note: it's important to handle errors here
+                // instead of a catch() block so that we don't swallow
+                // exceptions from actual bugs in components.
+                (error) => {
+                    dismiss();
+                    toast({
+                            message: "Terjadi kesalahan! [" + error.message + "]", duration: 1500, position: "top"
+                        }
+                    );
+                }
+            )
+    };
+
+    const showAlertConfirmed = () => {
+        dismiss();
+        showConfirm({
+            //simpan unit id ke pref
+            subHeader: 'Berhasil melepas unit. Silahkan memilih unit kembali!',
+            backdropDismiss: false,
+            buttons: [
+                {
+                    text: 'OK',
+                    cssClass: 'alert-button-confirm',
+                    handler: () => {
+                        removePref(pref_unit).then(r => {
+                            setUnit(null);
+                        });
+                        removePref(pref_unit_id).then(r => {
+                            setPegawaiUnitId(null);
+                        });
+                        removePref(pref_pegawai_unit_id).then(r => r);
+                    }
+                },
+            ],
+        })
     }
 
     return (
@@ -301,75 +516,46 @@ const GAFuelHome: React.FC = () => {
 
                 <div className="bg-red-700">
                     {/* Header */}
-                    <ListHeader title={"Permintaan Unit dan Bahan Bakar"} isReplace={false} link={""} addButton={false} />
+                    <ListHeader title={t('header.menu_fuel_unit')} isReplace={false} link={""} addButton={false} />
                     {/* end Header */}
-
+                    {countMenu > 1 &&
+                        <IonSegment color="light" onIonChange={(e: any) => segmentChanged(e.target.value)} value={selectedSegment}>
+                            {(menu != null && (menu.includes(AUTH_FUEL_GA))) &&
+                                <IonSegmentButton class='text-white'
+                                                  value='request'>{t("header.persetujuan")}</IonSegmentButton>
+                            }
+                            {(menu != null && (menu.includes(AUTH_FUEL_FINANCE))) &&
+                                <IonSegmentButton class='text-white'
+                                                  value='finance'>{t("header.persetujuan")}</IonSegmentButton>
+                            }
+                            {(menu != null && menu.includes(AUTH_FUEL_LOGISTIC)) &&
+                                <IonSegmentButton class='text-white'
+                                                  value='logistic'>{t("header.logistik")}</IonSegmentButton>
+                            }
+                            {(menu != null && (menu.includes(AUTH_FUEL_REQUEST) || menu.includes(AUTH_FUEL_OTHER_REQUEST))) &&
+                                <IonSegmentButton class='text-white'
+                                                  value='mymenu'>{t("header.manajemen")}</IonSegmentButton>
+                            }
+                        </IonSegment>
+                    }
                     <div className="bg-white px-2">
-                        {/* === Start Current Status === */}
-                        {/*<div className="px-4 py-4">
-                            <h3 className="font-bold py-2">Status</h3>
-                            <div className="rounded-lg bg-teal-500 text-white text-sm px-4 py-6">
-                                Sedang perjalanan dinas ke BIB site
-                            </div>
-                        </div>*/}
-                        {/* === End Current Status === */}
 
                         {/* === Start Request === */}
-                        <div className="px-2 py-2">
-                            <div className="grid grid-cols-1 gap-4 pt-6">
-                                <div onClick={btnListReqFuel} className="inline-flex items-center rounded-lg border border-1 border-gray-300 bg-white px-2.5 py-3 shadow-md">
-                                    {/* <svg className="w-12 h-6 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg> */}
-                                    <img className="w-6 ml-2 mr-4" src='assets/icon/fuel-unit-icon.png' />
-                                    <div className="flex justify-between w-full items-center">
-                                        <div>
-                                            <p className="font-bold">{t("Bahan Bakar Unit")}</p>
-                                            {countFuelUnit > 0 ?
-                                                <p className="text-sm text-green-600">{countFuelUnit} permintaan baru</p>
-                                                :
-                                                <p className="text-sm text-gray-600">Tidak ada permintaan baru</p>
-                                            }
-                                        </div>
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 items-end text-red-700">
-                                            <path fill-rule="evenodd" d="M16.28 11.47a.75.75 0 010 1.06l-7.5 7.5a.75.75 0 01-1.06-1.06L14.69 12 7.72 5.03a.75.75 0 011.06-1.06l7.5 7.5z" clip-rule="evenodd" />
-                                        </svg>
-                                    </div>
-                                </div>
-
-                                <div onClick={btnListNonFuel} className="inline-flex items-center rounded-lg border border-1 border-gray-300 bg-white px-2.5 py-3 shadow-md">
-                                    {/* <svg className="w-12 h-6 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg> */}
-                                    <img className="w-6 ml-2 mr-4" src='assets/icon/fuel-non-unit-icon.png' />
-                                    <div className="flex justify-between w-full items-center">
-                                        <div>
-                                            <p className="font-bold">Bahan Bakar Non-Unit</p>
-                                            {countFuelNonUnit > 0 ?
-                                                <p className="text-sm text-green-600">{countFuelNonUnit} permintaan baru</p>
-                                                :
-                                                <p className="text-sm text-gray-600">Tidak ada permintaan baru</p>
-                                            }
-                                        </div>
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 items-end text-red-700">
-                                            <path fill-rule="evenodd" d="M16.28 11.47a.75.75 0 010 1.06l-7.5 7.5a.75.75 0 01-1.06-1.06L14.69 12 7.72 5.03a.75.75 0 011.06-1.06l7.5 7.5z" clip-rule="evenodd" />
-                                        </svg>
-                                    </div>
-                                </div>
-
-                                {role == 'GA' ?
-                                    <><div onClick={btnDaftarPermintaanUnitSementara} className="inline-flex items-center rounded-lg border border-1 border-gray-300 bg-white px-2.5 py-3 shadow-md">
-                                        {/* <svg className="w-12 h-6 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg> */}
-                                        <img className="w-6 ml-2 mr-4" src='assets/icon/temporary-unit-icon.png' />
+                        {selectedSegment == 'mymenu' &&
+                            <FuelHomeComponent data={unit} auth={menu} hanldeOnClick={handleOnClick} simper={simper} allowOperateUnit={false}/>
+                        }
+                        {selectedSegment == 'request' &&
+                            <div className="px-2 py-2">
+                                <div className="grid grid-cols-1 gap-4 pt-6">
+                                    <div onClick={btnListReqFuel} className="inline-flex items-center rounded-lg border border-1 border-gray-300 bg-white px-2.5 py-3 shadow-md">
+                                        <img className="w-6 ml-2 mr-4" src='assets/icon/fuel-unit-icon.png' />
                                         <div className="flex justify-between w-full items-center">
                                             <div>
-                                                <p className="font-bold">Unit Sementara</p>
-                                                {countTempUnit > 0 ?
-                                                    <p className="text-sm text-green-600">{countTempUnit} permintaan baru</p>
+                                                <p className="font-bold">{t("permintaan.bahan_bakar")}</p>
+                                                {countFuelUnit > 0 ?
+                                                    <p className="text-sm text-green-600">{countFuelUnit} {t('permintaan.baru')}</p>
                                                     :
-                                                    <p className="text-sm text-gray-600">Tidak ada permintaan baru</p>
+                                                    <p className="text-sm text-gray-600">{t('permintaan.kosong')}</p>
                                                 }
                                             </div>
                                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 items-end text-red-700">
@@ -378,69 +564,171 @@ const GAFuelHome: React.FC = () => {
                                         </div>
                                     </div>
 
-                                        <div onClick={btnDaftarPermintaanGantiUnit} className="inline-flex items-center rounded-lg border border-1 border-gray-300 bg-white px-2.5 py-3 shadow-md">
-                                            {/* <svg className="w-12 h-6 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg> */}
-                                            <img className="w-6 ml-2 mr-4" src='assets/icon/change-unit-icon.png' />
-                                            <div className="flex justify-between w-full items-center">
-                                                <div>
-                                                    <p className="font-bold">Ganti Unit</p>
-                                                    {countGantiUnit > 0 ?
-                                                        <p className="text-sm text-green-600">{countGantiUnit} permintaan baru</p>
-                                                        :
-                                                        <p className="text-sm text-gray-600">Tidak ada permintaan baru</p>
-                                                    }
-                                                </div>
-                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 items-end text-red-700">
-                                                    <path fill-rule="evenodd" d="M16.28 11.47a.75.75 0 010 1.06l-7.5 7.5a.75.75 0 01-1.06-1.06L14.69 12 7.72 5.03a.75.75 0 011.06-1.06l7.5 7.5z" clip-rule="evenodd" />
-                                                </svg>
+                                    <div onClick={btnListNonFuel} className="inline-flex items-center rounded-lg border border-1 border-gray-300 bg-white px-2.5 py-3 shadow-md">
+                                        <img className="w-6 ml-2 mr-4" src='assets/icon/fuel-non-unit-icon.png' />
+                                        <div className="flex justify-between w-full items-center">
+                                            <div>
+                                                <p className="font-bold">{t("permintaan.bahan_bakar_lain")}</p>
+                                                {countFuelNonUnit > 0 ?
+                                                    <p className="text-sm text-green-600">{countFuelNonUnit} {t('permintaan.baru')}</p>
+                                                    :
+                                                    <p className="text-sm text-gray-600">{t('permintaan.kosong')}</p>
+                                                }
                                             </div>
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 items-end text-red-700">
+                                                <path fill-rule="evenodd" d="M16.28 11.47a.75.75 0 010 1.06l-7.5 7.5a.75.75 0 01-1.06-1.06L14.69 12 7.72 5.03a.75.75 0 011.06-1.06l7.5 7.5z" clip-rule="evenodd" />
+                                            </svg>
                                         </div>
+                                    </div>
 
-                                        <div onClick={btnDaftarPermintaanP2H} className="inline-flex items-center rounded-lg border border-1 border-gray-300 bg-white px-2.5 py-3 shadow-md">
-                                            {/* <svg className="w-12 h-6 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg> */}
-                                            <img className="h-6 ml-2 mr-4" src='assets/icon/p2h-icon.png' />
-                                            <div className="flex justify-between w-full items-center">
-                                                <div>
-                                                    <p className="font-bold">P2H</p>
-                                                    {countP2H > 0 ?
-                                                        <p className="text-sm text-green-600">{countP2H} permintaan baru</p>
-                                                        :
-                                                        <p className="text-sm text-gray-600">Tidak ada permintaan baru</p>
-                                                    }
+                                    {role == 'GA' ?
+                                        <>
+                                            <div onClick={btnDaftarPermintaanP2H} className="inline-flex items-center rounded-lg border border-1 border-gray-300 bg-white px-2.5 py-3 shadow-md">
+                                                <img className="h-6 ml-2 mr-4" src='assets/icon/p2h-icon.png' />
+                                                <div className="flex justify-between w-full items-center">
+                                                    <div>
+                                                        <p className="font-bold">{t("permintaan.p2h")}</p>
+                                                        {countP2H > 0 ?
+                                                            <p className="text-sm text-green-600">{countP2H} {t('permintaan.baru')}</p>
+                                                            :
+                                                            <p className="text-sm text-gray-600">{t('permintaan.kosong')}</p>
+                                                        }
+                                                    </div>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 items-end text-red-700">
+                                                        <path fill-rule="evenodd" d="M16.28 11.47a.75.75 0 010 1.06l-7.5 7.5a.75.75 0 01-1.06-1.06L14.69 12 7.72 5.03a.75.75 0 011.06-1.06l7.5 7.5z" clip-rule="evenodd" />
+                                                    </svg>
                                                 </div>
-                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 items-end text-red-700">
-                                                    <path fill-rule="evenodd" d="M16.28 11.47a.75.75 0 010 1.06l-7.5 7.5a.75.75 0 01-1.06-1.06L14.69 12 7.72 5.03a.75.75 0 011.06-1.06l7.5 7.5z" clip-rule="evenodd" />
-                                                </svg>
                                             </div>
+                                            <div onClick={btnDaftarPermintaanUnitSementara} className="inline-flex items-center rounded-lg border border-1 border-gray-300 bg-white px-2.5 py-3 shadow-md">
+                                                <img className="w-6 ml-2 mr-4" src='assets/icon/temporary-unit-icon.png' />
+                                                <div className="flex justify-between w-full items-center">
+                                                    <div>
+                                                        <p className="font-bold">{t("permintaan.unit_sementara")}</p>
+                                                        {countTempUnit > 0 ?
+                                                            <p className="text-sm text-green-600">{countTempUnit} {t('permintaan.baru')}</p>
+                                                            :
+                                                            <p className="text-sm text-gray-600">{t('permintaan.kosong')}</p>
+                                                        }
+                                                    </div>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 items-end text-red-700">
+                                                        <path fill-rule="evenodd" d="M16.28 11.47a.75.75 0 010 1.06l-7.5 7.5a.75.75 0 01-1.06-1.06L14.69 12 7.72 5.03a.75.75 0 011.06-1.06l7.5 7.5z" clip-rule="evenodd" />
+                                                    </svg>
+                                                </div>
+                                            </div>
+
+                                            <div onClick={btnDaftarPermintaanGantiUnit} className="inline-flex items-center rounded-lg border border-1 border-gray-300 bg-white px-2.5 py-3 shadow-md">
+                                                <img className="w-6 ml-2 mr-4" src='assets/icon/change-unit-icon.png' />
+                                                <div className="flex justify-between w-full items-center">
+                                                    <div>
+                                                        <p className="font-bold">{t("permintaan.ganti_unit")}</p>
+                                                        {countGantiUnit > 0 ?
+                                                            <p className="text-sm text-green-600">{countGantiUnit} {t('permintaan.baru')}</p>
+                                                            :
+                                                            <p className="text-sm text-gray-600">{t('permintaan.kosong')}</p>
+                                                        }
+                                                    </div>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 items-end text-red-700">
+                                                        <path fill-rule="evenodd" d="M16.28 11.47a.75.75 0 010 1.06l-7.5 7.5a.75.75 0 01-1.06-1.06L14.69 12 7.72 5.03a.75.75 0 011.06-1.06l7.5 7.5z" clip-rule="evenodd" />
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                            <div onClick={btnListOdo} className="inline-flex items-center rounded-lg border border-1 border-gray-300 bg-white px-2.5 py-3 shadow-md">
+                                                <img className="w-6 ml-2 mr-4" src='assets/icon/odometer-icon.png' />
+                                                <div className="flex justify-between w-full items-center">
+                                                    <div>
+                                                        <p className="font-bold">{t("permintaan.update_odo")}</p>
+                                                        {countOdo > 0 ?
+                                                            <p className="text-sm text-green-600">{countOdo} {t('permintaan.baru')}</p>
+                                                            :
+                                                            <p className="text-sm text-gray-600">{t('permintaan.kosong')}</p>
+                                                        }
+                                                    </div>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 items-end text-red-700">
+                                                        <path fill-rule="evenodd" d="M16.28 11.47a.75.75 0 010 1.06l-7.5 7.5a.75.75 0 01-1.06-1.06L14.69 12 7.72 5.03a.75.75 0 011.06-1.06l7.5 7.5z" clip-rule="evenodd" />
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                            <div className="inline-flex items-center rounded-lg border border-1 border-gray-300 bg-gray-300 px-2.5 py-3 shadow-md">
+                                                <img className="w-6 ml-2 mr-4" src='assets/icon/purchase-order-icon.png' />
+                                                <div className="flex justify-between w-full items-center">
+                                                    <div>
+                                                        <p className="font-bold">{t("permintaan.po")}</p>
+                                                        {/*{countPo > 0 ?*/}
+                                                        {/*    <p className="text-sm text-green-600">{countPo} {t('permintaan.baru')}</p>*/}
+                                                        {/*    :*/}
+                                                        {/*    <p className="text-sm text-gray-600">{t('permintaan.kosong')}</p>*/}
+                                                        {/*}*/}
+                                                        {t('segera_hadir')}
+                                                    </div>
+                                                    {/*<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 items-end text-red-700">*/}
+                                                    {/*    <path fill-rule="evenodd" d="M16.28 11.47a.75.75 0 010 1.06l-7.5 7.5a.75.75 0 01-1.06-1.06L14.69 12 7.72 5.03a.75.75 0 011.06-1.06l7.5 7.5z" clip-rule="evenodd" />*/}
+                                                    {/*</svg>*/}
+                                                </div>
+                                            </div>
+                                            <div className="inline-flex items-center rounded-lg border border-1 border-gray-300 bg-gray-300 px-2.5 py-3 shadow-md">
+                                                <img className="w-6 ml-2 mr-4" src='assets/icon/deposit-icon.png' />
+                                                <div className="flex justify-between w-full items-center">
+                                                    <div>
+                                                        <p className="font-bold">{t("permintaan.deposit")}</p>
+                                                        {/*{countDo > 0 ?*/}
+                                                        {/*    <p className="text-sm text-green-600">{countDo} {t('permintaan.baru')}</p>*/}
+                                                        {/*    :*/}
+                                                        {/*    <p className="text-sm text-gray-600">{t('permintaan.kosong')}</p>*/}
+                                                        {/*}*/}
+                                                        {t('segera_hadir')}
+                                                    </div>
+                                                    {/*<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 items-end text-red-700">*/}
+                                                    {/*    <path fill-rule="evenodd" d="M16.28 11.47a.75.75 0 010 1.06l-7.5 7.5a.75.75 0 01-1.06-1.06L14.69 12 7.72 5.03a.75.75 0 011.06-1.06l7.5 7.5z" clip-rule="evenodd" />*/}
+                                                    {/*</svg>*/}
+                                                </div>
+                                            </div>
+                                        </>
+                                        : null}
+                                </div>
+                            </div>
+                        }
+                        {selectedSegment == 'finance' &&
+                            <div className="px-2 py-2">
+                                <div className="grid grid-cols-1 gap-4 pt-6">
+                                    <div onClick={btnListFinReqFuel} className="inline-flex items-center rounded-lg border border-1 border-gray-300 bg-white px-2.5 py-3 shadow-md">
+                                        <img className="w-6 ml-2 mr-4" src='assets/icon/fuel-unit-icon.png' />
+                                        <div className="flex justify-between w-full items-center">
+                                            <div>
+                                                <p className="font-bold">{t("permintaan.bahan_bakar")}</p>
+                                                {countFinFuelUnit > 0 ?
+                                                    <p className="text-sm text-green-600">{countFinFuelUnit} {t('permintaan.baru')}</p>
+                                                    :
+                                                    <p className="text-sm text-gray-600">{t('permintaan.kosong')}</p>
+                                                }
+                                            </div>
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 items-end text-red-700">
+                                                <path fill-rule="evenodd" d="M16.28 11.47a.75.75 0 010 1.06l-7.5 7.5a.75.75 0 01-1.06-1.06L14.69 12 7.72 5.03a.75.75 0 011.06-1.06l7.5 7.5z" clip-rule="evenodd" />
+                                            </svg>
                                         </div>
-                                    </>
-                                    : null}
-                                    <div onClick={btnListPO} className="inline-flex items-center rounded-lg border border-1 border-gray-300 bg-white px-2.5 py-3 shadow-md">
-                                    {/* <svg className="w-12 h-6 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg> */}
-                                    {/* <img className="w-6 ml-2 mr-4" src='assets/icon/fuel-unit-icon.png' /> */}
-                                    <div className="flex justify-between w-full items-center">
-                                        <div>
-                                            <p className="font-bold">{t("PO")}</p>
-                                            {/*{countFuelNonUnit > 0 ?*/}
-                                            {/*    <p className="text-sm text-green-600">{countFuelNonUnit} permintaan baru</p>*/}
-                                            {/*    :*/}
-                                            {/*    <p className="text-sm text-gray-600">Tidak ada permintaan baru</p>*/}
-                                            {/*}*/}
-                                            <p className="text-sm text-green-600">xx permintaan baru</p>
+                                    </div>
+
+                                    <div onClick={btnListFinNonFuel} className="inline-flex items-center rounded-lg border border-1 border-gray-300 bg-white px-2.5 py-3 shadow-md">
+                                        <img className="w-6 ml-2 mr-4" src='assets/icon/fuel-non-unit-icon.png' />
+                                        <div className="flex justify-between w-full items-center">
+                                            <div>
+                                                <p className="font-bold">{t("permintaan.bahan_bakar_lain")}</p>
+                                                {countFinFuelNonUnit > 0 ?
+                                                    <p className="text-sm text-green-600">{countFinFuelNonUnit} {t('permintaan.baru')}</p>
+                                                    :
+                                                    <p className="text-sm text-gray-600">{t('permintaan.kosong')}</p>
+                                                }
+                                            </div>
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 items-end text-red-700">
+                                                <path fill-rule="evenodd" d="M16.28 11.47a.75.75 0 010 1.06l-7.5 7.5a.75.75 0 01-1.06-1.06L14.69 12 7.72 5.03a.75.75 0 011.06-1.06l7.5 7.5z" clip-rule="evenodd" />
+                                            </svg>
                                         </div>
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 items-end text-red-700">
-                                            <path fill-rule="evenodd" d="M16.28 11.47a.75.75 0 010 1.06l-7.5 7.5a.75.75 0 01-1.06-1.06L14.69 12 7.72 5.03a.75.75 0 011.06-1.06l7.5 7.5z" clip-rule="evenodd" />
-                                        </svg>
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        }
+                        {selectedSegment == 'logistic' &&
+                            <LogisticFuelHomeComponent countDo={logCountDo} countPo={logCountPo}/>
+                        }
                         {/* === End Request === */}
 
 

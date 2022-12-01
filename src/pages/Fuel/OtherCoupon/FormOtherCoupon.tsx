@@ -13,34 +13,25 @@ import {
 
 import './FormOtherCoupon.css';
 import { RefresherEventDetail } from '@ionic/core';
-import { useTranslation, initReactI18next } from "react-i18next";
-import React, {useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import React, {useState } from "react";
 import {
     API_URI,
-    BASE_API_URL,
-    FUEL_REQ_UNIT_CREATE_URI,
-    FUEL_REQ_UNIT_URI,
-    FUEL_REQ_USER_LAST_REDEM, OTHER_COUPON_URI,
+    FUEL_REQ_UNIT_CREATE_URI, OTHER_COUPON_URI,
     pref_identity,
     pref_json_pegawai_info_login,
     pref_pegawai_id,
-    pref_pegawai_unit_id,
     pref_token,
-    pref_unit,
-    TEMP_UNIT_CREATE_URI,
-    TEMP_UNIT_URI
 } from "../../../constant/Index";
 import {useHistory, useLocation} from "react-router-dom";
-import {getJsonPref, getPref} from "../../../helper/preferences";
+import {getJsonPref, getPref} from "../../../helper/Preferences";
 import { Camera, CameraResultType, CameraSource } from "@capacitor/camera";
-import {Capacitor} from "@capacitor/core";
-import {App} from "@capacitor/app";
 import SelectItem from "../../../components/SelectWithSearchInModal/SelectItem";
-import {PegawaiListSelectAPI} from "../../../api";
-import {PegawaiListModalAPI} from "../../../api/MDForFuel/PegawaiList";
+import {CustodianModalAPI} from "../../../api/MDForFuel/PegawaiList";
 import {OtherCouponListModalAPI} from "../../../api/MDForFuel/OtherCoupon";
 import {FuelStationListModalAPI} from "../../../api/MDForFuel/FuelStation";
 import ListHeader from "../../../components/Header/ListHeader";
+import {BaseAPI} from "../../../api/ApiManager";
 
 const userInfo = { name: "", nik: "", imageUrl: "" }
 const userUnit = { id: "", noPol: "", noLambung: "", vendor: { name: "" }, jenisUnit: { name: "" } };
@@ -102,37 +93,56 @@ const FormOtherCoupon: React.FC = () => {
     const loadDataPref = () => {
         getPref(pref_token).then(res => {
             setToken(res);
-            loadDataFuelStasiun(res);
-            loadDataPenjaga(res);
-            loadDataTujuan(res);
         });
+        getPref(pref_identity).then(i => {
+            setIdentity(i);
+        });
+
+        loadDataFuelStasiun();
+        loadDataPenjaga();
+        loadDataTujuan();
+
         getJsonPref(pref_json_pegawai_info_login).then(res => {setPegawai(res);});
-        getPref(pref_identity).then(res => {setIdentity(res);});
         getPref(pref_pegawai_id).then(res => {setPegId(res); setData({...data, pemohon:{id:res}})});
     }
 
-    const loadDataTujuan = (t : string) => {
-        OtherCouponListModalAPI(t).then((res) => {
+    const loadDataTujuan = () => {
+        OtherCouponListModalAPI().then((res) => {
             setOther(res);
         });
     }
 
-    const loadDataPenjaga = (t : string) => {
-        PegawaiListModalAPI(t).then((res) => {
-            getPref(pref_pegawai_id).then(r => {
-                let data: { id: any; nama: any; }[] = [];
-                res.map((req: { [x: string]: any; }) => {
-                    if(req["name"] != null && req["name"] !== "" && req["id"] !== r) {
-                        data.push({id: req["id"], nama: req["name"]});
-                    }
-                })
-                setPenjaga(data);
-            });
+    const loadDataPenjaga = () => {
+        CustodianModalAPI().then((res) => {
+            console.log(res);
+            if(res != null && res.status === 'SUCCESS'){
+                let dt = res.data;
+                getPref(pref_pegawai_id).then(r => {
+                    let data: { id: any; nama: any; }[] = [];
+                    dt.map((req: { [x: string]: any; }) => {
+                        if(req["name"] != null && req["name"] !== "" && req["id"] !== r) {
+                            data.push({id: req["id"], nama: req["name"]});
+                        }
+                    })
+                    setPenjaga(data);
+                });
+            }
         });
+        // PegawaiListModalAPI().then((res) => {
+        //     getPref(pref_pegawai_id).then(r => {
+        //         let data: { id: any; nama: any; }[] = [];
+        //         res.map((req: { [x: string]: any; }) => {
+        //             if(req["name"] != null && req["name"] !== "" && req["id"] !== r) {
+        //                 data.push({id: req["id"], nama: req["name"]});
+        //             }
+        //         })
+        //         setPenjaga(data);
+        //     });
+        // });
     }
 
-    const loadDataFuelStasiun = (t : string) => {
-        FuelStationListModalAPI(t).then((res) => {
+    const loadDataFuelStasiun = () => {
+        FuelStationListModalAPI().then((res) => {
             setStasiun(res);
         });
     }
@@ -166,9 +176,10 @@ const FormOtherCoupon: React.FC = () => {
 
         const loading = present({
             message: 'Memproses permintaan ...',
+            backdropDismiss: false
         })
         // console.log(unit);
-        const url = BASE_API_URL + API_URI + OTHER_COUPON_URI + FUEL_REQ_UNIT_CREATE_URI;
+        const url = BaseAPI() + API_URI + OTHER_COUPON_URI + FUEL_REQ_UNIT_CREATE_URI;
         // const data = {pegawai: {id: ""}, jenis: {id:""}, vendor: {id:""}, type: {id:""}, spesifikasi: {id:""}, entity: {id: ""}, no_poll: "", odometer: ""}
         fetch(url, {
             method: 'POST',
@@ -183,6 +194,7 @@ const FormOtherCoupon: React.FC = () => {
                         showConfirm({
                             //simpan unit id ke pref
                             subHeader: "Permintaan Bahan Bakar Non Unit berhasil diajukan!",
+                            backdropDismiss: false,
                             buttons: [
                                 {
                                     text: 'OK',
@@ -199,6 +211,7 @@ const FormOtherCoupon: React.FC = () => {
                         showConfirm({
                             //simpan unit id ke pref
                             subHeader: result.message,
+                            backdropDismiss: false,
                             buttons: [
                                 {
                                     text: 'OK',
@@ -235,6 +248,7 @@ const FormOtherCoupon: React.FC = () => {
         showConfirm({
             //simpan unit id ke pref
             subHeader: msg,
+            backdropDismiss: false,
             buttons: [
                 {
                     text: 'OK',

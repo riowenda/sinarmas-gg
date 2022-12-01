@@ -3,6 +3,8 @@ import { useMemo } from "react";
 interface CardListLaporanProps {
   status?: string;
   kategori?: string;
+  pelapor?: string;
+  nomor?: string;
   tanggal?: string;
   star?: boolean;
   handleOnPress?: () => void;
@@ -30,7 +32,7 @@ const purple = "rgb(168 85 247 / var(--tw-border-opacity))";
 
 const CardListLaporan: React.FC<CardListLaporanProps> = ({
   status,
-  kategori,
+  kategori, pelapor,nomor,
   tanggal,
   star,
   handleOnPress,
@@ -54,11 +56,13 @@ const CardListLaporan: React.FC<CardListLaporanProps> = ({
       onClick={handleOnPress}
     >
       <div>
-        <h3 className="truncate font-medium text-black mb-2">{kategori}</h3>
-        <h4 className="truncate text-sm text-black">{tanggal}</h4>
+        <h3 className="truncate font-medium text-black mb-2">{nomor}</h3>
+        <p className="truncate text-gray-600 mb-2">{pelapor}</p>
+        <p className="truncate text-gray-600 mb-2">{kategori}</p>
+        <p className="truncate text-gray-600">{tanggal}</p>
       </div>
       <div className="flex-col items-end justify-end">
-        <p className={`px-5 ml-auto py-1 ${textColor} font-bold uppercase`}>{status}</p>
+        <p className={`pl-2 pr-2 ml-auto py-1 ${textColor} font-bold uppercase`}>{status}</p>
         {/* <div
           className={` px-5 ml-auto py-1 ${statusBackground} rounded-xl items-center justify-center mb-2`}
         >

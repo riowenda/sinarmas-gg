@@ -13,18 +13,16 @@ import {
 
 import {RefresherEventDetail} from '@ionic/core';
 import {useTranslation} from "react-i18next";
-import React, {useEffect, useRef, useState} from "react";
+import React, { useRef, useState} from "react";
 import { defineCustomElements } from "@ionic/pwa-elements/loader";
 import {
     API_URI,
-    BASE_API_URL,
     pref_user_id,
     pref_identity,
-    TEMP_UNIT_URI,
-    TEMP_UNIT_CREATE_URI, pref_token, pref_pegawai_id, DO_REQ_URI, DO_REQ_CREATE
+    pref_token, pref_pegawai_id, DO_REQ_URI, DO_REQ_CREATE, pref_fuel_station_id
 } from "../../../constant/Index";
 import {useHistory, useLocation, useParams} from "react-router-dom";
-import {getPref} from "../../../helper/preferences";
+import {getPref} from "../../../helper/Preferences";
 import moment from 'moment';
 import ListHeader from "../../../components/Header/ListHeader";
 import TextareaExpand from "react-expanding-textarea";
@@ -33,6 +31,7 @@ import DatePicker, {Calendar, utils} from 'react-modern-calendar-datepicker';
 import './FormGantiStok.css';
 import {CalendarIcon} from "@heroicons/react/24/solid";
 import ActionSheet from "actionsheet-react";
+import {BaseAPI} from "../../../api/ApiManager";
 
 //stuktur object dari backend untuk mempermudah maping
 const obj = {nomor:"", tanggal:moment(new Date()).format("DD-MM-yyyy"), jumlah:"", keterangan:""}
@@ -54,6 +53,8 @@ const FormGantiStok: React.FC = () => {
     const {t} = useTranslation()
     const location = useLocation();
     const ref = useRef();
+    const [tglRencana, setTglRencana] = useState(new Date());
+    const [stasiunId, setStasiunId] = useState();
 
     /* BEGIN LIFECYCLE APPS */
 
@@ -102,7 +103,10 @@ const FormGantiStok: React.FC = () => {
         getPref(pref_token).then(res => {
             setToken(res);
         });
-
+        //dapatkan fuelStasiun
+        getPref(pref_fuel_station_id).then(res => {
+            setStasiunId(res);
+        });
     }
 
     if (error) {
@@ -114,10 +118,12 @@ const FormGantiStok: React.FC = () => {
 
         const loading = present({
             message: 'Memproses permintaan ...',
+            backdropDismiss: false
         })
         // console.log(unit);
-        const url = BASE_API_URL + API_URI + DO_REQ_URI + DO_REQ_CREATE;
-        const data = {nomor: req.nomor, jumlahRencana: req.jumlah, pembuat: {id: pegId}, fuelStasiun: null, keterangan: req.keterangan}
+        const url = BaseAPI() + API_URI + DO_REQ_URI + DO_REQ_CREATE;
+        // fuel stasiun masih hardcode
+        const data = {ref: req.nomor, jumlahRencana: req.jumlah, tanggalRencana:tglRencana, pembuat: {id: pegId}, fuelStasiun: {id:stasiunId}, alasan: req.keterangan}
         fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Identity': identity ? identity :''},
@@ -133,6 +139,7 @@ const FormGantiStok: React.FC = () => {
                         showConfirm({
                             //simpan unit id ke pref
                             subHeader: 'Tidak dapat memproses permintaan penggantian stok!',
+                            backdropDismiss: false,
                             buttons: [
                                 {
                                     text: 'OK',
@@ -160,6 +167,7 @@ const FormGantiStok: React.FC = () => {
         showConfirm({
             //simpan unit id ke pref
             subHeader: 'Berhasil memproses permintaan penggantian stok',
+            backdropDismiss: false,
             buttons: [
                 {
                     text: 'OK',
@@ -182,6 +190,7 @@ const FormGantiStok: React.FC = () => {
         let a = moment(new Date(""+val.month+"-"+val.day+"-"+val.year)).format("DD-MM-yyyy");
         setReq({...req, tanggal: a})
         setSelectedDay(val);
+        setTglRencana(new Date(""+val.month+"-"+val.day+"-"+val.year));
         // @ts-ignore
         ref.current.close();
     }
@@ -214,7 +223,7 @@ const FormGantiStok: React.FC = () => {
                                             type="text"
                                             name="noref"
                                             id="noref"
-                                            placeholder={"Nomor Ref/PO"}
+                                            placeholder={"Nomor Ref"}
                                             autoComplete="given-name"
                                             className="block w-full"
                                         />

@@ -9,6 +9,7 @@ import "./FuelmanScanQR.css"
 import {useHistory, useLocation} from "react-router-dom";
 import {useTranslation} from "react-i18next";
 import ListHeader from "../../../../components/Header/ListHeader";
+import {encode, decode} from 'string-encode-decode';
 
 const FuelmanScanQR: React.FC = () => {
     const [err, setErr] = useState<string>()
@@ -26,6 +27,7 @@ const FuelmanScanQR: React.FC = () => {
     bisa dipindah ke diEnter */
     useIonViewWillEnter(() => {
         BarcodeScanner.prepare();
+        checkAkses();
     });
 
     /* Proses animasi selsai dan sudah sepenuhnya masuk halaman,
@@ -64,7 +66,9 @@ const FuelmanScanQR: React.FC = () => {
         if (result.hasContent) {
             document.body.style.background = "";
             document.body.style.opacity="1";
-            let data = result.content?.split("_");
+
+            let txt = decode(result.content);
+            let data = txt.split("_");
             // @ts-ignore
             if(data.length == 4){
                 //format QR > hrgabib_tipekupon_idkupon_timestamp
@@ -87,7 +91,9 @@ const FuelmanScanQR: React.FC = () => {
                         } else if(tipe === "fuel-other"){
                             path = "/fuel/detail-other/";
                         } else if(tipe === "do"){
-                            path = "/fuel/detail-do";
+                            path = "/fuel/detail-do/";
+                        } else if(tipe === "do-stock"){
+                            path = "/fuel/detail-do-stock/";
                         }
 
                         history.replace({
@@ -108,11 +114,11 @@ const FuelmanScanQR: React.FC = () => {
         if(!isValid){
             //record data tidak valid, siapa yang scan, dan di mana
             history.replace({
-                pathname:"/fuel/detail/"+0,
-                state: {detail:0}
+                pathname:"/fuel/invalid"
             });
             showConfirm({
                 //simpan unit id ke pref
+                backdropDismiss: false,
                 subHeader: 'QR Code tidak valid, silahkan scan ulang atau minta QR Code baru!',
                 buttons: [
                     {
@@ -143,7 +149,7 @@ const FuelmanScanQR: React.FC = () => {
 
     const [present] = useIonAlert()
 
-    useEffect(() => {
+    const checkAkses = () => {
         const checkPermission = async () => {
             try {
                 const status = await BarcodeScanner.checkPermission({ force: true })
@@ -151,6 +157,20 @@ const FuelmanScanQR: React.FC = () => {
                 if (status.granted) {
                     return true
                 }
+
+                if (status.denied) {
+                    // the user denied permission for good
+                    // redirect user to app settings if they want to grant it anyway
+                    BarcodeScanner.openAppSettings();
+                }
+
+                if (status.asked) {
+                    BarcodeScanner.openAppSettings();
+                }
+
+                // if (status.unknown) {
+                //     BarcodeScanner.openAppSettings();
+                // }
 
                 return false
             } catch (error) {
@@ -161,7 +181,7 @@ const FuelmanScanQR: React.FC = () => {
         checkPermission()
 
         return () => {}
-    }, [])
+    }
 
     const setTorchOn = (on : boolean) => {
         if(on){

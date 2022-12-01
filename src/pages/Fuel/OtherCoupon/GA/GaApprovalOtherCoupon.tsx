@@ -13,12 +13,10 @@ import {
 
 import './GaApprovalOtherCoupon.css';
 import { RefresherEventDetail } from '@ionic/core';
-import { useTranslation, initReactI18next } from "react-i18next";
-import React, { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import React, { useState } from "react";
 import {
     API_URI,
-    BASE_API_URL,
-    FUEL_REQ_UNIT_APPROVAL_URI,
     FUEL_REQ_UNIT_GA_FORGIVEN_URL,
     FUEL_REQ_UNIT_URI,
     OTHER_COUPON_APPROVAL_URI,
@@ -26,11 +24,9 @@ import {
     pref_identity,
     pref_pegawai_id,
     pref_user_id,
-    TEMP_UNIT_APPROVAL_URI,
-    TEMP_UNIT_URI,
 } from "../../../../constant/Index";
 import {useHistory, useLocation, useParams} from "react-router-dom";
-import { getPref } from "../../../../helper/preferences";
+import { getPref } from "../../../../helper/Preferences";
 import TextareaExpand from 'react-expanding-textarea';
 import moment from "moment";
 import UserCardWithUnit from "../../../Layout/UserCardWithUnit";
@@ -38,8 +34,9 @@ import {Capacitor} from "@capacitor/core";
 import {App} from "@capacitor/app";
 import SkeletonDetail from '../../../Layout/SkeletonDetail';
 import DetailHeader from "../../../../components/Header/DetailHeader";
+import {BaseAPI} from "../../../../api/ApiManager";
 
-const obj = {id:"", pemohon: {id: "", name:"", nik:"", foto: ""}, nomor: "", tanggalPermintaan: null, liter: null, literPengisian:null, fuelman: {id:"",name:""}, penjaga:{id:"",name:""}, status: "", fuelStasiun: {id:"", nama: ""}, riwayats: []}
+const obj = {id:"", tujuan:{id:"", nama:""}, pemohon: {id: "", name:"", nik:"", foto: ""}, nomor: "", tanggalPermintaan: null, liter: null, literPengisian:null, fuelman: {id:"",name:""}, penjaga:{id:"",name:""}, status: "", fuelStasiun: {id:"", nama: ""}, riwayats: []}
 const peg = {id:"", name:"", nik:"", foto:""};
 const data = {otherKupon:{id:""}, status:"", approveType: "", komentar:"", tanggal: (new Date()), pegawai: {id:""}}
 const objForgiven = {id:"", ga:"", komentar:""}
@@ -124,7 +121,7 @@ const GaApprovalOtherCoupon: React.FC = () => {
     };
 
     const loadDataPermintaan = (id: any) => {
-        const url = BASE_API_URL + API_URI + OTHER_COUPON_URI + "/" + id;
+        const url = BaseAPI() + API_URI + OTHER_COUPON_URI + "/" + id;
         fetch(url)
             .then(res => res.json())
             .then(
@@ -187,6 +184,7 @@ const GaApprovalOtherCoupon: React.FC = () => {
         if (allowToPush) {
             presentAlert({
                 subHeader: keterangan,
+                backdropDismiss: false,
                 buttons: [
                     {
                         text: 'Batal',
@@ -207,8 +205,9 @@ const GaApprovalOtherCoupon: React.FC = () => {
     const sendRequestApprovement = (status: any) => {
         const loading = present({
             message: 'Memproses ' + status === 'REJECTED' ? 'penolakan' : 'persetujuan' + ' ...',
+            backdropDismiss: false
         })
-        const url = BASE_API_URL + API_URI + OTHER_COUPON_URI + OTHER_COUPON_APPROVAL_URI;
+        const url = BaseAPI() + API_URI + OTHER_COUPON_URI + OTHER_COUPON_APPROVAL_URI;
         const body = {otherKupon:{id:getId}, status:status, approveType: "GA", komentar:approv.komentar, tanggal: (new Date()), pegawai: {id:pegId}};
         fetch(url, {
             method: 'POST',
@@ -226,6 +225,7 @@ const GaApprovalOtherCoupon: React.FC = () => {
                         showConfirm({
                             //simpan unit id ke pref
                             subHeader: ('Tidak dapat memproses ' + keterangan),
+                            backdropDismiss: false,
                             buttons: [
                                 {
                                     text: 'OK',
@@ -253,6 +253,7 @@ const GaApprovalOtherCoupon: React.FC = () => {
         showConfirm({
             //simpan unit id ke pref
             subHeader: '' + ("Berhasil memproses " + (status === "REJECTED" ? "Penolakan." : "Persetujuan.")) + '',
+            backdropDismiss: false,
             buttons: [
                 {
                     text: 'OK',
@@ -268,6 +269,7 @@ const GaApprovalOtherCoupon: React.FC = () => {
     const acceptAmpunan = () => {
         presentAlert({
             subHeader: "Anda yakin untuk menyelesaikan ampunan ini?",
+            backdropDismiss: false,
             buttons: [
                 {
                     text: 'Batal',
@@ -287,8 +289,9 @@ const GaApprovalOtherCoupon: React.FC = () => {
     const kirimAmpunan = () => {
         const loading = present({
             message: 'Memproses persetujuan ampunan ...',
+            backdropDismiss: false
         })
-        const url = BASE_API_URL + API_URI + FUEL_REQ_UNIT_URI + FUEL_REQ_UNIT_GA_FORGIVEN_URL;
+        const url = BaseAPI() + API_URI + FUEL_REQ_UNIT_URI + FUEL_REQ_UNIT_GA_FORGIVEN_URL;
         const body = {id:getId, ga:pegId, komentar:forgiven.komentar};
         fetch(url, {
             method: 'POST',
@@ -303,6 +306,7 @@ const GaApprovalOtherCoupon: React.FC = () => {
                         showConfirm({
                             //simpan unit id ke pref
                             subHeader: "Persetujuan ampunan berhasil!",
+                            backdropDismiss: false,
                             buttons: [
                                 {
                                     text: 'OK',
@@ -318,6 +322,7 @@ const GaApprovalOtherCoupon: React.FC = () => {
                         showConfirm({
                             //simpan unit id ke pref
                             subHeader: "Tidak dapat memproses persetujuan!",
+                            backdropDismiss: false,
                             buttons: [
                                 {
                                     text: 'OK',
@@ -373,6 +378,15 @@ const GaApprovalOtherCoupon: React.FC = () => {
                                 </label>
                                 <div>
                                     {items.nomor}
+                                </div>
+                            </div>
+
+                            <div className="mt-4">
+                                <label className="block text-sm text-gray-400">
+                                    Permintaan Untuk
+                                </label>
+                                <div>
+                                    {items.tujuan.nama}
                                 </div>
                             </div>
 

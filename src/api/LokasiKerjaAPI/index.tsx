@@ -1,14 +1,10 @@
 import ApiManager from "../ApiManager"
 
 
-export const LokasiKerjaApi = async (token: string) => {
+export const LokasiKerjaApi = async () => {
     try {
         const result = await ApiManager('/api/md/lokasi-kerjas/', {
             method: "GET",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`
-            }
         })
 
         return result.data

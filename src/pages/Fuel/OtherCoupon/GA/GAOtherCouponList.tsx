@@ -12,23 +12,23 @@ import {
 
 import './GAOtherCouponList.css';
 import { RefresherEventDetail } from '@ionic/core';
-import { useTranslation, initReactI18next } from "react-i18next";
-import React, { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import React, { useState } from "react";
 import {
     API_URI,
-    BASE_API_URL,
     pref_identity,
-    pref_user_role,
     pref_pegawai_unit_id,
     OTHER_COUPON_URI,
     OTHER_COUPON_GA_LIST_URI,
-    OTHER_COUPON_FINANCE_LIST_URI
+    OTHER_COUPON_FINANCE_LIST_URI, AUTH_FUEL_GA, AUTH_FUEL_FINANCE
 } from "../../../../constant/Index";
 import {useHistory, useLocation} from "react-router-dom";
-import { getPref } from "../../../../helper/preferences";
+import {getFuelMenu, getPref} from "../../../../helper/Preferences";
 import moment from "moment";
 import ListHeader from "../../../../components/Header/ListHeader";
 import Select from "react-select";
+import PStatus from "../../PO/components/PStatus";
+import {BaseAPI} from "../../../../api/ApiManager";
 
 const options = [
     { value: '-', label: 'ALL' },
@@ -88,13 +88,23 @@ const GAOtherCouponList: React.FC = () => {
     const loadDataPref = () => {
         getPref(pref_identity).then(res => { setIdentity(res);});
         getPref(pref_pegawai_unit_id).then(res => { setPegUnitId(res); });
-        getPref(pref_user_role).then(restRole => {
-            setRole(restRole); loadDataPermintaan(restRole);
+        getFuelMenu().then(menu => {
+            let restRole = "";
+
+            if(menu.includes(AUTH_FUEL_GA)){
+                restRole = 'GA';
+            } else if(menu.includes(AUTH_FUEL_FINANCE)) {
+                restRole = 'FINANCE';
+            }
+
+            // @ts-ignore
+            setRole(restRole);
+            loadDataPermintaan(restRole);
         });
     }
 
     const loadDataPermintaan = (role : any) => {
-        const url = BASE_API_URL + API_URI + OTHER_COUPON_URI + (role === "GA" ? OTHER_COUPON_GA_LIST_URI : OTHER_COUPON_FINANCE_LIST_URI);
+        const url = BaseAPI() + API_URI + OTHER_COUPON_URI + (role === "GA" ? OTHER_COUPON_GA_LIST_URI : OTHER_COUPON_FINANCE_LIST_URI);
         fetch(url)
             .then(res => res.json())
             .then(
@@ -174,52 +184,40 @@ const GAOtherCouponList: React.FC = () => {
 
     return (
         <IonPage>
-            <IonContent fullscreen>
+            {/* Header */}
+            <ListHeader title={t('header.daftar_fuel_lain')} isReplace={false} link={""} addButton={false} />
+            {/* end Header */}
+            <div className="bg-white px-3 pt-4 divide-y divide-gray-300">
+                <div className='top-0 z-10 mb-3'>
+                    <Select placeholder="Filter" options={options} onChange={event => handleSelectChange(event)} />
+                </div>
+                <div></div>
+            </div>
+            <IonContent>
                 <IonRefresher slot="fixed" onIonRefresh={doRefresh}>
                     <IonRefresherContent></IonRefresherContent>
                 </IonRefresher>
                 <div className="bg-red-700 ">
-                    {/* Header */}
-                    <ListHeader title={"Daftar Permintaan Bahan Bakar Non Unit"} isReplace={false} link={""} addButton={false} />
-                    {/* end Header */}
-
                     {/* === Start List  === */}
                     <div className="bg-white">
-                        <div className="px-3 pt-4 divide-y divide-gray-300">
-                            <div className='mb-3'>
-                                <Select placeholder="Filter" options={options} onChange={event => handleSelectChange(event)} />
-                            </div>
-                            <div className='pt-4'>
+                        <div className="px-3">
+                            <div className='pt-3'>
                             {isLoaded ?
                                 <>
                             {items.map((req, index) => {
                                 return (
                                     <div onClick={() => btnDetailReqFuel(req['id'])} key={req['id']}
-                                        className="px-4 py-2 my-2 rounded-lg border border-1 border-gray-300">
+                                        className="px-4 py-4 my-2 rounded-lg border border-1 border-gray-300">
                                         <div>
-                                            <div className="flex min-w-0 flex-1 justify-between space-x-4">
-                                                <div>
-                                                    <p className="text-base font-bold text-gray-900">{req['tujuan']['nama']}</p>
-                                                    <p className="text-sm text-gray-900">{req['liter']} liter</p>
-                                                    <p className="text-sm text-gray-900">{req['pemohon']['name']}</p>
-                                                </div>
-                                                <div className="whitespace-nowrap text-center text-sm text-gray-500">
-                                                    <p className="text-sm text-gray-900">{moment(req['tanggalPermintaan']).format('DD MMM yyyy').toString()}</p>
-                                                    {req['status'] === 'PROPOSED' &&
-                                                        <span className="text-blue-600 font-bold">{req['status']}</span>
-                                                    }
-                                                    {req['status'] === 'APPROVED' &&
-                                                        <span className="text-green-600 font-bold">{req['status']}</span>
-                                                    }
-                                                    {(req['status'] === 'FORGIVENESS' || req['status'] === 'ONHOLD') &&
-                                                        <span className="text-orange-600 font-bold">{req['status']}</span>
-                                                    }
-                                                    {req['status'] === 'CLOSED' &&
-                                                        <span className="text-red-600 font-bold">{req['status']}</span>
-                                                    }
-                                                </div>
+                                            <div className="flex justify-between">
+                                                <p className="font-bold text-gray-900">{req['tujuan']['nama']}</p>
+                                                <p className="text-sm text-gray-900">{moment(req['tanggalPermintaan']).format('DD MMM yyyy').toString()}</p>
                                             </div>
-
+                                            <div className="flex justify-between">
+                                                <p className="text-sm text-gray-900">{req['liter']} liter</p>
+                                                <PStatus title={req['status']} status={req['status']}/>
+                                            </div>
+                                            <div><p className="text-sm text-gray-900">{req['penjaga']['name']}</p></div>
                                         </div>
                                     </div>
                                 )

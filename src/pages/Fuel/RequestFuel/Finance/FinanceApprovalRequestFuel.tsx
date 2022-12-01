@@ -16,20 +16,18 @@ import { RefresherEventDetail } from '@ionic/core';
 import { useTranslation, initReactI18next } from "react-i18next";
 import React, { useCallback, useEffect, useState } from "react";
 import {
-    API_URI,
-    BASE_API_URL, FUEL_REQ_UNIT_APPROVAL_URI, FUEL_REQ_UNIT_URI,
+    API_URI, FUEL_REQ_UNIT_APPROVAL_URI, FUEL_REQ_UNIT_URI, IMAGE_FUEL_URI,
     pref_identity, pref_pegawai_id,
-    pref_user_id, TEMP_UNIT_APPROVAL_URI, TEMP_UNIT_URI,
+    pref_user_id
 } from "../../../../constant/Index";
 import {useHistory, useLocation, useParams} from "react-router-dom";
-import { getPref } from "../../../../helper/preferences";
+import { getPref } from "../../../../helper/Preferences";
 import TextareaExpand from 'react-expanding-textarea';
 import moment from "moment";
 import UserCardWithUnit from "../../../Layout/UserCardWithUnit";
-import {Capacitor} from "@capacitor/core";
-import {App} from "@capacitor/app";
 import DetailHeader from "../../../../components/Header/DetailHeader";
 import SkeletonDetail from "../../../Layout/SkeletonDetail";
+import {BaseAPI} from "../../../../api/ApiManager";
 
 const obj = {id:"", pegawaiUnit: {id: "", unit: {id: "", noLambung: "", noPol: ""}}, nomor: "", tanggal: null, liter: null, odometerPermintaan: null, odometerPermintaanImg: null, odometerPengisianSebelumnya: null, odometerPengisian: null, odometerPengisianImg: null, status: null, fuelStasiun: null, fuelMan: null, riwayats: [], permintaanDataImg: null, pengisianDataImg: null}
 const peg = {id:"", name:"", nik:"", foto:""};
@@ -103,12 +101,13 @@ const FinanceApprovalRequestFuel: React.FC = () => {
         });
         // @ts-ignore
         const dataId = history.location.state.detail;
+        // const dataId = '1c61b97b-a67a-44b0-af8a-da6ea377e66f';
         setGetId(dataId);
         loadDataPermintaan(dataId);
     }
 
     const loadDataPermintaan = (id: any) => {
-        const url = BASE_API_URL + API_URI + FUEL_REQ_UNIT_URI + "/" + id;
+        const url = BaseAPI() + API_URI + FUEL_REQ_UNIT_URI + "/" + id;
         fetch(url)
             .then(res => res.json())
             .then(
@@ -168,6 +167,7 @@ const FinanceApprovalRequestFuel: React.FC = () => {
         if (allowToPush) {
             presentAlert({
                 subHeader: keterangan,
+                backdropDismiss: false,
                 buttons: [
                     {
                         text: 'Batal',
@@ -188,8 +188,9 @@ const FinanceApprovalRequestFuel: React.FC = () => {
     const sendRequestApprovement = (status: any) => {
         const loading = present({
             message: 'Memproses ' + status === 'REJECTED' ? 'penolakan' : 'persetujuan' + ' ...',
+            backdropDismiss: false
         })
-        const url = BASE_API_URL + API_URI + FUEL_REQ_UNIT_URI + FUEL_REQ_UNIT_APPROVAL_URI;
+        const url = BaseAPI() + API_URI + FUEL_REQ_UNIT_URI + FUEL_REQ_UNIT_APPROVAL_URI;
         const body = {kupon:{id:getId}, status:status, approveType: "FINANCE", komentar:approv.komentar, tanggal: (new Date()), pegawai: {id:pegId}};
         fetch(url, {
             method: 'POST',
@@ -207,6 +208,7 @@ const FinanceApprovalRequestFuel: React.FC = () => {
                         showConfirm({
                             //simpan unit id ke pref
                             subHeader: ('Tidak dapat memproses ' + keterangan),
+                            backdropDismiss: false,
                             buttons: [
                                 {
                                     text: 'OK',
@@ -234,6 +236,7 @@ const FinanceApprovalRequestFuel: React.FC = () => {
         showConfirm({
             //simpan unit id ke pref
             subHeader: '' + ("Berhasil memproses " + (status === "REJECTED" ? "Penolakan." : "Persetujuan.")) + '',
+            backdropDismiss: false,
             buttons: [
                 {
                     text: 'OK',
@@ -318,23 +321,27 @@ const FinanceApprovalRequestFuel: React.FC = () => {
                                 </div>
                             </div>
 
-                            <div className="mt-4">
-                                <label htmlFor='odometer' className="block text-sm text-gray-400">
-                                    Disetujui GA
-                                </label>
-                                <div>
-                                    {approvGA != null ? approvGA['pegawai']['name'] : "-"}
+                            {(items.status !== "PROPOSED" && items.odometerPengisian != null) &&
+                                <div className="mt-4">
+                                    <label className="block text-sm text-gray-400">
+                                        Odometer saat pengisian
+                                    </label>
+                                    <div>
+                                        {items.odometerPengisian} Km
+                                    </div>
                                 </div>
-                            </div>
+                            }
 
-                            <div className="mt-4">
+                            <div hidden={items.status !== "PROPOSED" ? false : false} className="mt-4">
                                 <label htmlFor='odometer' className="block text-sm text-gray-400">
                                     Foto Odometer
                                 </label>
-                                <img src={`${items.permintaanDataImg}`}></img>
+                                <div className="group block rounded-lg aspect-auto bg-gray-100 overflow-hidden">
+                                    <img className="object-cover pointer-events-none" src={`${BaseAPI()}${API_URI}${IMAGE_FUEL_URI}${items.odometerPengisianImg != null ? items.odometerPengisianImg : items.odometerPermintaanImg}`} ></img>
+                                </div>
                             </div>
 
-                            <div className="mt-4">
+                            <div hidden={items.status == "APPROVED" ? false : true} className="mt-4">
                                 <label htmlFor='odometer' className="block text-sm text-gray-400">
                                     Alasan disetujui/tolak
                                 </label>
@@ -350,7 +357,7 @@ const FinanceApprovalRequestFuel: React.FC = () => {
                     {/* === End Content === */}
 
                     {/* === Footer button ===*/}
-                    <div className='py-6 grid grid-cols-2 bg-white'>
+                    <div hidden={items.status == "APPROVED" ? false : true} className='py-6 grid grid-cols-2 bg-white'>
                         <div className="pl-6 pr-3">
                             <button onClick={() => acceptReject("REJECTED")} className="items-center w-full mx-auto rounded-md bg-gray-200 px-3 py-2 text-sm font-bold text-red-700">
                                 TOLAK

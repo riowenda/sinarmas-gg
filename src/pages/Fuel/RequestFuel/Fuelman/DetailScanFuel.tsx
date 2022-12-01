@@ -16,24 +16,19 @@ import './DetailScanFuel.css';
 import { RefresherEventDetail } from '@ionic/core';
 import { useTranslation, initReactI18next } from "react-i18next";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import ActionSheet from "actionsheet-react";
 import {
     API_URI,
-    BASE_API_URL,
     FUEL_REQ_FUELMAN_FILL_URI,
-    FUEL_REQ_UNIT_APPROVAL_URI,
     FUEL_REQ_UNIT_URI,
     pref_fuel_station_id,
     pref_identity,
-    pref_json_pegawai_info_login,
     pref_pegawai_id,
-    pref_unit,
 } from "../../../../constant/Index";
 import {useHistory, useLocation, useParams} from "react-router-dom";
-import {getJsonPref, getPref} from "../../../../helper/preferences";
+import {getJsonPref, getPref} from "../../../../helper/Preferences";
 import moment from "moment";
-import UserCardWithUnit from "../../../Layout/UserCardWithUnit";
 import DetailHeader from "../../../../components/Header/DetailHeader";
+import {BaseAPI} from "../../../../api/ApiManager";
 
 const userInfo = { name: "", nik: "", imageUrl: "" }
 const userUnit = { id: "", noPol: "", noLambung: "", vendor: { name: "" }, jenisUnit: { name: "" } };
@@ -43,15 +38,11 @@ const DetailScanFuel: React.FC = () => {
     const [identity, setIdentity] = useState("");
     const history = useHistory();
     const [isLoaded, setIsLoaded] = useState(false);
-    const [user, setUser] = useState(userInfo);
-    const [unit, setUnit] = useState(userUnit);
     const [pegId, setPegId] = useState("");
     const [stasiunId, setStasiunId] = useState("");
-    const reqId = useParams<any[]>();
     const [presentAlert] = useIonAlert();
     const [present, dismiss] = useIonLoading();
     const [toast] = useIonToast();
-    const id = useParams<any[]>();
     const [reqFuel, setReqFuel] = useState(null);
     const [showConfirm] = useIonAlert();
     const [filled, setFilled] = useState<any>(send);
@@ -111,6 +102,7 @@ const DetailScanFuel: React.FC = () => {
     const loadData = () => {
         // @ts-ignore
         let id = history.location.state.detail;
+        // let id = '087f3789-7be0-4fe6-8b35-f1b012871d00'
         setGetId(id);
         // console.log("sini ",id);
         loadDataPref(id);
@@ -118,9 +110,7 @@ const DetailScanFuel: React.FC = () => {
 
     const loadDetail = (id:any) => {
         // @ts-ignore
-        const urlContents = BASE_API_URL + API_URI + FUEL_REQ_UNIT_URI + "/" + id;
-        //const url = BASE_API_URL + API_URI + P2H_ITEM_URI;
-        // console.log("URL: " + urlContents);
+        const urlContents = BaseAPI() + API_URI + FUEL_REQ_UNIT_URI + "/" + id;
 
         fetch(urlContents, {
             method: 'GET'
@@ -151,15 +141,28 @@ const DetailScanFuel: React.FC = () => {
         ref.current.close();
     };
 
-    const btnBack = () => {
-        // history.go();
-        history.push("/dashboard2");
+    const showDialog = () => {
+        showConfirm({
+            //simpan unit id ke pref
+            backdropDismiss: false,
+            subHeader: 'Permintaan ini tidak dapat diproses karna sudah selesai diisi!',
+            buttons: [
+                {
+                    text: t('btn.oke'),
+                    cssClass: 'alert-button-confirm',
+                    handler: () => {
+                        history.replace("/fuel/scan");
+                    }
+                },
+            ],
+        })
     }
 
     const btnSelesai = (e : any) => {
         e.preventDefault();
         presentAlert({
             subHeader: 'Anda yakin untuk menyelesaikan pengisian Bahan Bakar Unit ini?',
+            backdropDismiss: false,
             buttons: [
                 {
                     text: 'Tidak',
@@ -179,8 +182,9 @@ const DetailScanFuel: React.FC = () => {
     const sendRequest = () => {
         const loading = present({
             message: 'Memproses penyelesaian ...',
+            backdropDismiss: false
         })
-        const url = BASE_API_URL + API_URI + FUEL_REQ_UNIT_URI + FUEL_REQ_FUELMAN_FILL_URI;
+        const url = BaseAPI() + API_URI + FUEL_REQ_UNIT_URI + FUEL_REQ_FUELMAN_FILL_URI;
         const data = {id:getId, fuelman:pegId, liter:filled.liter, stasiun: stasiunId} //user diambil dari pref
         fetch(url, {
             method: 'POST',
@@ -195,6 +199,7 @@ const DetailScanFuel: React.FC = () => {
                         showConfirm({
                             //simpan unit id ke pref
                             subHeader: "Pengisian Bahan Bakar Unit berhasil!",
+                            backdropDismiss: false,
                             buttons: [
                                 {
                                     text: 'OK',
@@ -288,7 +293,8 @@ const DetailScanFuel: React.FC = () => {
                                 </label>
                                 <div className="border-b border-gray-300 py-2">
                                     <input
-                                        defaultValue={filled.liter != null ? filled.liter : ""}
+                                        // defaultValue={filled.liter != null ? filled.liter : ""}
+                                        placeholder={reqFuel != null && reqFuel["liter"] != null && reqFuel["liter"] !== 'N/A' ? ("Isi sebelumnya "+ reqFuel["liter"] + " liter") : ""}
                                         onChange={(event) => setFilled({...filled, liter: event.target.value})}
                                         required
                                         type="number"

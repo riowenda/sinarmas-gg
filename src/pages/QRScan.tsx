@@ -124,6 +124,7 @@ const QRScan: React.FC = () => {
             showConfirm({
                 //simpan unit id ke pref
                 subHeader: 'QR Code tidak valid, silahkan scan ulang atau minta QR Code baru!',
+                backdropDismiss: false,
                 buttons: [
                     {
                         text: 'Tidak',

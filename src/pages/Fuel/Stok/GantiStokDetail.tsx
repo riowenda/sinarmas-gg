@@ -1,6 +1,5 @@
 import {
-    IonAvatar, IonButton,
-    IonContent, IonImg, IonItem, IonLabel, IonList, IonModal,
+    IonContent,
     IonPage,
     IonRefresher,
     IonRefresherContent,
@@ -12,62 +11,41 @@ import {
     useIonViewWillLeave,
 } from '@ionic/react';
 
-import {RefresherEventDetail} from '@ionic/core';
-import {useTranslation} from "react-i18next";
-import React, {useEffect, useRef, useState} from "react";
-import { defineCustomElements } from "@ionic/pwa-elements/loader";
+import { RefresherEventDetail } from '@ionic/core';
+import { useTranslation } from "react-i18next";
+import React, { useRef, useState } from "react";
 import {
-    API_URI,
-    BASE_API_URL,
-    PEGAWAI_UNIT_CRUD_URI,
-    pref_user_id,
-    pref_identity,
-    TEMP_UNIT_URI,
-    TEMP_UNIT_CREATE_URI, PEGAWAI_UNIT_BY_USER_URI, pref_pegawai_id, pref_token
+    API_URI, AUTH_FUEL_FINANCE, AUTH_FUEL_GA,
+    FUEL_REQ_UNIT_APPROVAL_URI, FUEL_REQ_UNIT_URI, pref_identity,
+    pref_pegawai_id
 } from "../../../constant/Index";
-import {useHistory, useLocation, useParams} from "react-router-dom";
-import {getPref} from "../../../helper/preferences";
-import moment from 'moment';
-import {Camera, CameraResultType, CameraSource} from "@capacitor/camera";
-import {Capacitor} from "@capacitor/core";
-import {App} from "@capacitor/app";
-import {SistemKerjaListModalAPI} from "../../../api/MDForFuel/SistemKerja";
-import {DivisiListModalAPI} from "../../../api/MDForFuel/DivisiList";
-import {JenisKendaraanListModalAPI} from "../../../api/MDForFuel/JenisKendaraan";
-import {SpesifikasiListModalAPI} from "../../../api/MDForFuel/SpesifikasiUnit";
-import {TipeUnitListModalAPI} from "../../../api/MDForFuel/TipeUnit";
-import {VendorListModalAPI} from "../../../api/MDForFuel/VendorList";
-import ListHeader from "../../../components/Header/ListHeader";
-import SelectItem from "../../../components/SelectWithSearchInModal/SelectItem";
-import {ChevronDownIcon, ClockIcon, MagnifyingGlassCircleIcon} from "@heroicons/react/24/solid";
+import { useHistory } from "react-router-dom";
+import {getFuelMenu, getPref} from "../../../helper/Preferences";
+import moment from "moment";
+import SkeletonDetail from '../../Layout/SkeletonDetail';
+import DetailHeader from '../../../components/Header/DetailHeader';
+import {DO} from "../../../api/PODOFuelAPI/DO";
+import {BaseAPI} from "../../../api/ApiManager";
 
-//stuktur object dari backend untuk mempermudah maping
-const obj = {pegawai: {id: ""}, jenis: {id:"", name:""}, vendor: {id:"", name:""}, type: {id:"", name:""}, spesifikasi: {id:"", name:""}, entity: {id: "", name:""}, no_poll: "", odometer: "", base64: "", odoImgFileName: "", sistemKerja: null, tanggal: new Date()}
-
+const userInfo = { name: "", nik: "", imageUrl: "" }
+const userUnit = { id: "", noPol: "", noLambung: "", vendor: { name: "" }, jenisUnit: { name: "" } };
 const GantiStokDetail: React.FC = () => {
-    const history = useHistory()
-    const [error, setError] = useState(null)
-    const [isLoaded, setIsLoaded] = useState(false)
+    const [getId, setGetId] = useState<string>();
+    const [identity, setIdentity] = useState("");
+    const history = useHistory();
+    const [user, setUser] = useState(userInfo);
+    const [token, setToken] = useState("");
+    const [pegId, setPegId] = useState("");
+    const [presentAlert] = useIonAlert();
     const [present, dismiss] = useIonLoading();
     const [toast] = useIonToast();
+    const [sendId, setSendId] = useState("");
     const [showConfirm] = useIonAlert();
-    const [presentAlert] = useIonAlert();
-    const [unit, setUnit] = useState(obj);
-    const [userId, setUserId] = useState();
-    const [identity, setIdentity] = useState<string>();
-    const id = useParams<any[]>();
-    const [photo, setPhoto] = useState<any>(null);
-    const [toSend, setToSend] = useState<any>(null);
-    const [divisi, setDivisi] = useState<any>([]);
-    const [jenis, setJenis] = useState<any>([]);
-    const [sistemKerja, setSistemKerja] = useState<any[]>([]);
-    const [spesifikasi, setSpesifikasi] = useState<any>([]);
-    const [tipe, setTipe] = useState<any>([]);
-    const [vendor, setVendor] = useState<any>([]);
-    const {t} = useTranslation()
-    const location = useLocation();
-    const modal = useRef<HTMLIonModalElement>(null);
-    const [isOpen, setIsOpen] = useState(false);
+    const [isLoaded, setIsLoaded] = useState(false)
+    const [po, setPo] = useState<any>();
+    const [dos, setDos] = useState([]);
+    const { t } = useTranslation();
+    const [role, setRole] = useState("");
 
     /* BEGIN LIFECYCLE APPS */
 
@@ -87,6 +65,7 @@ const GantiStokDetail: React.FC = () => {
     /* Proses animasi akan dimulai saat akan meninggalkan halaman
     disini cocok untuk melakukan clean up atau sebagainya yang sesuai kebutuhan */
     useIonViewWillLeave(() => {
+        setIsLoaded(false);
     });
 
     /* Proses transisi ke halaman berikutnya
@@ -97,407 +76,238 @@ const GantiStokDetail: React.FC = () => {
 
     function doRefresh(event: CustomEvent<RefresherEventDetail>) {
         console.log('Begin async operation');
-        loadDataPref();
+        setIsLoaded(false);
+        loadDataPermintaan(sendId);
         setTimeout(() => {
             console.log('Async operation has ended');
             event.detail.complete();
         }, 2000);
     }
 
-    const loadDataPegawaiUnitSebelumnya = (dataId : string) => {
-        const url = BASE_API_URL + API_URI + PEGAWAI_UNIT_CRUD_URI + PEGAWAI_UNIT_BY_USER_URI + "/" + dataId;
-        fetch(url, {
-            method: 'GET'
-        })
-            .then(res => res.json())
-            .then(
-                (result) => {
-                    if(result.data != null) {
-                        let dt = {
-                            pegawai: {id: dataId},
-                            jenis: result['data']['unit']['jenisUnit'],
-                            vendor: result['data']['unit']['vendor'],
-                            type: result['data']['unit']['tipeUnit'],
-                            spesifikasi: result['data']['unit']['spesifikasiUnit'],
-                            sistemKerja: result['data']['unit']['sistemKerja'],
-                            entity: result['data']['unit']['departemen'],
-                            no_poll: "",
-                            odometer: "",
-                            base64: "",
-                            odoImgFileName: "",
-                            tanggal: new Date()
-                        }
-                        // @ts-ignore
-                        setUnit(dt);
-                    }
-                    setIsLoaded(true);
-                },
-                (error) => {
-                    setIsLoaded(true);
-                    setError(error);
-                }
-            );
-    }
-
     const loadDataPref = () => {
-        // getPref(pref_pegawai_id).then(res => {
-        //     setUnit({...unit, pegawai: {id:res}})
-        // } );
-        getPref(pref_user_id).then(res => {
-            setUserId(res);
-            loadDataPegawaiUnitSebelumnya(res);
-            // setIsLoaded(true);
-        } );
-        getPref(pref_identity).then(res => {setIdentity(res)});
-        getPref(pref_token).then(res => {
-            SistemKerjaListModalAPI(res).then((res) => {
-                setSistemKerja(res);
-            });
-            DivisiListModalAPI(res).then((res) => {
-                setDivisi(res);
-            });
-            JenisKendaraanListModalAPI(res).then((res) => {
-                setJenis(res);
-            });
-            SpesifikasiListModalAPI(res).then((res) => {
-                setSpesifikasi(res);
-            });
-            TipeUnitListModalAPI(res).then((res) => {
-                setTipe(res);
-            });
-            VendorListModalAPI(res).then((res) => {
-                setVendor(res);
-            });
+        // @ts-ignore
+        const dataId = history.location.state.detail;
+        setSendId(dataId);
+
+        getPref(pref_identity).then(res => { setIdentity(res) });
+        getPref(pref_pegawai_id).then(res => { setPegId(res); });
+        loadDataPermintaan(dataId);
+        getFuelMenu().then(menu => {
+            let restRole = "";
+
+            if(menu.includes(AUTH_FUEL_GA)){
+                restRole = 'GA';
+            } else if(menu.includes(AUTH_FUEL_FINANCE)){
+                restRole = 'FINANCE';
+            }
+
+            // @ts-ignore
+            setRole(restRole);
+
+
         });
-
     }
 
-    if (error) {
-        return <div>Error: {error}</div>;
-    }
-
-    const sendRequest = (e : any) => {
-        e.preventDefault();
-        if(photo){
-            const loading = present({
-                message: 'Memproses permintaan ...',
-            })
-            // console.log(unit);
-            const url = BASE_API_URL + API_URI + TEMP_UNIT_URI + TEMP_UNIT_CREATE_URI;
-            // const data = {pegawai: {id: ""}, jenis: {id:""}, vendor: {id:""}, type: {id:""}, spesifikasi: {id:""}, entity: {id: ""}, no_poll: "", odometer: ""}
-            fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Identity': identity ? identity :''},
-                body: JSON.stringify(unit)
-            })
-                .then(res => res.json())
-                .then(
-                    (result) => {
-                        if(result.status === 'SUCCESS'){
-                            showAlertConfirmed();
-                        } else if(result.status === 'FAILED'){ // ditolak oleh sistem
-                            dismiss();
-                            showConfirm({
-                                //simpan unit id ke pref
-                                header: 'Ditolak oleh sistem',
-                                subHeader: result.message,
-                                buttons: [
-                                    {
-                                        text: 'OK',
-                                        cssClass: 'alert-button-confirm',
-                                    },
-                                ],
-                            })
-                        } else {
-                            dismiss();
-                            showConfirm({
-                                //simpan unit id ke pref
-                                subHeader: 'Tidak dapat memproses permintaan unit sementara',
-                                buttons: [
-                                    {
-                                        text: 'OK',
-                                        cssClass: 'alert-button-confirm',
-                                    },
-                                ],
-                            })
-                        }
-                    },
-                    // Note: it's important to handle errors here
-                    // instead of a catch() block so that we don't swallow
-                    // exceptions from actual bugs in components.
-                    (error) => {
-                        dismiss();
-                        toast( {
-                                message: "Terjadi kesalahan! ["+error.message+"]", duration: 1500, position: "top"
-                            }
-                        );
-                    }
-                )
-        } else {
-            toast( {
-                    message: "Foto harus disertakan", duration: 1500, position: "top"
+    const loadDataPermintaan = (id: string) => {
+        let data = DO("detail", id).then(result => {
+            try {
+                if(result.status === "SUCCESS") {
+                    let data = result.data;
+                    setPo(data);
                 }
-            );
-        }
+            } catch (error) {
 
+            }
+            setIsLoaded(true);
+        });
+    }
+
+    const ref = useRef();
+
+    const handleOpen = () => {
+        // @ts-ignore
+        ref.current.open();
     };
 
-    const showAlertConfirmed = () => {
-        dismiss();
-        showConfirm({
-            //simpan unit id ke pref
-            subHeader: 'Berhasil memproses permintaan unit sementara',
+    const handleClose = () => {
+        // @ts-ignore
+        ref.current.close();
+    };
+
+    const btnBack = () => {
+        // history.goBack();
+        history.push("/fuel/req-fuel/daftar-permintaan");
+    }
+
+    const btnDetailDO = (id:string) => {
+        // history.goBack();
+        history.push({
+            pathname: "/fuel/do/detail/" + id,
+            state: { detail: id }
+        });
+    }
+
+    const btnBatal = () => {
+        presentAlert({
+            subHeader: 'Anda yakin untuk membatalkan Permintaan Bahan Bakar Unit ini?',
+            backdropDismiss: false,
             buttons: [
                 {
-                    text: 'OK',
+                    text: 'Tidak',
+                    cssClass: 'alert-button-cancel',
+                },
+                {
+                    text: 'Ya',
                     cssClass: 'alert-button-confirm',
                     handler: () => {
-                        history.goBack();
-                        // history.push("/fuel/temp-unit/daftar-permintaan");
+                        sendRequest();
                     }
                 },
             ],
         })
     }
 
-    const takePhoto = async () => {
-        await Camera.getPhoto({
-            resultType: CameraResultType.Base64,
-            source: CameraSource.Camera,
-            quality: 30
+    const sendRequest = () => {
+        const loading = present({
+            message: 'Memproses pembatalan ...',
+            backdropDismiss: false
         })
-            .then((res) => {
-                console.log(res);
-                let imgs = res.base64String;
-                let imgName = (new Date().getTime().toString())+"."+res.format;
-                // @ts-ignore
-                setUnit({...unit, base64: imgs, odoImgFileName: imgName})
-                setToSend(res.base64String);
-                setPhoto(res);
-            })
-            .catch((err) => {
-                console.log(err);
-            });
+        const url = BaseAPI() + API_URI + FUEL_REQ_UNIT_URI + FUEL_REQ_UNIT_APPROVAL_URI;
+        const data = { kupon: { id: sendId }, status: "CANCELED", approveType: "USER", komentar: null, tanggal: (new Date()), pegawai: { id: pegId } } //user diambil dari pref
+        fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Identity': identity ? identity : '' },
+            body: JSON.stringify(data)
+        })
+            .then(res => res.json())
+            .then(
+                (result) => {
+                    dismiss();
+                    if (result.status === "SUCCESS") {
+                        showConfirm({
+                            //simpan unit id ke pref
+                            subHeader: "Pembatalan Permintaan Bahan Bakar Unit berhasil!",
+                            backdropDismiss: false,
+                            buttons: [
+                                {
+                                    text: 'OK',
+                                    cssClass: 'alert-button-confirm',
+                                    handler: () => {
+                                        loadDataPermintaan(sendId);
+                                    }
+                                },
+                            ],
+                        })
+                    } else {
+                        toast({
+                                message: "Terjadi kesalahan! [" + result.message + "]", duration: 1500, position: "top"
+                            }
+                        );
+                    }
+                },
+                // Note: it's important to handle errors here
+                // instead of a catch() block so that we don't swallow
+                // exceptions from actual bugs in components.
+                (error) => {
+                    dismiss();
+                    toast({
+                            message: "Terjadi kesalahan! [" + error.message + "]", duration: 1500, position: "top"
+                        }
+                    );
+                }
+            )
     };
 
-    const toBack = () => {
-        // history.goBack();
-        history.push("/fuel/temp-unit/daftar-permintaan")
-    }
-
-    const handleOnChange = (arg:any, tipe:any) => {
-        if(tipe === "jenis"){
-            setUnit({...unit, jenis:{id:arg, name: ""}})
-        }
-        if(tipe === "vendor"){
-            setUnit({...unit, vendor:{id:arg, name: ""}})
-        }
-        if(tipe === "tipe"){
-            setUnit({...unit, type:{id:arg, name: ""}})
-        }
-        if(tipe === "spesifikasi"){
-            setUnit({...unit, spesifikasi:{id:arg, name: ""}})
-        }
-        if(tipe === "divisi"){
-            setUnit({...unit, entity:{id:arg, name: ""}})
-        }
-    }
-
-    const handleItemClick = (item : any) => {
-        setUnit({...unit, sistemKerja: item['id']});
-        // @ts-ignore
-        modal.current.dismiss();
-    }
-
+    // @ts-ignore
+    // @ts-ignore
+    // @ts-ignore
     return (
         <IonPage>
-            <IonContent fullscreen>
-                <IonRefresher slot="fixed" onIonRefresh={doRefresh}>
-                    <IonRefresherContent></IonRefresherContent>
-                </IonRefresher>
-                <div className="bg-white flex flex-col min-h-screen justify-between">
-                    {/*<div className="bg-white rounded-md rounded-lg lg:rounded-lg p-2 ">*/}
-                    <div>
-                        {/* === Start Header === */}
-                        <ListHeader title={"Form Penggantian Stok"} isReplace={false} link={""} addButton={false} />
-                        {/* === End Header ===*/}
+            {isLoaded ?
+                <>
+                    <IonContent fullscreen>
+                        <IonRefresher slot="fixed" onIonRefresh={doRefresh}>
+                            <IonRefresherContent></IonRefresherContent>
+                        </IonRefresher>
+                        <div className="bg-gray-100 flex flex-col min-h-screen justify-between">
 
-                        {/* === Start Form ===*/}
-                        <form onSubmit={sendRequest}>
-                            <div className="p-6">
-                                <div>
-                                    <label htmlFor='nopol' className="block text-sm text-gray-400">
-                                        Nomor Polisi
-                                    </label>
-                                    <div className="border-b border-gray-300 py-2">
-                                        <input
-                                            defaultValue={unit.no_poll}
-                                            onChange={(event) => setUnit({...unit, no_poll: event.target.value})}
-                                            required
-                                            type="text"
-                                            name="nopol"
-                                            id="nopol"
-                                            placeholder={"Nomor Polisi pada Mobil"}
-                                            autoComplete="given-name"
-                                            className="block w-full"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="mt-4">
-                                    <label htmlFor='jenis' className="block text-sm text-gray-400">
-                                        Jenis Kendaraan
-                                    </label>
-                                    <div>
-                                        <SelectItem list={jenis} id={"jenis"} isName={true} nameComp={"jenis"} img={""} placeholder={"Pilih Jenis"} handleOnchange={handleOnChange} defaultValue={unit.jenis != null ? unit.jenis['name'] : ""}></SelectItem>
-                                    </div>
-                                </div>
-                                <div className="mt-4">
-                                    <label htmlFor='vendor' className="block text-sm text-gray-400">
-                                        Vendor
-                                    </label>
-                                    <div>
-                                        <SelectItem list={vendor} id={"vendor"} isName={true} nameComp={"vendor"} img={""} placeholder={"Pilih Vendor"} handleOnchange={handleOnChange} defaultValue={unit.vendor != null ? unit.vendor['name'] : ""}></SelectItem>
-                                    </div>
-                                </div>
-                                <div className="mt-4">
-                                    <label htmlFor='tipe' className="block text-sm text-gray-400">
-                                        Tipe Unit
-                                    </label>
-                                    <div>
-                                        <SelectItem list={tipe} id={"tipe"} isName={true} nameComp={"tipe"} img={""} placeholder={"Pilih Tipe"} handleOnchange={handleOnChange} defaultValue={unit.type != null ? unit.type['name'] : ""}></SelectItem>
-                                    </div>
-                                </div>
-                                <div className="mt-4">
-                                    <label htmlFor='spesifikasi' className="block text-sm text-gray-400">
-                                        Spesifikasi
-                                    </label>
-                                    <div>
-                                        <SelectItem list={spesifikasi} id={"spesifikasi"} isName={true} nameComp={"spesifikasi"} img={""} placeholder={"Pilih Spesifikasi"} handleOnchange={handleOnChange} defaultValue={unit.spesifikasi != null ? unit.spesifikasi['name'] : ""}></SelectItem>
-                                    </div>
-                                </div>
-                                <div className="mt-4">
-                                    <label htmlFor='divisi' className="block text-sm text-gray-400">
-                                        Divisi
-                                    </label>
-                                    <div>
-                                        <SelectItem list={divisi} id={"divisi"} isName={true} nameComp={"divisi"} img={""} placeholder={"Pilih Divisi"} handleOnchange={handleOnChange} defaultValue={unit.entity != null ? unit.entity['name'] : ""}></SelectItem>
-                                    </div>
-                                </div>
-                                <div className="mt-4">
-                                    <label htmlFor='sistemkerja' className="block text-sm text-gray-400">
-                                        Sistem Kerja
-                                    </label>
-                                    <div className="relative border-b border-gray-300 py-2">
-                                        <input
-                                            id="open-modal"
-                                            readOnly
-                                            type="text"
-                                            name="sistemKerja"
-                                            value={unit.sistemKerja === "SHIFT" ? "Shift" : "Non Shift"}
-                                            className="block w-full rounded-md border-gray-300 pr-10 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                                            placeholder="Pilih Sistem Kerja"
-                                        />
-                                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-1">
-                                            <ChevronDownIcon className="h-5 w-5 text-gray-400" aria-hidden="true"/>
+                            {/* === Start Content  === */}
+                            <div>
+                                <DetailHeader title={"Penggantian Stok"} link='/fuel/po' approval={po['status']}></DetailHeader>
+
+
+                                <div className="p-6 bg-white">
+                                    <div className="mt-4">
+                                        <label className="block text-sm text-gray-400">
+                                            DO ID
+                                        </label>
+                                        <div>
+                                            {po['nomor'] !== '' ? po['nomor'] : "-"}
                                         </div>
                                     </div>
-                                    <IonModal ref={modal} trigger="open-modal" initialBreakpoint={0.25} breakpoints={[0, 0.25]}>
-                                        <IonContent className="ion-padding">
-                                            <IonList>
-                                                {sistemKerja.map((item, index) => {
-                                                    return (
-                                                        <IonItem key={index} id={item["id"]} onClick={(event) => handleItemClick(item)}>
-                                                            <IonAvatar slot="start">
-                                                                <ClockIcon className="text-red-600"/>
-                                                            </IonAvatar>
-                                                            <IonLabel>
-                                                                <h2>{item["value"]}</h2>
-                                                            </IonLabel>
-                                                        </IonItem>
-                                                    )
-                                                })}
-                                            </IonList>
-                                        </IonContent>
-                                    </IonModal>
-                                </div>
-                                <div className="mt-4">
-                                    <label htmlFor='tanggal' className="block text-sm text-gray-400">
-                                        Tanggal
-                                    </label>
-                                    <div className="border-b border-gray-300 py-2">
-                                        <input
-                                            defaultValue={moment(unit.tanggal).format('DD-MM-yyyy').toString()}
-                                            readOnly
-                                            type="text"
-                                            name="tanggal"
-                                            id="tanggal"
-                                            placeholder={"Tanggal"}
-                                            autoComplete="given-name"
-                                            className="block w-full"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="mt-4">
-                                    <label htmlFor='odometer' className="block text-sm text-gray-400">
-                                        Angka Odometer
-                                    </label>
-                                    <div className="border-b border-gray-300 py-2">
-                                        <input
-                                            defaultValue={unit.odometer}
-                                            onChange={(event) => setUnit({...unit, odometer: event.target.value})}
-                                            required
-                                            type="number"
-                                            name="odometer"
-                                            id="odometer"
-                                            placeholder={"Angka Odometer"}
-                                            autoComplete="given-name"
-                                            className="block w-full"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="mt-4">
-                                    <label htmlFor='foto' className="block text-sm text-gray-400">
-                                        Foto Odometer
-                                    </label>
-                                    {photo ?
-                                        <><div className="group block rounded-lg aspect-auto bg-gray-100 overflow-hidden">
-                                            <img className="object-cover pointer-events-none" src={`data:image/jpeg;base64,${photo.base64String}`} ></img>
-                                        </div></>
-                                        :
-                                        <div className="rounded-md border-2 border-dashed border-gray-300 py-10">
-                                            <><div className="flex justify-center">
-                                                <button onClick={() => {
-                                                    takePhoto();
-                                                }}
-                                                        className="items-center rounded-full bg-slate-800 px-3 py-3 text-white">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-                                                        <path fill-rule="evenodd" d="M1 8a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 018.07 3h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0016.07 6H17a2 2 0 012 2v7a2 2 0 01-2 2H3a2 2 0 01-2-2V8zm13.5 3a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM10 14a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
-                                                    </svg>
-                                                </button>
-                                            </div><p className="mt-1 text-xs text-center text-gray-500">Ambil Foto</p></>
+                                    <div className="mt-4">
+                                        <label className="block text-sm text-gray-400">
+                                            No. DO
+                                        </label>
+                                        <div>
+                                            {po['ref'] !== '' ? po['ref'] : "-"}
                                         </div>
-                                    }
+                                    </div>
+                                    <div className="mt-4">
+                                        <label className="block text-sm text-gray-400">
+                                            Tanggal Pengiriman
+                                        </label>
+                                        <div>
+                                            {po['tanggalRencana'] !== '' ? moment(po['tanggalRencana']).format('DD MMM yyyy').toString() : "-"}
+                                        </div>
+                                    </div>
+                                    <div className="mt-4">
+                                        <label className="block text-sm text-gray-400">
+                                            Jumlah
+                                        </label>
+                                        <div>
+                                            {po['jumlahRencana'] !== '' ? po['jumlahRencana'] : "-"} liter
+                                        </div>
+                                    </div>
+                                    <div className="mt-4">
+                                        <label className="block text-sm text-gray-400">
+                                            Keterangan
+                                        </label>
+                                        <div>
+                                            {po['alasan'] !== '' ? po['alasan'] : "-"}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
+                            {/* === End Content === */}
+
                             {/* === Footer button ===*/}
-                            <div className='p-6 items-end bg-white'>
-                                <button value="Kirim" type="submit" className="w-full items-center mx-auto rounded-md bg-emerald-500 px-3 py-2 text-sm font-bold text-white">
-                                    KIRIM
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                    {/* === End Form ===*/}
-                    {/*</div>*/}
-                </div>
+                            {role === "GA" &&
+                                <div className='py-6 bg-white'>
+                                    <div className="pl-3 pr-6">
+                                        <button
+                                            className="items-center w-full mx-auto rounded-md bg-emerald-500 px-3 py-2 text-sm font-bold text-white">
+                                            SELESAI
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                        </div>
 
-            </IonContent>
+                    </IonContent>
+                </>
+                :
+                <>
+                    <SkeletonDetail />
+                </>
+            }
         </IonPage>
+
     );
+
 };
 
 export default GantiStokDetail;
-defineCustomElements(window);
 function classNames(arg0: string, arg1: string): string | undefined {
     throw new Error('Function not implemented.');
 }

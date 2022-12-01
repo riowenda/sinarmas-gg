@@ -13,18 +13,14 @@ import {RefresherEventDetail} from '@ionic/core';
 import {useTranslation} from "react-i18next";
 import React, {useState} from "react";
 import {
-    API_URI,
-    BASE_API_URL,
-    PEGAWAI_UNIT_CRUD_URI, PEGAWAI_UNIT_RELEASED_URI, pref_identity,
-    pref_json_pegawai_info_login, pref_pegawai_id, pref_pegawai_unit_id, pref_token,
-    pref_unit, pref_unit_id, pref_user_id
+    pref_json_pegawai_info_login, pref_pegawai_id, pref_token, pref_user_id
 } from "../../../constant/Index";
 
 import {useHistory, useLocation} from "react-router-dom";
-import {getJsonPref, getPref, removePref} from "../../../helper/preferences";
-import {IonBackButtonInner} from "@ionic/react/dist/types/components/inner-proxies";
+import {getJsonPref, getPref, removePref} from "../../../helper/Preferences";
 import ListHeader from "../../../components/Header/ListHeader";
 import {PO} from "../../../api/PODOFuelAPI/PO";
+import {DO} from "../../../api/PODOFuelAPI/DO";
 
 const user = {name: "", nik: "", imageUrl: ""}
 const LogisticFuelHome: React.FC = () => {
@@ -35,7 +31,7 @@ const LogisticFuelHome: React.FC = () => {
     const [identity, setIdentity] = useState("");
     const [token, setToken] = useState("");
     const [countPo, setCountPo] = useState(0);
-    const [countFuel, setCountFuel] = useState(0);
+    const [countDo, setCountDo] = useState(0);
 
     const {t} = useTranslation();
     const location = useLocation();
@@ -90,18 +86,33 @@ const LogisticFuelHome: React.FC = () => {
         })
         getPref(pref_token).then(r => {
             setToken(r);
-            getCountPo(r);
-        })
+        });
+
+        getCountPo();
+        getCountDo();
     }
 
-    const getCountPo = (token:any) => {
-        let data = PO(token, "list", "").then(result => {
+    const getCountPo = () => {
+        let data = PO("count_open", "").then(result => {
+            console.log(result);
+            if(result){
+                try {
+                    // @ts-ignore
+                    setCountPo(result.data);
+                } catch (error) {
+
+                }
+            }
+        });
+    }
+
+    const getCountDo = () => {
+        let data = DO("count_open", "").then(result => {
             // console.log(result);
             if(result){
                 try {
                     // @ts-ignore
-                    let data = result.filter((x: { [x: string]: { [x: string]: null; }; }) => (x['fuelStasiun'] !== null && x['vendor'] !== null && x['nomor'] !== null && x['status'] === 'PROPOSED'));
-                    setCountPo(data.length);
+                    setCountDo(result.data);
                 } catch (error) {
 
                 }
@@ -114,7 +125,7 @@ const LogisticFuelHome: React.FC = () => {
     };
 
     const menuFuel = () => {
-        history.push("/fuel/po");
+        history.push("/fuel/do-stok");
     };
 
     return (
@@ -171,7 +182,7 @@ const LogisticFuelHome: React.FC = () => {
                                 <img className="w-10 mr-2" src='assets/icon/fuel-non-unit-icon.png' />
                                 <span className="absolute inset-0 object-right-top -mr-6 mt-1">
                                   <div className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-semibold leading-4 bg-gray-900 text-white">
-                                    {countFuel}
+                                    {countDo}
                                   </div>
                                 </span>
                             </button>

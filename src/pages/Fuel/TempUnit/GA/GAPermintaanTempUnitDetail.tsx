@@ -18,18 +18,15 @@ import React, { useEffect, useState } from "react";
 import { defineCustomElements } from "@ionic/pwa-elements/loader";
 import {
     API_URI,
-    BASE_API_URL,
     pref_user_id,
     pref_identity,
     TEMP_UNIT_URI,
-    TEMP_UNIT_CREATE_URI,
     PEGAWAI_UNIT_CRUD_URI,
-    PEGAWAI_UNIT_APPROVED_URI,
     TEMP_UNIT_APPROVAL_URI,
-    PEGAWAI_UNIT_BY_USER_URI
+    PEGAWAI_UNIT_BY_USER_URI, IMAGE_FUEL_URI
 } from "../../../../constant/Index";
 import { useHistory, useLocation, useParams } from "react-router-dom";
-import { getPref } from "../../../../helper/preferences";
+import { getPref } from "../../../../helper/Preferences";
 import moment from 'moment';
 import { Camera, CameraResultType, CameraSource } from "@capacitor/camera";
 import UserCardWithUnit from "../../../Layout/UserCardWithUnit";
@@ -37,9 +34,10 @@ import { Capacitor } from "@capacitor/core";
 import { App } from "@capacitor/app";
 import SkeletonDetail from '../../../Layout/SkeletonDetail';
 import DetailHeader from "../../../../components/Header/DetailHeader";
+import {BaseAPI} from "../../../../api/ApiManager";
 
 //stuktur object dari backend untuk mempermudah maping
-const obj = { pegawai: { id: "", name: "", nik: "", foto: "" }, jenis: { id: "", name: "" }, vendor: { id: "", name: "" }, type: { id: "", name: "" }, spesifikasi: { id: "", name: "" }, entity: { id: "", name: "" }, no_poll: "", odometer: "", base64: "", odoImgFileName: "", status: "", dataFile: "", keterangans: "", daftarAlasan: [] }
+const obj = { pegawai: { id: "", name: "", nik: "", foto: "" }, jenis: { id: "", name: "" }, vendor: { id: "", name: "" }, type: { id: "", name: "" }, spesifikasi: { id: "", name: "" }, entity: { id: "", name: "" }, no_poll: "", odometer: "", sistemKerja:"", base64: "", odoImgFileName: "", status: "", dataFile: "", keterangans: "", daftarAlasan: [] }
 const pegUnit = { noPol: "", noLambung: "" }
 
 const GAPermintaanTempUnitDetail: React.FC = () => {
@@ -107,7 +105,7 @@ const GAPermintaanTempUnitDetail: React.FC = () => {
     };
 
     const loadData = (dataId: any) => {
-        const url = BASE_API_URL + API_URI + TEMP_UNIT_URI + "/" + dataId;
+        const url = BaseAPI() + API_URI + TEMP_UNIT_URI + "/" + dataId;
         fetch(url, {
             method: 'GET'
         })
@@ -124,6 +122,7 @@ const GAPermintaanTempUnitDetail: React.FC = () => {
                             spesifikasi: result['data']['spesifikasi'],
                             entity: result['data']['entity'],
                             no_poll: result['data']['no_poll'],
+                            sistemKerja: result['data']['sistemKerja'],
                             odometer: result['data']['odometer'],
                             base64: result['data']['base64'],
                             status: result['data']['status'],
@@ -155,7 +154,7 @@ const GAPermintaanTempUnitDetail: React.FC = () => {
     }
 
     const loadDataPegUnit = async (userId: string) => {
-        const url = BASE_API_URL + API_URI + PEGAWAI_UNIT_CRUD_URI + PEGAWAI_UNIT_BY_USER_URI + "/" + userId;
+        const url = BaseAPI() + API_URI + PEGAWAI_UNIT_CRUD_URI + PEGAWAI_UNIT_BY_USER_URI + "/" + userId;
         fetch(url, {
             method: 'GET'
         })
@@ -225,6 +224,7 @@ const GAPermintaanTempUnitDetail: React.FC = () => {
         if (allowToPush) {
             presentAlert({
                 subHeader: keterangan,
+                backdropDismiss: false,
                 buttons: [
                     {
                         text: 'Batal',
@@ -245,8 +245,9 @@ const GAPermintaanTempUnitDetail: React.FC = () => {
     const sendRequestApprovement = (status: any) => {
         const loading = present({
             message: 'Memproses ' + status === 'REJECTED' ? 'penolakan' : 'persetujuan' + ' ...',
+            backdropDismiss: false
         })
-        const url = BASE_API_URL + API_URI + TEMP_UNIT_URI + TEMP_UNIT_APPROVAL_URI;
+        const url = BaseAPI() + API_URI + TEMP_UNIT_URI + TEMP_UNIT_APPROVAL_URI;
         const data = { id: paramId, user: userId, keterangan: unit.keterangans, status: status } //user diambil dari pref
         fetch(url, {
             method: 'POST',
@@ -263,6 +264,7 @@ const GAPermintaanTempUnitDetail: React.FC = () => {
                         showConfirm({
                             //simpan unit id ke pref
                             subHeader: 'Tidak dapat memproses ' + status === 'REJECTED' ? 'penolakan!' : 'persetujuan!',
+                            backdropDismiss: false,
                             buttons: [
                                 {
                                     text: 'OK',
@@ -289,6 +291,7 @@ const GAPermintaanTempUnitDetail: React.FC = () => {
         dismiss();
         showConfirm({
             //simpan unit id ke pref
+            backdropDismiss: false,
             subHeader: '' + ("Berhasil memproses " + (status === "REJECTED" ? "Penolakan." : "Persetujuan.")) + '',
             buttons: [
                 {
@@ -322,11 +325,11 @@ const GAPermintaanTempUnitDetail: React.FC = () => {
                                 <UserCardWithUnit name={unit.pegawai['name']} nik={unit.pegawai['nik']} noLambung={pegawaiUnit != null ? pegawaiUnit['noLambung'] : ""} noPol={pegawaiUnit != null ? pegawaiUnit['noPol'] : ""} foto={unit.pegawai['foto']}></UserCardWithUnit>
 
                                 <div className="p-6 bg-white mt-4">
-                                    {unit.status !== "PROPOSED" &&
-                                        <div className={unit.status === "APPROVED" ? "float-right text-green-600 font-bold" : "float-right text-red-600 font-bold"}>
-                                            {unit.status}
-                                        </div>
-                                    }
+                                    {/*{unit.status !== "PROPOSED" &&*/}
+                                    {/*    <div className={unit.status === "APPROVED" ? "float-right text-green-600 font-bold" : "float-right text-red-600 font-bold"}>*/}
+                                    {/*        {unit.status}*/}
+                                    {/*    </div>*/}
+                                    {/*}*/}
                                     <div className="mt-4">
                                         <label className="block text-sm text-gray-400">
                                             No. Polisi
@@ -385,7 +388,7 @@ const GAPermintaanTempUnitDetail: React.FC = () => {
                                         <label htmlFor='odometer' className="block text-sm text-gray-400">
                                             Sistem Kerja
                                         </label>
-                                        sistemkerja
+                                        {unit.sistemKerja === "SHIFT" ? "Shift" : "Non Shift"}
                                     </div>
 
                                     <div className="mt-4">
@@ -406,7 +409,9 @@ const GAPermintaanTempUnitDetail: React.FC = () => {
                                         <label htmlFor='odometer' className="block text-sm text-gray-400">
                                             Foto Odometer
                                         </label>
-                                        <img src={`${unit.dataFile}`}></img>
+                                        <div className="group block rounded-lg aspect-auto bg-gray-100 overflow-hidden">
+                                            <img className="object-cover pointer-events-none" src={`${BaseAPI()}${API_URI}${IMAGE_FUEL_URI}${unit.odoImgFileName}`} ></img>
+                                        </div>
                                     </div>
 
                                     <div className="mt-4">
@@ -422,7 +427,7 @@ const GAPermintaanTempUnitDetail: React.FC = () => {
                                                             <label className="block text-sm text-gray-400">
                                                                 Oleh: {object['user']}
                                                             </label>
-                                                            {object['keterangan']}
+                                                            {object['keterangan'] != null ? object['keterangan'] : ""}
                                                         </div>
                                                     </div>
                                                 )}

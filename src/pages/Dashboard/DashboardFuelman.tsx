@@ -10,7 +10,7 @@ import { RefresherEventDetail } from '@ionic/core';
 import { useTranslation, initReactI18next } from "react-i18next";
 import "../../components/Translate";
 import {useHistory, useLocation} from "react-router-dom";
-import { getJsonPref, getPref } from "../../helper/preferences";
+import { getJsonPref, getPref } from "../../helper/Preferences";
 import { pref_json_pegawai_info_login, pref_unit, pref_user_role } from "../../constant/Index";
 import {Capacitor} from "@capacitor/core";
 import {App} from "@capacitor/app";

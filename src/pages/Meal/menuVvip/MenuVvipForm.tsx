@@ -111,8 +111,8 @@ const MenuVvipForm: React.FC = () => {
             <IonRefresherContent></IonRefresherContent>
           </IonRefresher>
             <div className="bg-red-700">
-                <ListHeader title="Pengajuan Menu Sehat"></ListHeader>
-                <div className="bg-white rounded-t-3xl px-2 pt-2 pb-6">
+                <ListHeader title="Pengajuan Menu VVIP"></ListHeader>
+                <div className="bg-white px-2 pt-2 pb-6">
                     <div className="container">
                         <label className="ml-3 text-lg">Jenis Tamu</label><br/>
                         <div className="mr-3 ml-3">

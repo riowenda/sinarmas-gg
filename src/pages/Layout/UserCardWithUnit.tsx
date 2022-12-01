@@ -1,4 +1,7 @@
 import React from "react";
+import {useTranslation} from "react-i18next";
+import {BaseAPI} from "../../api/ApiManager";
+import {API_URI, IMAGE_MD_URI} from "../../constant/Index";
 
 interface UserCardWithUnitProps {
     name: string,
@@ -11,6 +14,7 @@ interface UserCardWithUnitProps {
 }
 
 const UserCardWithUnit: React.FC<UserCardWithUnitProps> = ({ name, nik, noLambung, noPol, withUnit, foto, handleOnPress}) => {
+    const { t } = useTranslation();
     return (
         <>
             <div className="w-full">
@@ -19,7 +23,7 @@ const UserCardWithUnit: React.FC<UserCardWithUnitProps> = ({ name, nik, noLambun
                         {foto != null && foto !== "" ?
                             <img
                                 className="h-12 w-12 flex-shrink-0 rounded-full bg-gray-300"
-                                src={foto}
+                                src={!foto.toString().includes("https://") || !foto.toString().includes("http://") ? (BaseAPI()+API_URI+IMAGE_MD_URI+foto) : foto }
                                 alt=""
                             /> :
                             <img
@@ -41,10 +45,12 @@ const UserCardWithUnit: React.FC<UserCardWithUnitProps> = ({ name, nik, noLambun
                     <div
                         className="grid divide-gray-200 border-t border-gray-200 bg-gray-50 grid-cols-2 divide-y-0 divide-x shadow-md">
                         <div className="px-6 py-3 text-center text-sm font-medium">
-                            <span className="text-gray-600">{noLambung ? noLambung : "-"}</span>
+                            <span className="text-xs text-gray-400 mb-2">{t('unit.nomor_lambung')}</span><br/>
+                            <span className="text-gray-600 mb-2">{noLambung ? noLambung : "-"}</span><br/>
                         </div>
                         <div className="px-6 py-3 text-center text-sm font-medium">
-                            <span className="text-gray-600">{noPol ? noPol : "-"}</span>
+                            <span className="text-xs text-gray-400 mb-2">{t('unit.nomor_polisi')}</span><br/>
+                            <span className="text-gray-600 mb-2">{noPol ? noPol : "-"}</span><br/>
                         </div>
                     </div>
                 }

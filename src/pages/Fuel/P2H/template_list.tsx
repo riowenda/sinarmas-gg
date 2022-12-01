@@ -76,16 +76,11 @@ import {
 import React, { useCallback, useEffect, useState } from "react";
 import {
     API_URI,
-    AUTH_URI,
-    BASE_API_URL,
-    LOGIN_ISAFE_URI,
-    LOGIN_URI, P2H_LIST_GA_URI,
-    P2H_LIST_USER_URI, pref_identity, pref_user_id, UNIT_CRUD_URI,
-    UNIT_LIST_URI, UNIT_VIEWS_URI
+    P2H_LIST_USER_URI, pref_identity, pref_user_id
 } from "../../../constant/Index";
-import axios from "axios";
 import { useHistory } from "react-router-dom";
-import { getPref } from "../../../helper/preferences";
+import { getPref } from "../../../helper/Preferences";
+import {BaseAPI} from "../../../api/ApiManager";
 
 
 
@@ -111,7 +106,7 @@ const P2HList: React.FC = () => {
     }
     const loadData = (res: any) => {
         console.log("ini: ", res)
-        const url = BASE_API_URL + API_URI + P2H_LIST_USER_URI + "/" + res;
+        const url = BaseAPI() + API_URI + P2H_LIST_USER_URI + "/" + res;
         console.log("url: ", url)
         fetch(url, {
             method: 'GET'

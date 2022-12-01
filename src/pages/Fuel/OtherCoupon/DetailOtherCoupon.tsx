@@ -13,14 +13,10 @@ import {
 
 import './FormOtherCoupon.css';
 import { RefresherEventDetail } from '@ionic/core';
-import { useTranslation, initReactI18next } from "react-i18next";
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import ActionSheet from "actionsheet-react";
+import { useTranslation } from "react-i18next";
+import React, { useRef, useState } from "react";
 import {
     API_URI,
-    BASE_API_URL,
-    FUEL_REQ_UNIT_APPROVAL_URI,
-    FUEL_REQ_UNIT_URI,
     OTHER_COUPON_APPROVAL_URI,
     OTHER_COUPON_URI,
     pref_identity,
@@ -28,17 +24,17 @@ import {
     pref_pegawai_id,
     pref_unit,
 } from "../../../constant/Index";
-import { useHistory, useLocation, useParams } from "react-router-dom";
-import { getJsonPref, getPref } from "../../../helper/preferences";
+import { useHistory, useLocation } from "react-router-dom";
+import { getJsonPref, getPref } from "../../../helper/Preferences";
 import moment from "moment";
 import SVGStopCloseCheckCircle from "../../Layout/SVGStopCloseCheckCircle";
 import SkeletonDetail from '../../Layout/SkeletonDetail';
 import DetailHeader from "../../../components/Header/DetailHeader";
+import {BaseAPI} from "../../../api/ApiManager";
 
 const userInfo = { name: "", nik: "", imageUrl: "" }
 const userUnit = { id: "", noPol: "", noLambung: "", vendor: { name: "" }, jenisUnit: { name: "" } };
 const FormRequestFuel: React.FC = () => {
-    const [getId, setGetId] = useState<string>();
     const [identity, setIdentity] = useState("");
     const history = useHistory();
     const [user, setUser] = useState(userInfo);
@@ -120,8 +116,8 @@ const FormRequestFuel: React.FC = () => {
 
     const loadDetail = (id: any) => {
         // @ts-ignore
-        const urlContents = BASE_API_URL + API_URI + OTHER_COUPON_URI + "/" + id;
-        //const url = BASE_API_URL + API_URI + P2H_ITEM_URI;
+        const urlContents = BaseAPI() + API_URI + OTHER_COUPON_URI + "/" + id;
+        //const url = BaseAPI() + API_URI + P2H_ITEM_URI;
         // console.log("URL: " + urlContents);
 
         fetch(urlContents, {
@@ -169,6 +165,7 @@ const FormRequestFuel: React.FC = () => {
     const btnBatal = () => {
         presentAlert({
             subHeader: 'Anda yakin untuk membatalkan Permintaan Bahan Bakar Non Unit ini?',
+            backdropDismiss: false,
             buttons: [
                 {
                     text: 'Tidak',
@@ -188,8 +185,9 @@ const FormRequestFuel: React.FC = () => {
     const sendRequest = () => {
         const loading = present({
             message: 'Memproses pembatalan ...',
+            backdropDismiss: false
         })
-        const url = BASE_API_URL + API_URI + OTHER_COUPON_URI + OTHER_COUPON_APPROVAL_URI;
+        const url = BaseAPI() + API_URI + OTHER_COUPON_URI + OTHER_COUPON_APPROVAL_URI;
         const data = { otherKupon: { id: sendId }, status: "CANCELED", approveType: "USER", komentar: null, tanggal: (new Date()), pegawai: { id: pegId } } //user diambil dari pref
         fetch(url, {
             method: 'POST',
@@ -204,6 +202,7 @@ const FormRequestFuel: React.FC = () => {
                         showConfirm({
                             //simpan unit id ke pref
                             subHeader: "Pembatalan Permintaan Bahan Bakar Non Unit berhasil!",
+                            backdropDismiss: false,
                             buttons: [
                                 {
                                     text: 'OK',
@@ -259,6 +258,24 @@ const FormRequestFuel: React.FC = () => {
                                         </label>
                                         <div>
                                             {reqFuel != null ? moment(reqFuel["tanggalPermintaan"]).format('DD MMM yyyy').toString() : "-"}
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-4">
+                                        <label className="block text-sm text-gray-400">
+                                            No. Permintaan
+                                        </label>
+                                        <div>
+                                            {reqFuel != null ? reqFuel['nomor'] : "-"}
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-4">
+                                        <label className="block text-sm text-gray-400">
+                                            Permintaan Untuk
+                                        </label>
+                                        <div>
+                                            {reqFuel != null ? reqFuel['tujuan']['nama'] : "-"}
                                         </div>
                                     </div>
 

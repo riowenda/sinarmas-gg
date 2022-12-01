@@ -19,18 +19,17 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import ActionSheet from "actionsheet-react";
 import {
     API_URI,
-    BASE_API_URL,
     FUEL_REQ_UNIT_APPROVAL_URI,
     FUEL_REQ_UNIT_CONFIRMATION_URI,
     FUEL_REQ_UNIT_FORGIVENES_URI,
-    FUEL_REQ_UNIT_URI,
+    FUEL_REQ_UNIT_URI, IMAGE_FUEL_URI,
     pref_identity,
     pref_json_pegawai_info_login,
     pref_pegawai_id, pref_token,
     pref_unit,
 } from "../../../../constant/Index";
 import { useHistory, useLocation, useParams } from "react-router-dom";
-import { getJsonPref, getPref } from "../../../../helper/preferences";
+import { getJsonPref, getPref } from "../../../../helper/Preferences";
 import QRCodeWithCountDown from "../../../../components/QRCodeWithCountDown/QRCodeWithCountDown";
 import moment from "moment";
 import SVGStopCloseCheckCircle from "../../../Layout/SVGStopCloseCheckCircle";
@@ -40,6 +39,9 @@ import {Camera, CameraResultType, CameraSource} from "@capacitor/camera";
 import TextareaExpand from "react-expanding-textarea";
 import DetailHeader from "../../../../components/Header/DetailHeader";
 import {FuelStationAvailableListAPI, FuelStationListModalAPI} from "../../../../api/MDForFuel/FuelStation";
+import {privacyDisable, privacyEnable} from "../../../../helper/PrivacyScreenConf";
+import {encode} from "string-encode-decode";
+import {BaseAPI} from "../../../../api/ApiManager";
 
 const userInfo = { name: "", nik: "", imageUrl: "" }
 const userUnit = { id: "", noPol: "", noLambung: "", vendor: { name: "" }, jenisUnit: { name: "" } };
@@ -65,21 +67,28 @@ const RequestFuel: React.FC = () => {
     const [realStatus, setRealStatus] = useState("");
     const [kupon, setKupon] = useState(sendObj);
     const [alasanAmpunan, setAlasanAmpunan] = useState(null);
-    const [komentarAmpunan, setKomentarAmpunan] = useState(null);
+    const [komentarAmpunan, setKomentarAmpunan] = useState<any>();
     const [fuelStation, setFuelStation] = useState([]);
-
-    const times = new Date();
-    // @ts-ignore
-    times.setTime(times.getTime()+(5 * 60000));
-
-    const [expiryTimestamp, setExpiryTimestamp] = useState<any>(times);//
-    const { seconds, minutes, hours, days, isRunning, start, pause, resume, restart } = useTimer({ expiryTimestamp, onExpire: () => {
-        setAmpunan(true); // @ts-ignore
-        setReqFuel({ ...reqFuel, status:"ONHOLD" });
-    } } );
-
+    const [showCounter, setShowCounter] = useState(false);
     const { t } = useTranslation();
-    const location = useLocation();
+
+    const now = new Date();
+    // @ts-ignore
+    now.setTime(now.getTime()+(0 * 60000));
+
+    const [expiryTimestamp, setExpiryTimestamp] = useState<any>(now);//
+    const {seconds, minutes, hours, days, isRunning, start, pause, resume, restart} = useTimer({ expiryTimestamp, onExpire: () => {  console.log("habis") }});
+
+
+
+    const resetTimer = ()=> {
+        console.log("reset")
+        const now = new Date();
+        // @ts-ignore
+        const time = now.setTime(now.getTime() + (timer * 60000));
+        // @ts-ignore
+        restart(time);
+    }
 
     /* BEGIN LIFECYCLE APPS */
 
@@ -99,6 +108,7 @@ const RequestFuel: React.FC = () => {
     /* Proses animasi akan dimulai saat akan meninggalkan halaman
     disini cocok untuk melakukan clean up atau sebagainya yang sesuai kebutuhan */
     useIonViewWillLeave(() => {
+        privacyDisable().then(r => r);
         setIsLoaded(false);
     });
 
@@ -128,12 +138,14 @@ const RequestFuel: React.FC = () => {
         getPref(pref_pegawai_id).then(res => {
             setPegId(res);
         });
-        getPref(pref_identity).then(res => {
-            setIdentity(res);
-        });
+
         getPref(pref_token).then(res => {
             setToken(res);
-            loadStation(res);
+            getPref(pref_identity).then(i => {
+                setIdentity(i);
+                loadStation();
+            });
+
 
             // @ts-ignore
             const dataId = history.location.state.detail;
@@ -149,9 +161,7 @@ const RequestFuel: React.FC = () => {
 
     const loadDetail = (id: any, token: any) => {
         // @ts-ignore
-        const urlContents = BASE_API_URL + API_URI + FUEL_REQ_UNIT_URI + "/" + id;
-        //const url = BASE_API_URL + API_URI + P2H_ITEM_URI;
-        // console.log("URL: " + urlContents);
+        const urlContents = BaseAPI() + API_URI + FUEL_REQ_UNIT_URI + "/" + id;
 
         fetch(urlContents, {
             method: 'GET',
@@ -185,6 +195,44 @@ const RequestFuel: React.FC = () => {
                         // @ts-ignore
                         let close = riwayats.filter((x: { [x: string]: { [x: string]: null; }; }) => x['status'] == 'CLOSED');
                         setKomentarAmpunan(close.length > 0 ? close[0] : null);
+
+                        if(result.data.status === 'FILLED'){
+                            // @ts-ignore
+                            let filleds = riwayats.filter((x: { [x: string]: { [x: string]: null; }; }) => x['status'] == 'FILLED');
+                            // @ts-ignore
+                            let filledsSort = filleds.map((obj: { tanggal: string; }) => {return {...obj, date: new Date(obj.tanggal)}}).sort((a: { date: Date; }, b: { date: Date; }) => b.date - a.date);
+                            // console.log(JSON.stringify(filledsSort));
+                            let timeFilled = filledsSort[0]['tanggal'];
+                            const timeFilledFuel = new Date(timeFilled);
+                            console.log(timeFilledFuel);
+                            console.log(timeFilledFuel.setTime(timeFilledFuel.getTime()));
+                            const tff5 = timeFilledFuel.setTime(timeFilledFuel.getTime()+(5*60000));
+                            // @ts-ignore
+
+                            const timeReal = new Date();
+                            const tr = timeReal.getTime();
+                            console.log(tff5);//fuelman waktu isi + 5 menit
+                            console.log(tr); //waktu user untuk confirm + 5 menit
+                            // times.setTime(times.getTime()+(5 * 60000));
+                            if(tff5 > tr){//cek apakah waktu pengisian + 5 menit sudah terlewati ?
+                                console.log("belum");
+                                const tn = new Date();
+                                const t = tn.getTime();
+                                // @ts-ignore
+                                restart(t+(tff5-tr));
+                                setShowCounter(true);
+                            } else {
+                                console.log("sudah")
+                                setShowCounter(false);
+                            }
+
+                        }
+
+                        if(result.data.status === "READY"){
+                            privacyEnable().then(r => r);
+                        } else {
+                            privacyDisable().then(r => r);
+                        }
                     }
                     setIsLoaded(true);
                 },
@@ -195,8 +243,8 @@ const RequestFuel: React.FC = () => {
             );
     }
 
-    const loadStation = (token : any) => {
-        FuelStationAvailableListAPI(token).then((res) => {
+    const loadStation = () => {
+        FuelStationAvailableListAPI().then((res) => {
             setFuelStation(res.data);
         });
     }
@@ -250,15 +298,26 @@ const RequestFuel: React.FC = () => {
                 valid = false;
                 msg = "Foto odometer wajib dilampirkan!";
             }
+            // @ts-ignore
+            if(kupon.odometer == null || kupon.odometer === ""){
+                valid = false;
+                msg = "Odometer wajib diisi";
+            }
         } else {
             if(kupon.alasan == null || kupon.alasan === "" || kupon.alasan.length < 20){
                 valid = false;
                 msg = "Alasan wajib diisi!";
             }
+            // @ts-ignore
+            if(kupon.odometer == null || kupon.odometer === ""){
+                valid = false;
+                msg = "Odometer wajib diisi";
+            }
         }
         if(valid) {
             presentAlert({
                 subHeader: 'Anda yakin untuk mengajukan ampunan ini?',
+                backdropDismiss: false,
                 buttons: [
                     {
                         text: 'Tidak',
@@ -284,6 +343,7 @@ const RequestFuel: React.FC = () => {
     const sendAjukan = () => {
         const loading = present({
             message: 'Memproses pengajuan ampunan ...',
+            backdropDismiss: false
         })
         if(realStatus === "FILLED"){
             sendConfirmation("CLOSED","selesai");
@@ -295,14 +355,12 @@ const RequestFuel: React.FC = () => {
     }
 
     const pengajuan = () => {
-        const urlContents = BASE_API_URL + API_URI + FUEL_REQ_UNIT_URI + FUEL_REQ_UNIT_FORGIVENES_URI;
-        //const url = BASE_API_URL + API_URI + P2H_ITEM_URI;
-        // console.log("URL: " + urlContents);
+        const urlContents = BaseAPI() + API_URI + FUEL_REQ_UNIT_URI + FUEL_REQ_UNIT_FORGIVENES_URI;
         const data = {id:sendId, alasan:kupon.alasan}
 
         fetch(urlContents, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Identity': identity ? identity :''},
+            headers: { 'Content-Type': 'application/json', 'Identity': identity ? identity :'', 'Authorization' : `Bearer ${token}`},
             body: JSON.stringify(data)
         })
             .then(res => res.json())
@@ -311,6 +369,7 @@ const RequestFuel: React.FC = () => {
                     showConfirm({
                         //simpan unit id ke pref
                         subHeader: "Pengajuan ampunan berhasil dikirim!",
+                        backdropDismiss: false,
                         buttons: [
                             {
                                 text: 'OK',
@@ -336,22 +395,50 @@ const RequestFuel: React.FC = () => {
     const btnSelesai = (e : any) => {
         e.preventDefault();
         if(photo != null ) {
-            presentAlert({
-                subHeader: 'Anda yakin untuk menyelesaikan permintaan ini?',
-                buttons: [
-                    {
-                        text: 'Tidak',
-                        cssClass: 'alert-button-cancel',
-                    },
-                    {
-                        text: 'Ya',
-                        cssClass: 'alert-button-confirm',
-                        handler: () => {
-                            sendConfirmation("CLOSED","selesai");
-                        }
-                    },
-                ],
-            })
+            let odo = true;
+            let keterangan = "";
+            // @ts-ignore
+            let odoMinta = reqFuel['odometerPermintaan'];
+            // @ts-ignore
+            if(kupon.odometer != null && kupon.odometer !== ""){
+                if(Number(kupon.odometer) < Number(odoMinta)){
+                    odo = false;
+                    keterangan = "Odometer saat pengisian tidak boleh dibawah odometer saat permintaan";
+                }
+                if(kupon.odometer == 0){
+                    odo = false;
+                    keterangan = "Odometer tidak boleh 0!";
+                }
+            } else {
+                odo = false;
+                keterangan = "Odometer wajib diisi!";
+            }
+
+            if(odo){
+                presentAlert({
+                    subHeader: 'Anda yakin untuk menyelesaikan permintaan ini?',
+                    backdropDismiss: false,
+                    buttons: [
+                        {
+                            text: 'Tidak',
+                            cssClass: 'alert-button-cancel',
+                        },
+                        {
+                            text: 'Ya',
+                            cssClass: 'alert-button-confirm',
+                            handler: () => {
+                                sendConfirmation("CLOSED","selesai");
+                            }
+                        },
+                    ],
+                })
+            } else {
+                toast( {
+                        message: keterangan, duration: 1500, position: "top"
+                    }
+                );
+            }
+
         } else {
             toast( {
                     message: "Foto odometer wajib dilampirkan!", duration: 1500, position: "top"
@@ -363,22 +450,31 @@ const RequestFuel: React.FC = () => {
     const btnPerbaikan = (e : any) => {
         e.preventDefault();
         if(photo != null) {
-            presentAlert({
-                subHeader: 'Anda yakin untuk meminta perbaikan jumlah fuel?',
-                buttons: [
-                    {
-                        text: 'Tidak',
-                        cssClass: 'alert-button-cancel',
-                    },
-                    {
-                        text: 'Ya',
-                        cssClass: 'alert-button-confirm',
-                        handler: () => {
-                            sendConfirmation("REFILL","perbaikan");
-                        }
-                    },
-                ],
-            })
+            // @ts-ignore
+            if(kupon.odometer != null && kupon.odometer !== ""){
+                presentAlert({
+                    subHeader: 'Anda yakin untuk meminta perbaikan jumlah fuel?',
+                    backdropDismiss: false,
+                    buttons: [
+                        {
+                            text: 'Tidak',
+                            cssClass: 'alert-button-cancel',
+                        },
+                        {
+                            text: 'Ya',
+                            cssClass: 'alert-button-confirm',
+                            handler: () => {
+                                sendConfirmation("REFILL","perbaikan");
+                            }
+                        },
+                    ],
+                })
+            } else {
+                toast( {
+                        message: "Odometer wajib diisi!", duration: 1500, position: "top"
+                    }
+                );
+            }
         } else {
             toast( {
                     message: "Foto odometer wajib dilampirkan!", duration: 1500, position: "top"
@@ -388,17 +484,17 @@ const RequestFuel: React.FC = () => {
     }
 
     const sendConfirmation = (status : any, tipe: any) => {
-        const urlContents = BASE_API_URL + API_URI + FUEL_REQ_UNIT_URI + FUEL_REQ_UNIT_CONFIRMATION_URI;
-        //const url = BASE_API_URL + API_URI + P2H_ITEM_URI;
-        // console.log("URL: " + urlContents);
-        const data = {id:sendId, status:status, img:kupon.img, filename:kupon.filename, alasan:""}
+        const urlContents = BaseAPI() + API_URI + FUEL_REQ_UNIT_URI + FUEL_REQ_UNIT_CONFIRMATION_URI;
+
+        const data = {id:sendId, status:status, img:kupon.img, filename:kupon.filename, alasan:"", odometer:kupon.odometer}
         let msg = tipe === "perbaikan" ? "Pengajuan perbaikan" : "Penyelesaian permintaan";
         const loading = present({
             message: 'Memproses '+msg+" ...",
+            backdropDismiss: false
         })
         fetch(urlContents, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Identity': identity ? identity :''},
+            headers: { 'Content-Type': 'application/json', 'Authorization' : `Bearer ${token}`, 'Identity': identity ? identity :''},
             body: JSON.stringify(data)
         })
             .then(res => res.json())
@@ -409,6 +505,7 @@ const RequestFuel: React.FC = () => {
                         showConfirm({
                             //simpan unit id ke pref
                             subHeader: ""+msg+" berhasil dikirim!",
+                            backdropDismiss: false,
                             buttons: [
                                 {
                                     text: 'OK',
@@ -437,6 +534,7 @@ const RequestFuel: React.FC = () => {
     const btnBatal = () => {
         presentAlert({
             subHeader: 'Anda yakin untuk membatalkan Permintaan Bahan Bakar Unit ini?',
+            backdropDismiss: false,
             buttons: [
                 {
                     text: 'Tidak',
@@ -456,12 +554,13 @@ const RequestFuel: React.FC = () => {
     const sendRequest = () => {
         const loading = present({
             message: 'Memproses pembatalan ...',
+            backdropDismiss: false
         })
-        const url = BASE_API_URL + API_URI + FUEL_REQ_UNIT_URI + FUEL_REQ_UNIT_APPROVAL_URI;
+        const url = BaseAPI() + API_URI + FUEL_REQ_UNIT_URI + FUEL_REQ_UNIT_APPROVAL_URI;
         const data = { kupon: { id: sendId }, status: "CANCELED", approveType: "USER", komentar: null, tanggal: (new Date()), pegawai: { id: pegId } } //user diambil dari pref
         fetch(url, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Identity': identity ? identity : '' },
+            headers: { 'Content-Type': 'application/json', 'Authorization' : `Bearer ${token}`, 'Identity': identity ? identity : '' },
             body: JSON.stringify(data)
         })
             .then(res => res.json())
@@ -472,6 +571,7 @@ const RequestFuel: React.FC = () => {
                         showConfirm({
                             //simpan unit id ke pref
                             subHeader: "Pembatalan Permintaan Bahan Bakar Unit berhasil!",
+                            backdropDismiss: false,
                             buttons: [
                                 {
                                     text: 'OK',
@@ -586,7 +686,7 @@ const RequestFuel: React.FC = () => {
                                         <>
                                         <div className="mt-4">
                                             <label className="block text-sm text-gray-400">
-                                                Odometer sebelum permintaan
+                                                Odometer pengisian sebelumnya
                                             </label>
                                             <div>
                                                 {reqFuel != null ? reqFuel["odometerPengisianSebelumnya"] : "N/A"} Km
@@ -613,6 +713,16 @@ const RequestFuel: React.FC = () => {
                                             </div>
                                         </div>
                                     }
+                                    {(reqFuel != null && reqFuel["odometerPengisian"] != null && (reqFuel["status"] === "FORGIVENESS" || reqFuel["status"] === "CLOSED" )) &&
+                                        <div className="mt-4">
+                                            <label className="block text-sm text-gray-400">
+                                                Odometer saat pengisian
+                                            </label>
+                                            <div>
+                                                {reqFuel != null ? reqFuel["odometerPengisian"] : "N/A"} Km
+                                            </div>
+                                        </div>
+                                    }
 
                                     {(reqFuel != null && (reqFuel["status"] === "READY")) &&
                                         <div className="mt-4">
@@ -629,7 +739,7 @@ const RequestFuel: React.FC = () => {
                                         </div>
                                     }
 
-                                    {(reqFuel != null && (ampunan || reqFuel["status"] === "FILLED" || reqFuel["status"] === "REFILL")) &&
+                                    {(reqFuel != null && (ampunan || reqFuel["status"] === "FILLED")) &&
                                         <>
                                             {(reqFuel != null && reqFuel["status"] === "FILLED") &&
                                                 <div className="pt-3" style={{textAlign: 'center'}}>
@@ -646,8 +756,7 @@ const RequestFuel: React.FC = () => {
                                                     <>
                                                         <div
                                                             className="group block rounded-lg aspect-auto bg-gray-100 overflow-hidden">
-                                                            <img className="object-cover pointer-events-none"
-                                                                 src={`${reqFuel["pengisianDataImg"]}`}></img>
+                                                            <img className="object-cover pointer-events-none" src={`${BaseAPI()}${API_URI}${IMAGE_FUEL_URI}${reqFuel['odometerPengisianImg']}`} ></img>
                                                         </div>
                                                     </>
                                                     :
@@ -722,10 +831,16 @@ const RequestFuel: React.FC = () => {
                                             <div className='font-bold'> {alasanAmpunan != null ? alasanAmpunan["status"] : ""} </div>
                                             <div className='italic pl-3'> {alasanAmpunan != null ? alasanAmpunan["komentar"] : ""} </div>
                                         </div>
-                                        <div hidden={komentarAmpunan == null ? true : false}>
-                                            <div className='font-bold'> {komentarAmpunan != null ? "["+komentarAmpunan["pegawai"]["name"]+"] "+komentarAmpunan["status"] : ""} </div>
-                                            <div className='italic pl-3'> {komentarAmpunan != null ? komentarAmpunan["komentar"] : ""} </div>
-                                        </div>
+                                        {komentarAmpunan != null &&
+                                            <div hidden={komentarAmpunan == null ? true : false}>
+                                                {komentarAmpunan['pegawai'] != null &&
+                                                    <div
+                                                        className='font-bold'>{ "["+komentarAmpunan["pegawai"]["name"]+ "] " + komentarAmpunan["status"] } </div>
+                                                }
+                                                <div
+                                                    className='italic pl-3'> {komentarAmpunan != null ? komentarAmpunan["komentar"] : ""} </div>
+                                            </div>
+                                        }
                                     </div>
                                 </div>
                             </div>

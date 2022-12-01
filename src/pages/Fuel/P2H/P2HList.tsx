@@ -10,24 +10,17 @@ import {
 
 import './P2HList.css';
 import { RefresherEventDetail } from '@ionic/core';
-import { useTranslation, initReactI18next } from "react-i18next";
-import React, { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import React, { useState } from "react";
 import {
-    API_URI,
-    AUTH_URI,
-    BASE_API_URL,
-    LOGIN_ISAFE_URI,
-    LOGIN_URI, P2H_LIST_GA_URI,
-    P2H_LIST_USER_URI, pref_identity, pref_unit, pref_user_id, UNIT_CRUD_URI,
-    UNIT_LIST_URI, UNIT_VIEWS_URI
+    API_URI, P2H_LIST_USER_URI, pref_identity, pref_unit, pref_user_id,
 } from "../../../constant/Index";
-import axios from "axios";
 import {useHistory, useLocation} from "react-router-dom";
-import { getPref } from "../../../helper/preferences";
+import {getJsonPref, getPref} from "../../../helper/Preferences";
 import moment from "moment";
-import HeaderUser from "../../Dashboard/HeaderUser";
-import {Capacitor} from "@capacitor/core";
-import {App} from "@capacitor/app";
+import PStatus from "../PO/components/PStatus";
+import ListHeader from "../../../components/Header/ListHeader";
+import {BaseAPI} from "../../../api/ApiManager";
 
 const P2HList: React.FC = () => {
     const [userId, setUserId] = useState();
@@ -78,14 +71,14 @@ const P2HList: React.FC = () => {
             setIdentity(res);
             loadData(res);
         });
-        getPref(pref_unit).then(res => {
+        getJsonPref(pref_unit).then(res => {
             setUnit(res);
         });
 
     }
     const loadData = (res: any) => {
         console.log("ini: ", res)
-        const url = BASE_API_URL + API_URI + P2H_LIST_USER_URI + "/" + res;
+        const url = BaseAPI() + API_URI + P2H_LIST_USER_URI + "/" + res;
         console.log("url: ", url)
         fetch(url, {
             method: 'GET',
@@ -150,90 +143,99 @@ const P2HList: React.FC = () => {
 
     return (
         <IonPage>
-
+            <ListHeader title={t('header.daftar_p2h')} isReplace={false} link={"/fuel/p2h/p2hinput"} addButton={true} />
+            <div className="top-0 z-10 bg-red-700 ">
+                <div className="pb-3 px-1 bg-red-700">
+                    <div className='px-4'>
+                        <div className='rounded-lg bg-white p-2'>
+                            <div className='grid divide-gray-200 grid-cols-3 divide-x py-2'>
+                                <div className='px-2'>
+                                    <div className='text-xs text-gray-400'>
+                                        No. Lambung
+                                    </div>
+                                    <div className='text-sm font-bold'>
+                                        {unit != null && unit['noLambung'] != null ? unit['noLambung'] : "N/A"}
+                                    </div>
+                                </div>
+                                <div className='px-2'>
+                                    <div className='text-xs text-gray-400'>
+                                        No. Polisi
+                                    </div>
+                                    <div className='text-sm font-bold'>
+                                        {unit != null && unit['noPol'] != null ? unit['noPol'] : "N/A"}
+                                    </div>
+                                </div>
+                                <div className='px-2'>
+                                    <div className='text-xs text-gray-400'>
+                                        Tipe
+                                    </div>
+                                    <div className='text-sm font-bold'>
+                                        {unit != null && unit['jenisUnit'] != null ? unit['jenisUnit']['name'] : "N/A"}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className='px-2 text-xs'>
+                                {unit != null && unit['vendor'] != null ? unit['vendor']['name'] : "N/A"}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <IonContent fullscreen>
                 <IonRefresher slot="fixed" onIonRefresh={doRefresh}>
                     <IonRefresherContent></IonRefresherContent>
                 </IonRefresher>
+                <div className="bg-red-700 ">
 
-
-                <div className="bg-red-700">
-                    <HeaderUser link={"/fuel/homepage"} />
-                    <div className="bg-white rounded-t-3xl p-2 ">
-
-                        <div className="px-4 py-4">
-
-                            <div className="flex pb-4 justify-between">
-                                <h3 className="font-bold py-2">Daftar P2H</h3>
-                                <button onClick={btnInput} className="text-sm font-bold py-2 text-red-700">Tambah baru</button>
-                            </div>
-                            {isLoaded ?
-                                <>
-                                    {
-                                        items.map((p2h, index) => {
-                                            return (
-                                                <div onClick={() => btnPilih(p2h['id'])} key={p2h['id']} className="rounded-lg py-1 mb-3 border border-1 border-gray-200">
-                                                    <div className="px-2 py-2">
-                                                        <div className="relative flex space-x-3">
-                                                            <div>
-                                                            <span className="h-5 w-5 rounded-full bg-blue-500 flex items-center justify-center ">
-                                                                <svg className="h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
-                                                                </svg>
-                                                            </span>
-                                                            </div>
-                                                            <div className="flex min-w-0 flex-1 justify-between space-x-4">
-                                                                <div>
-                                                                    <p className="text-base font-bold text-gray-900">{p2h['unit']['noPol']} - {p2h['unit']['noLambung']}</p>
-                                                                    <p className="text-sm text-gray-900">{p2h['unit']['jenisUnit']['name']} - {p2h['unit']['tipeUnit']['name']}</p>
-                                                                    <p className="text-sm text-gray-900">{p2h['unit']['vendor']['name']}</p>
-                                                                </div>
-                                                                <div className="whitespace-nowrap text-center text-sm text-gray-500">
-
-                                                                    <p className="text-sm text-gray-900">{moment(p2h['tanggal']).format('DD MMM yyyy').toString()}</p>
-                                                                    {p2h['status'] === 'PROPOSED' &&
-                                                                        <span className="text-blue-600 font-bold">{p2h['status']}</span>
-                                                                    }
-                                                                    {p2h['status'] === 'REJECTED' &&
-                                                                        <span className="text-red-600 font-bold">{p2h['status']}</span>
-                                                                    }
-                                                                    {p2h['status'] === 'APPROVED' &&
-                                                                        <span className="text-green-600 font-bold">{p2h['status']}</span>
-                                                                    }
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )
-                                        })
-                                    }
-                                </> :
-                                <>
-                                    {
-                                        skeleton.map((index) => {
-                                            return (
-                                                <div
-                                                    className="px-4 py-2 my-2 rounded-lg border border-1 border-gray-300">
+                    <div className="bg-white">
+                        <div className="px-3 pt-3">
+                        {isLoaded ?
+                            <>
+                                {
+                                    items.map((p2h, index) => {
+                                        return (
+                                            <div onClick={() => btnPilih(p2h['id'])} key={p2h['id']} className="px-4 py-4 my-2 rounded-lg border border-1 border-gray-300">
+                                                <div>
                                                     <div>
                                                         <div className="flex justify-between">
-                                                            <IonSkeletonText animated style={{ width: '20%' }} />
-                                                            <IonSkeletonText animated style={{ width: '30%' }} />
+                                                            <p className="font-bold text-gray-900">{p2h['unit']['noPol']} - {p2h['unit']['noLambung']}</p>
+                                                            <p className="text-sm text-gray-900">{moment(p2h['tanggal']).format('DD MMM yyyy').toString()}</p>
                                                         </div>
                                                         <div className="flex justify-between">
-                                                            <IonSkeletonText animated style={{ width: '40%' }} />
+                                                            <p className="text-sm text-gray-900">{p2h['unit']['jenisUnit']['name']} - {p2h['unit']['tipeUnit']['name']}</p>
+                                                            <PStatus title={p2h['status']} status={p2h['status']}/>
                                                         </div>
-                                                        <IonSkeletonText animated style={{ width: '60%' }} />
                                                     </div>
+                                                    <div><p className="text-sm text-gray-900">{p2h['unit']['vendor']['name']}</p></div>
                                                 </div>
-                                            )
-                                        })
-                                    }
-                                </>
-                            }
+                                            </div>
+                                        )
+                                    })
+                                }
+                            </> :
+                            <>
+                                {
+                                    skeleton.map((index) => {
+                                        return (
+                                            <div
+                                                className="px-4 py-2 my-2 rounded-lg border border-1 border-gray-300">
+                                                <div>
+                                                    <div className="flex justify-between">
+                                                        <IonSkeletonText animated style={{ width: '20%' }} />
+                                                        <IonSkeletonText animated style={{ width: '30%' }} />
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <IonSkeletonText animated style={{ width: '40%' }} />
+                                                    </div>
+                                                    <IonSkeletonText animated style={{ width: '60%' }} />
+                                                </div>
+                                            </div>
+                                        )
+                                    })
+                                }
+                            </>
+                        }
                         </div>
-
-
                     </div>
                 </div>
             </IonContent>

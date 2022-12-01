@@ -83,10 +83,10 @@ const P2HDashboard: React.FC = () => {
                                 <div>
                                     <div className="-mt-px flex divide-x divide-gray-200">
                                         <div className="flex w-0 flex-1 text-wrap p-2 text-sm">
-                                            Sedang perjalanan dinas ke BIB site
+                                            {t('beranda.sedang_perjalanan_dinas_BIB')}
                                         </div>
                                         <div className="flex text-center p-2 text-sm">
-                                            Masuk Kerja
+                                            {t('beranda.masuk')}
                                         </div>
                                     </div>
                                 </div>

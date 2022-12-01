@@ -1,14 +1,10 @@
 import ApiManager from "../ApiManager"
 
 
-export const GaCareKategoriAPI = async (token: string) => {
+export const GaCareKategoriAPI = async () => {
     try {
-        const result = await ApiManager('/api/gacare/kategoris', {
-            method: "GET",
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`
-            }
+        const result = await ApiManager('/api/gacare/kategoris/list-tree', {
+            method: "GET"
         })
 
         return result.data
@@ -17,7 +13,7 @@ export const GaCareKategoriAPI = async (token: string) => {
     }
 }
 
-export const GaCareKategoriUpdateAPI = async (identity: string, token: string, data: {
+export const GaCareKategoriUpdateAPI = async (data: {
     id: number,
     parent: string,
     name: string,
@@ -26,11 +22,6 @@ export const GaCareKategoriUpdateAPI = async (identity: string, token: string, d
     try {
         const result = await ApiManager('/api/gacare/kategoris/update', {
             method: "PUT",
-            headers: {
-                'Content-Type': 'application/json',
-                identity: identity,
-                Authorization: `Bearer ${token}`
-            },
             data: data
         })
 
@@ -40,7 +31,7 @@ export const GaCareKategoriUpdateAPI = async (identity: string, token: string, d
     }
 }
 
-export const GaCareKategoriPagingAPI = async (token: string, data: {
+export const GaCareKategoriPagingAPI = async (data: {
     start: 0,
     length: 0,
     draw: 0,
@@ -71,10 +62,6 @@ export const GaCareKategoriPagingAPI = async (token: string, data: {
     try {
         const result = await ApiManager('/api/gacare/kategoris/list-paging', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`
-            },
             data: data
         })
 
@@ -84,7 +71,7 @@ export const GaCareKategoriPagingAPI = async (token: string, data: {
     }
 }
 
-export const GaCareKategoriCreateAPI = async (token: string, identity: string, data: {
+export const GaCareKategoriCreateAPI = async (data: {
     id: string,
     parent: string,
     name: string,
@@ -93,11 +80,6 @@ export const GaCareKategoriCreateAPI = async (token: string, identity: string, d
     try {
         const result = await ApiManager('/api/gacare/kategoris/list-paging', {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-                identity: identity
-            },
             data: data
         })
 
@@ -107,14 +89,10 @@ export const GaCareKategoriCreateAPI = async (token: string, identity: string, d
     }
 }
 
-export const GaCareKategoriListSelectAPI = async (token: string, key: string, term: string, page: number) => {
+export const GaCareKategoriListSelectAPI = async (key: string, term: string, page: number) => {
     try {
         const result = await ApiManager(`/api/gacare/kategoris/list-select2?key=${key}&term=${term}&page=${page}`, {
             method: "GET",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`
-            }
         })
 
         return result.data
@@ -123,14 +101,10 @@ export const GaCareKategoriListSelectAPI = async (token: string, key: string, te
     }
 }
 
-export const GaCareKategoriDetailAPI = async (token: string, id: string) => {
+export const GaCareKategoriDetailAPI = async (id: string) => {
     try {
         const result = await ApiManager(`/api/gacare/kategoris/detail/${id}`, {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`
-            }
+            method: "GET"
         })
 
         return result.data
@@ -139,15 +113,10 @@ export const GaCareKategoriDetailAPI = async (token: string, id: string) => {
     }
 }
 
-export const GaCareKategoriDeleteAPI = async (token: string, id: string, identity: string) => {
+export const GaCareKategoriDeleteAPI = async (id: string) => {
     try {
         const result = await ApiManager(`/api/gacare/kategoris/delete/${id}`, {
             method: "DELETE",
-            headers: {
-                "Content-Type": 'Application/json',
-                Authorization: `Bearer ${token}`,
-                identity: identity
-            }
         })
 
         return result.data

@@ -17,6 +17,7 @@ const QRCodeWithLogo: React.FC<QRCodeWithLogoProps> = ({ text, handleOnPress}) =
                 removeQrCodeBehindLogo = {true}
                 bgColor = {"#ffffff"}
             />
+            {/*<p>{decode(encode(text))}</p>*/}
         </>
     );
 };

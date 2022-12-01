@@ -31,18 +31,18 @@ import {
     qrCode,
     camera,
 } from 'ionicons/icons';
-import { getJsonPref, getPref } from "../../../helper/preferences";
 import './MenuSehat.css';
 import {IonReactRouter} from "@ionic/react-router";
 import { RefresherEventDetail } from '@ionic/core';
 import {useTranslation, initReactI18next} from "react-i18next";
+import ListHeader from '../../../components/Header/ListHeader';
 
 
 const MenuSehatForm: React.FC = () => {
-    const [noref, setNoref] = useState<string>();
-    const [tanggalAwal, setTanggalAwal] = useState<string>();
-    const [tanggalAkhir, setTanggalAkhir] = useState<string>();
-    const [keterangan, setKeterangan] = useState<string>();
+    const [noref, setNoref] = useState<any>();
+    const [tanggalAwal, setTanggalAwal] = useState<any>();
+    const [tanggalAkhir, setTanggalAkhir] = useState<any>();
+    const [keterangan, setKeterangan] = useState<any>();
     const history = useHistory();
     const haris = [{id: 1, nama: "Senin"}, {id: 2, nama: "Selasa"}, {id: 3, nama: "Rabu"}, {id: 4, nama: "Kamis"}, {id: 5, nama: "Jumat"}, {id: 6, nama: "Sabtu"}, {id: 7, nama: "Minggu"}];
    
@@ -115,6 +115,7 @@ const MenuSehatForm: React.FC = () => {
     // }
     const [file, setFile] = useState<any>();
     const [dataUri, setDataUri] = useState<any>('')
+    const [fileName, setFileName] = useState<any>('')
     const handleFile = async () => {
         await Camera.getPhoto({
             resultType: CameraResultType.Base64,
@@ -123,14 +124,12 @@ const MenuSehatForm: React.FC = () => {
         })
             .then((res) => {
                 console.log(res);
-                let imgs = res.base64String;
-                let imgName = (new Date().getTime().toString()) + "." + res.format;
+                const imgs = `data:image/jpeg;base64, ${res.base64String}`;
+                const imgName = (new Date().getTime().toString()) + "." + res.format;
                 // @ts-ignore
                 setFile(res);
-                fileToDataUri(file)
-                .then(dataUri => {
-                    setDataUri(dataUri)
-                })
+                setFileName(imgName);
+                
             })
             .catch((err) => {
                 console.log(err);
@@ -163,17 +162,19 @@ const MenuSehatForm: React.FC = () => {
     const handleSubmit = async (e:any) => {
         e.preventDefault();
         const BASE_API_URL = 'http://182.253.66.235:8000/';
+        console.log(file);
         const API_URI = '';
         const url = BASE_API_URL + API_URI + 'healthymenuproposals';
+        const blob = await fetch(`data:image/jpeg;base64, ${file.base64String}`).then(r => r.blob());
         const form = new FormData();
         form.append("user_id", "1234");
         form.append("user_nik", "357819465465462");
-        form.append("user_name", "Zaenal Siswanto Aribowo");
-        form.append("no_ref", "4");
-        form.append("user_note", "Alergi Udang");
-        form.append("date_start", "2022-10-16");
-        form.append("date_end", "2022-11-07");
-        form.append("image", file, file.name);
+        form.append("user_name", "Rio wenda");
+        form.append("no_ref", noref);
+        form.append("user_note", keterangan);
+        form.append("date_start", tanggalAwal);
+        form.append("date_end", tanggalAkhir);
+        form.append("image", blob, fileName);
         days.map((day:any) => {
             form.append("days["+day.hari+"]["+day.waktu+"]", day.value);
         })
@@ -204,60 +205,24 @@ const MenuSehatForm: React.FC = () => {
                 <IonRefresherContent></IonRefresherContent>
             </IonRefresher>
             <div className="bg-red-700">
-                <div className="px-4 py-6">
-                    <div className="flex">
-                        <svg onClick={btnBack} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-6 h-6 text-white">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 12h-15m0 0l6.75 6.75M4.5 12l6.75-6.75" />
-                        </svg>
-                        <div className="ml-4">
-                            <h3 className="text-base font-bold text-white">Pengajuan Menu Sehat</h3>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="rounded-2xl bg-white drop-shadow-md mx-5 mb-5 mt-0">
-                    <div className="flex w-full items-center justify-between space-x-6 py-4 px-6">
-                    <div className="flex-1 truncate">
-                        <div className="flex items-center">
-                        <p className="truncate text-sm font-medium text-gray-900">
-                            {/* {pegawai["name"]} <br />
-                            {pegawai["nik"]} */}
-                        </p>
-                        {/*
-                        <p className="truncate text-sm font-medium text-gray-900">
-                        </p>
-                        */}
-                        </div>
-                    </div>
-                    </div>
-                    <div className="grid divide-gray-200 border-t border-gray-200  grid-cols-2 divide-y-0 divide-x">
-                    <div className="px-6 py-3 text-center text-sm font-medium">
-                        <span className="text-gray-600">
-                        Masuk Kerja
-                        </span>
-                    </div>
-                    <div className="px-6 py-3 text-center text-sm font-medium">
-                        <span className="text-gray-600">
-                        123 POINTS
-                        </span>
-                    </div>
-                    </div>
-                </div>
-            
+                <ListHeader title="Pengajuan Menu Sehat"></ListHeader>
             <IonGrid className='bg-white'>
                 <h3 className='text-center'>Permohonan Menu Sehat</h3>
                 <IonRow>
                     <IonCol size="12">
                         <IonLabel >No Ref</IonLabel>
-                        <IonInput value={noref} placeholder="Masukan No Ref" className='input-color' onIonChange={e => setNoref(e.detail.value!)}></IonInput>
+                        <input value={noref} placeholder="Masukan No Ref" className="block w-full border border-1 border-gray-300 border-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-1"
+                         onChange={e => setNoref(e.target.value)}/>
                     </IonCol>
                     <IonCol size="12">
                         <IonLabel>Tanggal Awal</IonLabel>
-                        <IonInput type="date" className='input-color' onIonChange={e =>setTanggalAwal(e.detail.value!)}></IonInput>
+                        <input type="date" className="block w-full border border-1 border-gray-300 border-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-1"
+                         onChange={e =>setTanggalAwal(e.target.value)}/>
                     </IonCol>
                     <IonCol size="12">
                         <IonLabel>Tanggal Akhir</IonLabel><br/>
-                        <IonInput type="date" className='input-color' onIonChange={e => setTanggalAkhir(e.detail.value!)}></IonInput>
+                        <input type="date" className="block w-full border border-1 border-gray-300 border-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-1"
+                         onChange={e => setTanggalAkhir(e.target.value)}/>
                     </IonCol>
                 </IonRow>
                 <br/>
@@ -345,12 +310,13 @@ const MenuSehatForm: React.FC = () => {
                     <IonLabel>Keterangan</IonLabel>
                 </IonCol>
                 <IonCol size="12">
-                    <IonTextarea value={keterangan} className="text-area" placeholder="" onIonChange={e => setKeterangan(e.detail.value!)}></IonTextarea>
+                    <textarea value={keterangan} className="rounded-md block w-full border border-1 border-gray-300 border-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-1" 
+                    placeholder="" onChange={e => setKeterangan(e.target.value)}></textarea>
                 </IonCol>
               </IonRow>
               <IonRow className='pull-right'>
                 <IonCol  >
-                    <IonButton className="btn-cancel" color="danger">Batal</IonButton>
+                    <IonButton className="btn-cancel" color="danger" onClick={btnBack}>Batal</IonButton>
                     <IonButton className="btn-submit" color="tertiary" onClick={(e)=>handleSubmit(e)}>Submit</IonButton>
                 </IonCol>
                 <br/>

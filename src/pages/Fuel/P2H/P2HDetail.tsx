@@ -13,15 +13,14 @@ import { RefresherEventDetail } from '@ionic/core';
 import { useTranslation, initReactI18next, ReactI18NextChild } from "react-i18next";
 import React, { useState } from "react";
 import {
-    API_URI,
-    BASE_API_URL,
-    P2H_ITEM_URI, P2H_CRUD_URI, pref_json_pegawai_info_login, pref_unit
+    API_URI, P2H_ITEM_URI, P2H_CRUD_URI, pref_json_pegawai_info_login, pref_unit
 } from "../../../constant/Index";
 import { useHistory, useLocation, useParams } from "react-router-dom";
-import { getJsonPref } from "../../../helper/preferences";
+import { getJsonPref } from "../../../helper/Preferences";
 import UserCardWithUnit from "../../Layout/UserCardWithUnit";
 import SkeletonDetail from '../../Layout/SkeletonDetail';
 import DetailHeader from '../../../components/Header/DetailHeader';
+import {BaseAPI} from "../../../api/ApiManager";
 
 const Identity = "f8c3ca0e-f2e4-4cbd-9a48-e5f9905f420b";
 const rHeader = { 'Content-Type': 'application/json', 'Identity': Identity }
@@ -107,8 +106,8 @@ const P2HDetail: React.FC = () => {
         // @ts-ignore
         setGetId(dataId);
         // @ts-ignore
-        const urlContents = BASE_API_URL + API_URI + P2H_CRUD_URI + "/" + dataId;
-        const url = BASE_API_URL + API_URI + P2H_ITEM_URI;
+        const urlContents = BaseAPI() + API_URI + P2H_CRUD_URI + "/" + dataId;
+        const url = BaseAPI() + API_URI + P2H_ITEM_URI;
         console.log("URL: " + url);
         fetch(url, {
             method: 'GET'

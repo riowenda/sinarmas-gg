@@ -17,18 +17,19 @@ import { useTranslation } from "react-i18next";
 import React, { useEffect, useState } from "react";
 import {
     API_URI,
-    BASE_API_URL,
     pref_identity,
     pref_user_id, TAKEOVER_ALL_GA_URI, TEMP_UNIT_ALL_GA_URI,
     TEMP_UNIT_URI,
 } from "../../../../constant/Index";
 import { useHistory, useLocation } from "react-router-dom";
-import { getPref } from "../../../../helper/preferences";
+import { getPref } from "../../../../helper/Preferences";
 import Select from "react-select";
 import { Capacitor } from "@capacitor/core";
 import { App } from "@capacitor/app";
 import ListHeader from "../../../../components/Header/ListHeader";
 import moment from "moment";
+import PStatus from "../../PO/components/PStatus";
+import {BaseAPI} from "../../../../api/ApiManager";
 
 const options = [
     { value: '', label: 'ALL' },
@@ -93,7 +94,7 @@ const GAPermintaanTempUnitList: React.FC = () => {
     }
 
     const loadDataPermintaan = (user: any) => {
-        const url = BASE_API_URL + API_URI + TEMP_UNIT_URI + TEMP_UNIT_ALL_GA_URI;
+        const url = BaseAPI() + API_URI + TEMP_UNIT_URI + TEMP_UNIT_ALL_GA_URI;
         fetch(url)
             .then(res => res.json())
             .then(
@@ -143,7 +144,7 @@ const GAPermintaanTempUnitList: React.FC = () => {
     }
 
     const handleSelectChange = async (event: any) => {
-        const url = BASE_API_URL + API_URI + TEMP_UNIT_URI + TEMP_UNIT_ALL_GA_URI;
+        const url = BaseAPI() + API_URI + TEMP_UNIT_URI + TEMP_UNIT_ALL_GA_URI;
         fetch(url, {
             headers: {
                 "Content-Type": "application/json"
@@ -179,66 +180,56 @@ const GAPermintaanTempUnitList: React.FC = () => {
 
     return (
         <IonPage>
-            <IonContent fullscreen>
+            {/* Header */}
+            <ListHeader title={t('header.daftar_sementara')} isReplace={false} link={""} addButton={false} />
+            {/* end Header */}
+            <div className="bg-white px-3 pt-4 divide-y divide-gray-300">
+                <div className='top-0 z-10 mb-3'>
+                    <Select placeholder="Filter" options={options} onChange={event => handleSelectChange(event)} />
+                </div>
+                <div></div>
+            </div>
+            <IonContent>
                 <IonRefresher slot="fixed" onIonRefresh={doRefresh}>
                     <IonRefresherContent></IonRefresherContent>
                 </IonRefresher>
-                <div className="bg-white flex flex-col min-h-screen justify-between">
+                <div className="bg-white flex flex-col justify-between">
 
                     {/* === start form === */}
                     <div>
-                        {/* Header */}
-                        <ListHeader title={"Daftar Permintaan Unit Sementara"} isReplace={false} link={""} addButton={false} />
-                        {/* end Header */}
-
                         {/* === Start List  === */}
                         <div className="bg-white">
-                            <div className="px-3 pt-4 divide-y divide-gray-300">
-                                <div className='mb-3'>
-                                    <Select placeholder="Filter" options={options} onChange={event => handleSelectChange(event)} />
-                                </div>
+                            <div className="px-3">
 
-                                <div className='pt-4'>
+                                <div className='pt-3'>
                                     {isLoaded ?
                                         <>
                                     {items.map((req, index) => {
                                         return (
                                             <div onClick={() => btnPilih(req['id'])} key={req['id']}
-                                                className="px-4 py-2 my-2 rounded-lg border border-1 border-gray-300">
+                                                className="px-4 py-4 my-2 rounded-lg border border-1 border-gray-300">
                                                 <div>
                                                     <div className="flex justify-between">
                                                         <p className="font-bold">{req['no_poll']}</p>
-                                                        {req['status'] === 'PROPOSED' &&
-                                                            <p className="inline-flex text-sm font-semibold text-blue-600">
-                                                                {req['status']}
-                                                            </p>
-                                                        }
-                                                        {req['status'] === 'REJECTED' &&
-                                                            <p className="inline-flex text-sm font-semibold text-red-600">
-                                                                {req['status']}
-                                                            </p>
-                                                        }
-                                                        {req['status'] === 'APPROVED' &&
-                                                            <p className="inline-flex text-sm font-semibold text-green-600">
-                                                                {req['status']}
-                                                            </p>
-                                                        }
-                                                    </div>
-                                                    <div className="flex justify-between">
-                                                        <p className="text-sm text-gray-500">{req['odometer']} - {req['jenis']['name']}</p>
-                                                        {/*<span className="text-green-600 font-bold">APPROVED</span>*/}
                                                         <p className="text-sm text-gray-900">{moment(req['tanggal']).format('DD MMM yyyy').toString()}</p>
                                                     </div>
-                                                    <p className="text-sm text-gray-500">{req['vendor']['name']}</p>
-                                                    {(req['keterangan'] !== null && req['keterangan'] !== '') &&
-                                                        <div className="mt-2 sm:flex sm:justify-between">
-                                                            <div className="sm:flex">
-                                                                <p className="flex items-center italic text-sm text-black-50">
-                                                                    {req['keterangan']}
-                                                                </p>
+                                                    <div className="flex justify-between">
+                                                        <p className="text-sm text-gray-500">{req['jenis']['name']} - {req['odometer']} km</p>
+                                                        <PStatus title={req['status']} status={req['status']}/>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm text-gray-500">{req['pegawai']['name']}</p>
+                                                        <p className="text-sm text-gray-500">{req['vendor']['name']}</p>
+                                                        {(req['keterangan'] !== null && req['keterangan'] !== '') &&
+                                                            <div className="mt-2 sm:flex sm:justify-between">
+                                                                <div className="sm:flex">
+                                                                    <p className="flex items-center italic text-sm text-black-50">
+                                                                        {req['keterangan']}
+                                                                    </p>
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    }
+                                                        }
+                                                    </div>
                                                 </div>
                                             </div>
                                         )

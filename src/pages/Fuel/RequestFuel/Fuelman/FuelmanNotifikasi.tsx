@@ -11,17 +11,13 @@ import { useTranslation, initReactI18next } from "react-i18next";
 import React, { useState } from "react";
 import {
     API_URI,
-    BASE_API_URL,
-    pref_identity,
-    pref_user_id,
-    pref_user_role, FUEL_REQ_UNIT_URI, FUEL_REQ_USER_LIST_URI, pref_pegawai_unit_id, FUEL_REQ_USER_LAST_REDEM
+    pref_identity, FUEL_REQ_UNIT_URI, FUEL_REQ_USER_LIST_URI, pref_pegawai_unit_id, FUEL_REQ_USER_LAST_REDEM
 } from "../../../../constant/Index";
 import {useHistory, useLocation} from "react-router-dom";
-import { getPref } from "../../../../helper/preferences";
+import { getPref } from "../../../../helper/Preferences";
 import moment from "moment";
-import {Capacitor} from "@capacitor/core";
-import {App} from "@capacitor/app";
 import ListHeader from "../../../../components/Header/ListHeader";
+import {BaseAPI} from "../../../../api/ApiManager";
 
 const FuelmanNotifikasi: React.FC = () => {
     const history = useHistory();
@@ -74,13 +70,10 @@ const FuelmanNotifikasi: React.FC = () => {
     const loadDataPref = () => {
         getPref(pref_identity).then(res => { setIdentity(res) });
         getPref(pref_pegawai_unit_id).then(res => { setPegUnitId(res); loadDataPermintaan(res); });
-        getPref(pref_user_role).then(restRole => {
-            setRole(restRole);
-        });
     }
 
     const loadDataPermintaan = (user: any) => {
-        const url = BASE_API_URL + API_URI + FUEL_REQ_UNIT_URI + FUEL_REQ_USER_LIST_URI + "/" + user;
+        const url = BaseAPI() + API_URI + FUEL_REQ_UNIT_URI + FUEL_REQ_USER_LIST_URI + "/" + user;
         fetch(url)
             .then(res => res.json())
             .then(
@@ -135,7 +128,7 @@ const FuelmanNotifikasi: React.FC = () => {
                 </IonRefresher>
                 <div className="bg-red-700 ">
                     {/* Header */}
-                    <ListHeader title={"Notifikasi"} isReplace={false} link={""} addButton={false} />
+                    <ListHeader title={"NotifikasiAPI"} isReplace={false} link={""} addButton={false} />
                     {/* end Header */}
 
                     {/* === Start List  === */}

@@ -17,15 +17,16 @@ import {RefresherEventDetail} from '@ionic/core';
 import {useTranslation} from "react-i18next";
 import React, {useEffect, useState} from "react";
 import {
-    API_URI,
-    BASE_API_URL, pref_identity, pref_user_id, TAKEOVER_GET_ALL_REQUEST_USER_URI, TAKEOVER_UNIT_URI,
+    API_URI, pref_identity, pref_user_id, TAKEOVER_GET_ALL_REQUEST_USER_URI, TAKEOVER_UNIT_URI,
 } from "../../../constant/Index";
 import {useHistory, useLocation} from "react-router-dom";
-import {getPref} from "../../../helper/preferences";
+import {getPref} from "../../../helper/Preferences";
 import {Capacitor} from "@capacitor/core";
 import {App} from "@capacitor/app";
 import ListHeader from "../../../components/Header/ListHeader";
 import moment from "moment";
+import PStatus from "../PO/components/PStatus";
+import {BaseAPI} from "../../../api/ApiManager";
 
 const PermintaanUnitList: React.FC = () => {
     const history = useHistory();
@@ -87,7 +88,7 @@ const PermintaanUnitList: React.FC = () => {
     }
 
     const loadDataPermintaan = (user : any) => {
-        const url = BASE_API_URL + API_URI +TAKEOVER_UNIT_URI+ TAKEOVER_GET_ALL_REQUEST_USER_URI+"/"+user;
+        const url = BaseAPI() + API_URI +TAKEOVER_UNIT_URI+ TAKEOVER_GET_ALL_REQUEST_USER_URI+"/"+user;
         fetch(url)
             .then(res => res.json())
             .then(
@@ -135,50 +136,33 @@ const PermintaanUnitList: React.FC = () => {
     return (
         <div className="bg-gradient-to-r from-red-700 to-red-500">
             <IonPage className="bg-gradient-to-r from-red-700 to-red-500">
-                <IonContent fullscreen className="bg-gradient-to-r from-red-700 to-red-500 bg-danger h-auto">
+                {/* === Start Header ===*/}
+                <ListHeader title={t('header.daftar_ganti')} isReplace={false} link={""} addButton={false} />
+                {/* === End Header ===*/}
+                <IonContent className="bg-gradient-to-r from-red-700 to-red-500 bg-danger h-auto">
                     <IonRefresher slot="fixed" onIonRefresh={doRefresh}>
                         <IonRefresherContent></IonRefresherContent>
                     </IonRefresher>
-                    <div className="bg-white flex flex-col min-h-screen justify-between">
+                    <div className="bg-white flex flex-col justify-between">
                         {/* === start form === */}
                         <div>
-                            {/* === Start Header ===*/}
-                            <ListHeader title={"Daftar Permintaan Ganti Unit"} isReplace={false} link={""} addButton={false} />
-                            {/* === End Header ===*/}
-
-
                             {/* === Start List  === */}
                             <div className="bg-white ">
-                                <div className="px-3 pt-4">
+                                <div className="px-3 pt-3">
                                     {isLoaded ?
                                         <>
                                     {items.map((req, index) => {
                                         return (
                                             <div onClick={() => btnPilih(req['id'])} key={req['id']}
-                                                 className="px-4 py-2 my-2 rounded-lg border border-1 border-gray-300">
+                                                 className="px-4 py-4 my-2 rounded-lg border border-1 border-gray-300">
                                                 <div>
                                                     <div className="flex justify-between">
                                                         <p className="font-bold">{req['pegawaiUnit']['unit']['noLambung']}</p>
-                                                        { req['status'] === 'PROPOSED' &&
-                                                            <p className="inline-flex text-sm font-semibold text-blue-600">
-                                                                {req['status']}
-                                                            </p>
-                                                        }
-                                                        { req['status'] === 'REJECTED' &&
-                                                            <p className="inline-flex text-sm font-semibold text-red-600">
-                                                                {req['status']}
-                                                            </p>
-                                                        }
-                                                        { req['status'] === 'APPROVED' &&
-                                                            <p className="inline-flex text-sm font-semibold text-green-600">
-                                                                {req['status']}
-                                                            </p>
-                                                        }
+                                                        <p className="text-sm text-gray-900">{moment(req['requestDate']).format('DD MMM yyyy').toString()}</p>
                                                     </div>
                                                     <div className="flex justify-between">
                                                         <p className="text-sm text-gray-500">{req['pegawaiUnit']['unit']['jenisUnit']['name']} - {req['pegawaiUnit']['unit']['noPol']}</p>
-                                                        {/*<span className="text-green-600 font-bold">APPROVED</span>*/}
-                                                        <p className="text-sm text-gray-900">{moment(req['requestDate']).format('DD MMM yyyy').toString()}</p>
+                                                        <PStatus title={req['status']} status={req['status']}/>
                                                     </div>
                                                     <p className="text-sm text-gray-500">{req['pegawaiUnit']['unit']['vendor']['name']}</p>
                                                     {(req['keterangan'] !== null && req['keterangan'] !== '') &&

@@ -14,7 +14,7 @@ import { useTranslation, initReactI18next } from "react-i18next";
 import React, { useCallback, useState } from "react";
 import moment from "moment";
 import { useHistory } from "react-router-dom";
-import { getJsonPref, getPref } from "../../../helper/preferences";
+import { getJsonPref, getPref } from "../../../helper/Preferences";
 import ListHeader from "../../../components/Header/ListHeader";
 import {
   CursorArrowRaysIcon,

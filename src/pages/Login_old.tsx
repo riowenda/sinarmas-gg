@@ -34,7 +34,7 @@ import {
 } from '../constant/Index';
 import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
 import {RefresherEventDetail} from "@ionic/core";
-import {clearPref, getPref, removePref, setJsonPref, setPref} from "../helper/preferences";
+import {clearPref, getPref, removePref, setJsonPref, setPref} from "../helper/Preferences";
 import {getName} from "ionicons/dist/types/components/icon/utils";
 
 const Login: React.FC = () => {

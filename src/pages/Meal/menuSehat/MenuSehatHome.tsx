@@ -13,7 +13,7 @@ import { useTranslation, initReactI18next } from "react-i18next";
 import React, { useCallback, useState, useEffect } from "react";
 import moment from "moment";
 import { useHistory } from "react-router-dom";
-import { getJsonPref, getPref } from "../../../helper/preferences";
+import { getJsonPref, getPref } from "../../../helper/Preferences";
 import ListHeader from "../../../components/Header/ListHeader";
 import BadgeStatus from "../../../components/Badge/BadgeStatus";
 import {
@@ -132,28 +132,29 @@ const DayoffHome: React.FC = () => {
             <button className="block text-center rounded-lg bg-white border border-1 border-gray-500 px-2.5 py-3 text-xs font-bold mt-5">
             </button>
             */}
-              <IonList>
+              <div className="bg-white pt-3 px-2"></div>
                   {items.map((data, index) => {
                   return (
-                  <div className="rounded-lg py-1 mb-3 border border-1 border-gray-300" key={data['id']}>
-                      <IonItem routerLink={"/meal/menusehat/detailpengajuan/" + data['id']} routerDirection="forward" className="border-0" lines="none">
-                      <div className="p-3 m-1 rounded-md">
-                          <div className="grid grid-cols-12 gap-4">
-                              <div className="col-start-1 col-end-6 flex items-center justify-start justify-items-start">
-                                  <p className="text-base text-gray-900">
+                  <div 
+                    className="rounded-lg py-1 mb-3 border border-1 border-gray-300 cursor-pointer" 
+                    key={data['id']} 
+                    onClick={() => { history.push("/meal/menusehat/detailpengajuan/" + data['id']) } }
+                  >
+                    <div className="px-2 py-2">
+                      <div className="relative flex space-x-3">
+                        <div className="flex min-w-0 flex-1 justify-between space-x-4">
+                              <div>
+                                  <p className="text-gray-900">
                                       {moment(data['request_date']).format('DD MMM yyyy').toString()}
                                   </p>
                               </div>
-                              <div className="col-end-13 col-span-6 flex items-center justify-end justify-items-end">
-                                  <BadgeStatus title={data['status']}></BadgeStatus>
-                              </div>
+                              <BadgeStatus title={data['status']}></BadgeStatus>
                           </div>
                       </div>
-                      </IonItem>
+                    </div>
                   </div>
                   )
                   })}
-              </IonList>
 
             {/*<h3 className="text-base text-gray-900 text-center my-4">Load more...</h3>*/}
           </div>

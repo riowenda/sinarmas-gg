@@ -1,4 +1,4 @@
-import { IonTextarea } from "@ionic/react"
+import { IonImg, IonTextarea } from "@ionic/react"
 import { ButtonOutline, ButtonPrimary } from "../../Button"
 import { IconPhoto } from "../../Icon"
 
@@ -14,9 +14,12 @@ interface ModalGALaporanProps {
     statusUpload: boolean;
     onUpdateStatus?: () => void
     // onChangeText: () => void,
+    mediaReview? : {
+        base64?: string;
+    }[]
 }
 
-const ModalGALaporan: React.FC<ModalGALaporanProps> = ({ onSetModal, title, valueTextArea, setTextProgress, colorButton, titleButton, onUpload, onDangerOutline, statusUpload, onUpdateStatus }) => {
+const ModalGALaporan: React.FC<ModalGALaporanProps> = ({ onSetModal, title, valueTextArea, setTextProgress, colorButton, titleButton, onUpload, onDangerOutline, statusUpload, onUpdateStatus, mediaReview }) => {
     return (
         <div className="w-screen h-screen flex flex-col justify-center items-center  z-[999] fixed top-0 left-0 p-5">
             <div className="bg-white p-6 w-full rounded">
@@ -31,8 +34,15 @@ const ModalGALaporan: React.FC<ModalGALaporanProps> = ({ onSetModal, title, valu
                 {statusUpload == true ? (
                     <>
                         <div className=" flex flex-row gap-4 justify-center items-center">
-                            <IconPhoto />
-                            <IconPhoto />
+                            {/* <IconPhoto />
+                            <IconPhoto /> */}
+                            {mediaReview?.map((photo, index) => (
+                                <div className="w-[70px] h-[70px] flex justify-center" key={index}>
+                                    <IonImg
+                                        src={photo?.base64}
+                                        className="object-cover w-full h-full" />
+                                </div>
+                            ))}
                         </div>
                         <div className={'my-[0.5rem]'}>
                             <ButtonOutline
@@ -40,7 +50,7 @@ const ModalGALaporan: React.FC<ModalGALaporanProps> = ({ onSetModal, title, valu
                                 title={'UPLOAD'} onPress={onUpload} />
                             <ButtonOutline
                                 color={'danger'}
-                                title={'KEMMBALIKAN'} onPress={onDangerOutline} />
+                                title={'KEMBALIKAN'} onPress={onDangerOutline} />
                         </div>
                     </>
                 ) : (

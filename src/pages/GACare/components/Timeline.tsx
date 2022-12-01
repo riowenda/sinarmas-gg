@@ -19,8 +19,6 @@ interface TimelineProps {
 const Timeline: React.FC<TimelineProps> = ({ data }) => {
 
 
-
-
   return (
     <React.Fragment>
       {data?.length > 0 && (

@@ -18,6 +18,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
+    "forceConsistentCasingInFileNames": false,
     "jsx": "preserve"
   },
   "include": [

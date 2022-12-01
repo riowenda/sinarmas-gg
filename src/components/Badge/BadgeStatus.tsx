@@ -20,6 +20,15 @@ const BadgeStatus: React.FC<StatusProps> = ({ title }) => {
     }else if(title === "Approved"){
         return <IonBadge className="rounded-full px-2 text-xs" slot="start"
             color="success">{title}</IonBadge>
+    }else if(title === "Proses"){
+        return <IonBadge className="rounded-full px-2 text-xs" slot="start"
+            color="primary">{title}</IonBadge>
+    }else if(title === "Diantarkan"){
+        return <IonBadge className="rounded-full px-2 text-xs" slot="start"
+            color="warning">{title}</IonBadge>
+    }else if(title === "Selesai"){
+        return <IonBadge className="rounded-full px-2 text-xs" slot="start"
+            color="success">{title}</IonBadge>
     }else{
         return <IonBadge className="rounded-full px-2 text-xs" slot="start"
             color="danger">{title}</IonBadge>

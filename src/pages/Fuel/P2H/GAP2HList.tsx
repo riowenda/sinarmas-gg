@@ -16,8 +16,7 @@ import { useTranslation, initReactI18next } from "react-i18next";
 
 import React, { useEffect, useState } from "react";
 import {
-    API_URI,
-    BASE_API_URL, P2H_LIST_GA_URI,
+    API_URI, P2H_LIST_GA_URI,
 } from "../../../constant/Index";
 import { useHistory, useLocation } from "react-router-dom";
 import moment from "moment";
@@ -25,6 +24,8 @@ import Select from 'react-select'
 import { Capacitor } from "@capacitor/core";
 import { App } from "@capacitor/app";
 import ListHeader from "../../../components/Header/ListHeader";
+import PStatus from "../PO/components/PStatus";
+import {BaseAPI} from "../../../api/ApiManager";
 const Identity = "78fda6a7-0351-4f8f-84ab-d8bebce25d67";
 const rHeader = { 'Content-Type': 'application/json', 'Identity': Identity }
 
@@ -86,7 +87,7 @@ const GAP2HList: React.FC = () => {
     }
 
     const handleSelectChange = async (event: any) => {
-        const url = BASE_API_URL + API_URI + P2H_LIST_GA_URI;
+        const url = BaseAPI() + API_URI + P2H_LIST_GA_URI;
         fetch(url, {
             headers: {
                 "Content-Type": "application/json"
@@ -101,7 +102,7 @@ const GAP2HList: React.FC = () => {
                     if (event.value !== null && event.value !== "" && event.value !== "-") {
                         let data = result.filter((x: { [x: string]: { [x: string]: null; }; }) => x['unit']['jenisUnit'] !== null && x['unit']['tipeUnit'] !== null && x['status'] == event.value);
                         // @ts-ignore
-                        let sortByDate = data.map((obj: { tanggal: string; }) => {return {...obj, date: new Date(obj.tanggal)}}).sort((a: { date: Date; }, b: { date: Date; }) => b.date - a.date);
+                        let sortByDate = data.map((obj: { tanggal: string; }) => { return { ...obj, date: new Date(obj.tanggal) } }).sort((a: { date: Date; }, b: { date: Date; }) => b.date - a.date);
                         // console.log(sortByDate)
                         setItems(sortByDate);
                         // setItems(data);
@@ -109,7 +110,7 @@ const GAP2HList: React.FC = () => {
                         let data = result.filter((x: { [x: string]: { [x: string]: null; }; }) => x['unit']['jenisUnit'] !== null && x['unit']['tipeUnit'] !== null);
                         //setItems(result['data']);
                         // @ts-ignore
-                        let sortByDate = data.map((obj: { tanggal: string; }) => {return {...obj, date: new Date(obj.tanggal)}}).sort((a: { date: Date; }, b: { date: Date; }) => b.date - a.date);
+                        let sortByDate = data.map((obj: { tanggal: string; }) => { return { ...obj, date: new Date(obj.tanggal) } }).sort((a: { date: Date; }, b: { date: Date; }) => b.date - a.date);
                         setItems(sortByDate);
                     }
                     setIsLoaded(true);
@@ -122,7 +123,7 @@ const GAP2HList: React.FC = () => {
     }
 
     const loadData = () => {
-        const url = BASE_API_URL + API_URI + P2H_LIST_GA_URI;
+        const url = BaseAPI() + API_URI + P2H_LIST_GA_URI;
         fetch(url, {
             headers: {
                 "Content-Type": "application/json"
@@ -133,10 +134,10 @@ const GAP2HList: React.FC = () => {
                 (result) => {
                     // console.log(result);
                     let data = result;
-                    if(data != null && !data.isEmpty){
+                    if (data != null && !data.isEmpty) {
                         let item = data.filter((x: { [x: string]: { [x: string]: null; }; }) => x['unit']['jenisUnit'] !== null && x['unit']['tipeUnit'] !== null);
                         // @ts-ignore
-                        let sortByDate = item.map((obj: { tanggal: string; }) => {return {...obj, date: new Date(obj.tanggal)}}).sort((a: { date: Date; }, b: { date: Date; }) => b.date - a.date);
+                        let sortByDate = item.map((obj: { tanggal: string; }) => { return { ...obj, date: new Date(obj.tanggal) } }).sort((a: { date: Date; }, b: { date: Date; }) => b.date - a.date);
                         // console.log(sortByDate)
                         setItems(sortByDate);
                     }
@@ -172,62 +173,51 @@ const GAP2HList: React.FC = () => {
         // history.goBack();
         history.push('/ga/fuel/homepage');
     }
-    // @ts-ignore
-    // @ts-ignore
-    // @ts-ignore
-    // @ts-ignore
-    // @ts-ignore
+
     return (
         <IonPage>
-            <IonContent fullscreen>
+            {/* === Start Header ===*/}
+            {/* Header */}
+            <ListHeader title={t('header.daftar_p2h')} isReplace={false} link={""} addButton={false} />
+            {/* end Header */}
+            <div className="bg-white px-3 pt-4 divide-y divide-gray-300">
+                <div className='top-0 z-10 mb-3'>
+                    <Select placeholder="Filter" options={options} onChange={event => handleSelectChange(event)} />
+                </div>
+                <div></div>
+            </div>
+            <IonContent>
                 <IonRefresher slot="fixed" onIonRefresh={doRefresh}>
                     <IonRefresherContent></IonRefresherContent>
                 </IonRefresher>
-                <div className="bg-white flex flex-col min-h-screen justify-between">
+                <div className="bg-white flex flex-col justify-between">
                     {/* === start form === */}
                     <div>
-                        {/* === Start Header ===*/}
-                        {/* Header */}
-                        <ListHeader title={"Daftar Permintaan P2H"} isReplace={false} link={""} addButton={false} />
-                        {/* end Header */}
-
                         {/* === Start DUMMY List  === */}
 
                         <div className="bg-white">
 
-                            <div className="px-3 pt-4 divide-y divide-gray-300">
-                                <div className='mb-3'>
-                                    <Select placeholder="Filter" options={options} onChange={event => handleSelectChange(event)} />
-                                </div>
-
-                                <div className='pt-4'>
+                            <div className="px-3">
+                                <div className='pt-3'>
                                     {isLoaded ?
                                         <>
-                                    {items.map((p2h, index) => {
-                                        return (
-                                            <div onClick={() => btnPilih(p2h['id'])} key={p2h['id']} className="rounded-lg p-4 mb-3 border border-1 border-gray-200">
-                                                <div>
-                                                    <div className="flex justify-between">
-                                                        <p className="font-bold">{p2h['pegawai']['name']}</p>
-                                                        <p>{moment(p2h['tanggal']).format('DD MMM yyyy').toString()}</p>
+                                            {items.map((p2h, index) => {
+                                                return (
+                                                    <div onClick={() => btnPilih(p2h['id'])} key={p2h['id']} className="rounded-lg p-4 mb-3 border border-1 border-gray-200">
+                                                        <div>
+                                                            <div className="flex justify-between">
+                                                                <p className="font-bold">{p2h['pegawai']['name']}</p>
+                                                                <p>{moment(p2h['tanggal']).format('DD MMM yyyy').toString()}</p>
+                                                            </div>
+                                                            <div className="flex justify-between">
+                                                                <p className="text-sm text-gray-500">{p2h['unit']['noLambung']} - {p2h['unit']['noPol']}</p>
+                                                                <PStatus title={p2h['status']} status={p2h['status']}/>
+                                                            </div>
+                                                            <p className="text-sm text-gray-500">{p2h['unit']['jenisUnit']['name']}</p>
+                                                        </div>
                                                     </div>
-                                                    <div className="flex justify-between">
-                                                        <p className="text-sm text-gray-500">{p2h['unit']['noLambung']} - {p2h['unit']['noPol']}</p>
-                                                        {p2h['status'] === 'PROPOSED' &&
-                                                            <span className="text-blue-600 font-bold">{p2h['status']}</span>
-                                                        }
-                                                        {p2h['status'] === 'REJECTED' &&
-                                                            <span className="text-red-600 font-bold">{p2h['status']}</span>
-                                                        }
-                                                        {p2h['status'] === 'APPROVED' &&
-                                                            <span className="text-green-600 font-bold">{p2h['status']}</span>
-                                                        }
-                                                    </div>
-                                                    <p className="text-sm text-gray-500">{p2h['unit']['jenisUnit']['name']}</p>
-                                                </div>
-                                            </div>
-                                        )
-                                    })}
+                                                )
+                                            })}
                                         </> :
                                         <>
                                             {

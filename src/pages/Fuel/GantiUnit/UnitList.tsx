@@ -11,6 +11,7 @@ import {
     useIonViewDidEnter, useIonViewDidLeave,
     useIonViewWillEnter, useIonViewWillLeave,
 } from '@ionic/react';
+import { Dialog, Transition } from '@headlessui/react'
 
 import './UnitList.css';
 import { RefresherEventDetail } from '@ionic/core';
@@ -18,7 +19,6 @@ import { useTranslation } from "react-i18next";
 import React, { useEffect, useState } from "react";
 import {
     API_URI,
-    BASE_API_URL,
     PEGAWAI_UNIT_CRUD_URI,
     PEGAWAI_UNIT_SET_UNIT_USER_URI,
     PEGAWAI_UNIT_TAKEOVER_URI, pref_identity, pref_pegawai_unit_id,
@@ -28,17 +28,13 @@ import {
     UNIT_VIEWS_URI
 } from "../../../constant/Index";
 import { useHistory, useLocation } from "react-router-dom";
-import { getPref, setPref } from "../../../helper/preferences";
+import { getPref, setPref } from "../../../helper/Preferences";
 import { Capacitor } from "@capacitor/core";
 import { App } from "@capacitor/app";
 import Select from 'react-select'
 import ListHeader from "../../../components/Header/ListHeader";
-
-const options = [
-    { value: 'semua', label: 'Semua' },
-    { value: 'tersedia', label: 'Tersedia' },
-    { value: 'tidak', label: 'Tidak Tersedia' }
-]
+import { BaseAPI } from "../../../api/ApiManager";
+import Modal2Button from "../../../components/DialogModal/Modal2Button";
 
 const UnitList: React.FC = () => {
     const history = useHistory();
@@ -59,7 +55,15 @@ const UnitList: React.FC = () => {
     const [urlView, setUrlView] = useState("");
     const [dataOri, setDataOri] = useState();
     const location = useLocation();
+    const [isModalOpen, setModalOpen] = useState(false);
+    const [selectedUnit, setSelectedUnit] = useState();
+    const [modalMessage, setModalMessage] = useState('');
 
+    const options = [
+        { value: 'semua', label: t('semua') },
+        { value: 'tersedia', label: t('unit.tersedia') },
+        { value: 'tidak', label: t('unit.tidak_tersedia') }
+    ]
     /* BEGIN LIFECYCLE APPS */
 
     /* Proses animasi saat Mau masuk halaman
@@ -109,7 +113,7 @@ const UnitList: React.FC = () => {
         });
         getPref(pref_unit_id).then(res => {
             setPegUnitId(res);
-            const url = BASE_API_URL + API_URI + UNIT_CRUD_URI + UNIT_VIEWS_URI;
+            const url = BaseAPI() + API_URI + UNIT_CRUD_URI + UNIT_VIEWS_URI;
             if (res != null && res !== "") {
                 let urls = url + "/" + res;
                 setUrlView(urls);
@@ -150,6 +154,7 @@ const UnitList: React.FC = () => {
         // console.log(unit);
         presentAlert({
             subHeader: 'Anda yakin untuk memilih unit ' + unit[4] + ' - ' + unit[2] + ' ini?',
+            backdropDismiss: false,
             buttons: [
                 {
                     text: 'Batal',
@@ -167,10 +172,12 @@ const UnitList: React.FC = () => {
     };
 
     const sendRequest = (unit: any) => {
+        console.log('send req ' + unit);
         const loading = present({
             message: 'Memproses permintaan ...',
+            backdropDismiss: false
         })
-        const url = BASE_API_URL + API_URI + PEGAWAI_UNIT_CRUD_URI + PEGAWAI_UNIT_SET_UNIT_USER_URI;
+        const url = BaseAPI() + API_URI + PEGAWAI_UNIT_CRUD_URI + PEGAWAI_UNIT_SET_UNIT_USER_URI;
         const data = { unit: unit[0], user: userId } //user diambil dari pref
         fetch(url, {
             method: 'POST',
@@ -213,7 +220,8 @@ const UnitList: React.FC = () => {
         setPref(pref_pegawai_unit_id, dataUnit['id']).then(r => r);
         showSuccess({
             //simpan unit id ke pref
-            subHeader: 'Berhasil memilih ' + dataUnit['unit']['jenisUnit']['name'] + ' - ' + dataUnit.unit.no_pol + ', silahkan melakukan pengisian form P2H',
+            subHeader: 'Berhasil memilih ' + dataUnit['unit']['jenisUnit']['name'] + ' - ' + dataUnit['unit']['noPol'] + ', silahkan melakukan pengisian form P2H',
+            backdropDismiss: false,
             buttons: [
                 {
                     text: 'Isi Nanti',
@@ -239,6 +247,7 @@ const UnitList: React.FC = () => {
         showTakeOver({
             //simpan unit id ke pref
             subHeader: '' + unit[4] + ' - ' + unit[2] + ' sedang digunakan. Apakah anda ingin ambil alih?',
+            backdropDismiss: false,
             buttons: [
                 {
                     text: 'BATAL',
@@ -260,6 +269,7 @@ const UnitList: React.FC = () => {
         showConfirm({
             //simpan unit id ke pref
             subHeader: '' + (wait === "true" ? 'Permintaan Take Over sedang diproses. Silahkan tunggu' : response) + '',
+            backdropDismiss: false,
             buttons: [
                 {
                     text: 'OK',
@@ -275,8 +285,9 @@ const UnitList: React.FC = () => {
     const sendRequestTakeOver = (unit: any) => {
         const loading = present({
             message: 'Memproses permintaan ...',
+            backdropDismiss: false
         })
-        const url = BASE_API_URL + API_URI + PEGAWAI_UNIT_CRUD_URI + PEGAWAI_UNIT_TAKEOVER_URI;
+        const url = BaseAPI() + API_URI + PEGAWAI_UNIT_CRUD_URI + PEGAWAI_UNIT_TAKEOVER_URI;
         const data = { unit: unit[0], user: userId };//user diambil dari pref
 
         fetch(url, {
@@ -315,10 +326,10 @@ const UnitList: React.FC = () => {
         // console.log("ganti value: ", event.value);
         if (event.value !== null && event.value !== "") {
             let data = null;
-            if(event.value === "tidak"){
+            if (event.value === "tidak") {
                 // @ts-ignore
                 data = dataOri.filter((x: { [x: string]: { [x: string]: null; }; }) => x[5] != null)
-            } else if(event.value === "tersedia") {
+            } else if (event.value === "tersedia") {
                 // @ts-ignore
                 data = dataOri.filter((x: { [x: string]: { [x: string]: null; }; }) => x[5] == null)
             } else {
@@ -328,58 +339,77 @@ const UnitList: React.FC = () => {
             setItems(data);
         }
     }
+    
+    const toggleUserModal = (unit: any) => {
+        setSelectedUnit(unit);
+        setModalMessage('Anda yakin memilih unit ' + unit[4] + ' - ' + unit[2] +' ?');
+        
+        setModalOpen(!isModalOpen);
+    }
 
     return (
         <IonPage>
-            <IonContent fullscreen>
+            {/* === Start Header ===*/}
+            <ListHeader title={t('header.daftar_unit')} isReplace={false} link={""} addButton={false} />
+            {/* === End Header ===*/}
+            <div className="bg-white px-3 pt-4 divide-y divide-gray-300">
+                <div className='top-0 z-10 mb-3'>
+                    <Select placeholder="Filter" options={options} onChange={event => handleSelectChange(event)} />
+                </div>
+                <div></div>
+            </div>
+            <IonContent>
+                {isModalOpen ?
+                    <Modal2Button title='Konfirmasi pilih unit' 
+                    message={modalMessage}
+                    data={selectedUnit}
+                    buttonsubmit={t('btn.pilih')} 
+                    buttoncancel={t('btn.batal')} 
+                    onCancelPress={() => setModalOpen(!isModalOpen)}
+                    onSubmitPress={() => sendRequest(selectedUnit)}/>
+                : null}
                 <IonRefresher slot="fixed" onIonRefresh={doRefresh}>
                     <IonRefresherContent></IonRefresherContent>
                 </IonRefresher>
-                <div className="bg-white flex flex-col min-h-screen justify-between">
+
+
+                <div className="bg-white flex flex-col justify-between">
                     {/* === start form === */}
                     <div>
-                        {/* === Start Header ===*/}
-                        <ListHeader title={"Daftar Unit"} isReplace={false} link={""} addButton={false} />
-                        {/* === End Header ===*/}
-
-
                         {/* === Start List  === */}
                         <div className="bg-white">
-                            <div className="px-3 pt-4 divide-y divide-gray-300">
-                                <div className='mb-3'>
-                                    <Select placeholder="Filter" options={options} onChange={event => handleSelectChange(event)} />
-                                </div>
-                                <div className="px-3 pt-4">
+                            <div className="px-3">
+                                <div className="pt-3">
                                     {isLoaded ?
                                         <>
                                             {
                                                 items.map((unit, index) => {
                                                     return (
-                                                        <div onClick={() => btnPilih(unit)} key={unit[0]}
+                                                        <div onClick={() => toggleUserModal(unit)} key={unit[0]}
                                                             className="relative my-2 rounded-lg border border-1 border-gray-300 overflow-hidden">
                                                             <div>
                                                                 <div className="grid grid-cols-2 px-4 py-2">
                                                                     <div>
-                                                                        <h3 className='font-bold'>{unit[1]}</h3>
-                                                                        <p className='text-sm text-gray-500'>{unit[4]} - {unit[2]}</p>
+                                                                        <h3 className='font-bold'>{unit[2]}</h3>
+                                                                        <p className='text-sm text-gray-500'>{unit[4]} - {unit[1]}</p>
+                                                                        <p className='text-sm text-gray-500'>{unit[6]}</p>
                                                                     </div>
                                                                     <div className='text-right'>
-
                                                                         {unit[5] !== null ?
-                                                                            <h3 className='font-bold text-red-600'>Tidak Tersedia</h3>
+                                                                            <h3 className='font-bold text-red-600'>{t('unit.tidak_tersedia')}</h3>
                                                                             :
-                                                                            <h3 className='font-bold text-emerald-600'>Tersedia</h3>
+                                                                            <h3 className='font-bold text-emerald-600'>{t('unit.tersedia')}</h3>
                                                                         }
                                                                         <div className='absolute right-0 bottom-0'>
-                                                                        {unit[4] === 'Triton' &&
-                                                                            <img className='h-8' src='assets/images/truck-shiluete.png' />
-                                                                        }
-                                                                        {unit[4] === 'Pajero' &&
-                                                                            <img className='h-8' src='assets/images/suv-shiluete.png' />
-                                                                        }
-                                                                        {unit[4] === 'Bus' &&
-                                                                            <img className='h-8' src='assets/images/mpv-shiluete.png' />
-                                                                        }
+                                                                            {unit[4] === 'Triton' &&
+                                                                                <img className='h-8' src='assets/images/truck-shiluete.png' />
+                                                                            }
+                                                                            {unit[4] === 'Pajero' &&
+                                                                                <img className='h-8' src='assets/images/suv-shiluete.png' />
+                                                                            }
+                                                                            {unit[4] === 'Bus' &&
+                                                                                <img className='h-8' src='assets/images/mpv-shiluete.png' />
+                                                                            }
                                                                         </div>
                                                                     </div>
                                                                 </div>

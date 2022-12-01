@@ -1,6 +1,5 @@
 import {
     IonContent,
-    IonFooter,
     IonPage,
     IonRefresher,
     IonRefresherContent,
@@ -12,34 +11,28 @@ import {
     useIonViewWillLeave,
 } from '@ionic/react';
 
-// import './FormUpdateOdo.css';
-import { RefresherEventDetail } from '@ionic/core';
-import { useTranslation, initReactI18next } from "react-i18next";
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import ActionSheet from "actionsheet-react";
+import {RefresherEventDetail} from '@ionic/core';
+import {useTranslation} from "react-i18next";
+import React, {useState} from "react";
 import {
     API_URI,
-    BASE_API_URL,
-    FUEL_REQ_UNIT_APPROVAL_URI,
-    FUEL_REQ_UNIT_CONFIRMATION_URI,
-    FUEL_REQ_UNIT_FORGIVENES_URI,
     FUEL_REQ_UNIT_URI,
     pref_identity,
     pref_json_pegawai_info_login,
-    pref_pegawai_id, pref_token,
-    pref_unit,
+    pref_pegawai_id, pref_pegawai_unit_id, pref_token,
+    pref_unit, UPDATE_ODO_CREATE_URI,
 } from "../../../constant/Index";
-import { useHistory, useLocation, useParams } from "react-router-dom";
-import { getJsonPref, getPref } from "../../../helper/preferences";
-import moment from "moment";
-import SkeletonDetail from '../../Layout/SkeletonDetail';
+import {useHistory} from "react-router-dom";
+import {getJsonPref, getPref} from "../../../helper/Preferences";
 import {Camera, CameraResultType, CameraSource} from "@capacitor/camera";
 import TextareaExpand from "react-expanding-textarea";
-import DetailHeader from "../../../components/Header/DetailHeader";
+import ListHeader from "../../../components/Header/ListHeader";
+import {lastRedeemCoupon} from "../../../api";
+import {BaseAPI} from "../../../api/ApiManager";
 
-const userInfo = { name: "", nik: "", imageUrl: "" }
-const userUnit = { id: "", noPol: "", noLambung: "", vendor: { name: "" }, jenisUnit: { name: "" } };
-const sendObj = {id:"", status:"", img:"", filename:"", alasan:"", odometer:0}
+const userInfo = {name: "", nik: "", imageUrl: ""}
+const userUnit = {id: "", noPol: "", noLambung: "", vendor: {name: ""}, jenisUnit: {name: ""}};
+const sendObj = {kupon: {id:""}, odometerPerbaikan:"", alasan: "", base64:"", requester:{id:""}, odometerImg: 0}
 const FormUpdateOdo: React.FC = () => {
     const [identity, setIdentity] = useState("");
     const history = useHistory();
@@ -51,15 +44,13 @@ const FormUpdateOdo: React.FC = () => {
     const [present, dismiss] = useIonLoading();
     const [toast] = useIonToast();
     const [sendId, setSendId] = useState("");
-    const [reqFuel, setReqFuel] = useState(null);
     const [showConfirm] = useIonAlert();
     const [isLoaded, setIsLoaded] = useState(false);
     const [photo, setPhoto] = useState<any>(null);
-    const [realStatus, setRealStatus] = useState("");
-    const [kupon, setKupon] = useState(sendObj);
+    const [odo, setOdo] = useState(sendObj);
+    const [lastRedeem, setLastRedeem] = useState<any>();
 
-    const { t } = useTranslation();
-    const location = useLocation();
+    const {t} = useTranslation();
 
     /* BEGIN LIFECYCLE APPS */
 
@@ -86,12 +77,13 @@ const FormUpdateOdo: React.FC = () => {
     tidak cocok untuk beberapa logic yang butuh waktu */
     useIonViewDidLeave(() => {
     });
+
     /* END LIFECYCLE APPS */
 
     function doRefresh(event: CustomEvent<RefresherEventDetail>) {
         console.log('Begin async operation');
         setIsLoaded(false);
-        loadDetail(sendId, token);
+        loadDataLastRequest(sendId);
         setTimeout(() => {
             console.log('Async operation has ended');
             event.detail.complete();
@@ -115,10 +107,9 @@ const FormUpdateOdo: React.FC = () => {
             setToken(res);
 
             // @ts-ignore
-            const dataId = history.location.state.detail;
-            setSendId(dataId);
-            // @ts-ignore
-            loadDetail(dataId, res);
+            getPref(pref_pegawai_unit_id).then(rest => {
+                loadDataLastRequest(rest);
+            });
         });
     }
 
@@ -126,35 +117,19 @@ const FormUpdateOdo: React.FC = () => {
         loadDataPref();
     }
 
-    const loadDetail = (id: any, token: any) => {
-        // @ts-ignore
-        const urlContents = BASE_API_URL + API_URI + FUEL_REQ_UNIT_URI + "/" + id;
-        //const url = BASE_API_URL + API_URI + P2H_ITEM_URI;
-        // console.log("URL: " + urlContents);
-
-        fetch(urlContents, {
-            method: 'GET',
-            headers: {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        })
-            .then(res => res.json())
-            .then(
-                (result) => {
-                    if (result.status === "SUCCESS") {
-                        setReqFuel(result.data);
-                    }
-                    setIsLoaded(true);
-                },
-                (error) => {
-                    //setIsLoaded(true);
-                    //setError(error);
+    const loadDataLastRequest = (user: any) => {
+        console.log("puid", user)
+        lastRedeemCoupon(user).then((res) => {
+            setLastRedeem(res.data);
+            setOdo({...odo, kupon: {id:res.data.id}});
+        }).catch((error) => {
+            console.log('error', error)
+            toast( {
+                    message: "Terjadi kesalahan! ["+error.message+"]", duration: 1500, position: "top"
                 }
             );
+        })
     }
-
-    const ref = useRef();
 
     const takePhoto = async () => {
         await Camera.getPhoto({
@@ -167,7 +142,7 @@ const FormUpdateOdo: React.FC = () => {
                 let imgs = res.base64String;
                 let imgName = (new Date().getTime().toString()) + "." + res.format;
                 // @ts-ignore
-                setKupon({ ...kupon, img: imgs, filename: imgName });
+                setOdo({...odo, base64: imgs, odometerImg: imgName});
                 setPhoto(res);
             })
             .catch((err) => {
@@ -175,246 +150,23 @@ const FormUpdateOdo: React.FC = () => {
             });
     };
 
-    const handleOpen = () => {
-        // @ts-ignore
-        ref.current.open();
-    };
-
-    const handleClose = () => {
-        // @ts-ignore
-        ref.current.close();
-    };
-
-    const btnBack = () => {
-        history.goBack();
-        // history.push("/fuel/req-fuel/daftar-permintaan");
-    }
-
-    const btnAjukan = (e : any) => {
-        e.preventDefault();
-        let valid = true;
-        let msg = "";
-        if(realStatus === "FILLED"){
-            if(kupon.alasan == null || kupon.alasan === "" || kupon.alasan.length < 20){
-                valid = false;
-                msg = "Alasan wajib diisi!";
-            }
-            if(kupon.img == null){
-                valid = false;
-                msg = "Foto odometer wajib dilampirkan!";
-            }
-        } else {
-            if(kupon.alasan == null || kupon.alasan === "" || kupon.alasan.length < 20){
-                valid = false;
-                msg = "Alasan wajib diisi!";
-            }
-        }
-        if(valid) {
-            presentAlert({
-                subHeader: 'Anda yakin untuk mengajukan ampunan ini?',
-                buttons: [
-                    {
-                        text: 'Tidak',
-                        cssClass: 'alert-button-cancel',
-                    },
-                    {
-                        text: 'Ya',
-                        cssClass: 'alert-button-confirm',
-                        handler: () => {
-                            sendAjukan();
-                        }
-                    },
-                ],
-            })
-        } else {
-            toast( {
-                    message: msg, duration: 1500, position: "top"
-                }
-            );
-        }
-    }
-
-    const sendAjukan = () => {
+    const kirimData = () => {
         const loading = present({
-            message: 'Memproses pengajuan ampunan ...',
+            message: 'Memproses permintaan ...',
+            backdropDismiss: false
         })
-        if(realStatus === "FILLED"){
-            sendConfirmation("CLOSED","selesai");
-            pengajuan();
-        } else {
-            pengajuan();
-        }
-
-    }
-
-    const pengajuan = () => {
-        const urlContents = BASE_API_URL + API_URI + FUEL_REQ_UNIT_URI + FUEL_REQ_UNIT_FORGIVENES_URI;
-        //const url = BASE_API_URL + API_URI + P2H_ITEM_URI;
-        // console.log("URL: " + urlContents);
-        const data = {id:sendId, alasan:kupon.alasan}
-
-        fetch(urlContents, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Identity': identity ? identity :''},
-            body: JSON.stringify(data)
-        })
-            .then(res => res.json())
-            .then((result) => {
-                    dismiss();
-                    showConfirm({
-                        //simpan unit id ke pref
-                        subHeader: "Pengajuan ampunan berhasil dikirim!",
-                        buttons: [
-                            {
-                                text: 'OK',
-                                cssClass: 'alert-button-confirm',
-                                handler: () => {
-                                    loadDetail(sendId, token);
-                                    // history.push("/fuel/req-fuel/daftar-permintaan");
-                                }
-                            },
-                        ],
-                    })
-                },
-                (error) => {
-                    dismiss();
-                    toast( {
-                            message: "Terjadi kesalahan! ["+error.message+"]", duration: 1500, position: "top"
-                        }
-                    );
-                }
-            );
-    }
-
-    const btnSelesai = (e : any) => {
-        e.preventDefault();
-        if(photo != null ) {
-            presentAlert({
-                subHeader: 'Anda yakin untuk menyelesaikan permintaan ini?',
-                buttons: [
-                    {
-                        text: 'Tidak',
-                        cssClass: 'alert-button-cancel',
-                    },
-                    {
-                        text: 'Ya',
-                        cssClass: 'alert-button-confirm',
-                        handler: () => {
-                            sendConfirmation("CLOSED","selesai");
-                        }
-                    },
-                ],
-            })
-        } else {
-            toast( {
-                    message: "Foto odometer wajib dilampirkan!", duration: 1500, position: "top"
-                }
-            );
-        }
-    }
-
-    const btnPerbaikan = (e : any) => {
-        e.preventDefault();
-        if(photo != null) {
-            presentAlert({
-                subHeader: 'Anda yakin untuk meminta perbaikan jumlah fuel?',
-                buttons: [
-                    {
-                        text: 'Tidak',
-                        cssClass: 'alert-button-cancel',
-                    },
-                    {
-                        text: 'Ya',
-                        cssClass: 'alert-button-confirm',
-                        handler: () => {
-                            sendConfirmation("REFILL","perbaikan");
-                        }
-                    },
-                ],
-            })
-        } else {
-            toast( {
-                    message: "Foto odometer wajib dilampirkan!", duration: 1500, position: "top"
-                }
-            );
-        }
-    }
-
-    const sendConfirmation = (status : any, tipe: any) => {
-        const urlContents = BASE_API_URL + API_URI + FUEL_REQ_UNIT_URI + FUEL_REQ_UNIT_CONFIRMATION_URI;
-        //const url = BASE_API_URL + API_URI + P2H_ITEM_URI;
-        // console.log("URL: " + urlContents);
-        const data = {id:sendId, status:status, img:kupon.img, filename:kupon.filename, alasan:""}
-        let msg = tipe === "perbaikan" ? "Pengajuan perbaikan" : "Penyelesaian permintaan";
-        const loading = present({
-            message: 'Memproses '+msg+" ...",
-        })
-        fetch(urlContents, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Identity': identity ? identity :''},
-            body: JSON.stringify(data)
-        })
-            .then(res => res.json())
-            .then(
-                (result) => {
-                    dismiss();
-                    if (result.status === "SUCCESS") {
-                        showConfirm({
-                            //simpan unit id ke pref
-                            subHeader: ""+msg+" berhasil dikirim!",
-                            buttons: [
-                                {
-                                    text: 'OK',
-                                    cssClass: 'alert-button-confirm',
-                                    handler: () => {
-                                        loadDetail(sendId, token);
-                                        // history.push("/fuel/req-fuel/daftar-permintaan");
-                                    }
-                                },
-                            ],
-                        })
-                    }
-                },
-                (error) => {
-                    dismiss();
-                    toast( {
-                            message: "Terjadi kesalahan! ["+error.message+"]", duration: 1500, position: "top"
-                        }
-                    );
-                    //setIsLoaded(true);
-                    //setError(error);
-                }
-            );
-    }
-
-    const btnBatal = () => {
-        presentAlert({
-            subHeader: 'Anda yakin untuk membatalkan Permintaan Bahan Bakar Unit ini?',
-            buttons: [
-                {
-                    text: 'Tidak',
-                    cssClass: 'alert-button-cancel',
-                },
-                {
-                    text: 'Ya',
-                    cssClass: 'alert-button-confirm',
-                    handler: () => {
-                        sendRequest();
-                    }
-                },
-            ],
-        })
-    }
-
-    const sendRequest = () => {
-        const loading = present({
-            message: 'Memproses pembatalan ...',
-        })
-        const url = BASE_API_URL + API_URI + FUEL_REQ_UNIT_URI + FUEL_REQ_UNIT_APPROVAL_URI;
-        const data = { kupon: { id: sendId }, status: "CANCELED", approveType: "USER", komentar: null, tanggal: (new Date()), pegawai: { id: pegId } } //user diambil dari pref
+        const url = BaseAPI() + API_URI + FUEL_REQ_UNIT_URI + UPDATE_ODO_CREATE_URI;
+        const data = {
+            kupon: {id: odo.kupon.id},
+            odometerPerbaikan: odo.odometerPerbaikan,
+            alasan: odo.alasan,
+            requester: {id: pegId},
+            base64: odo.base64,
+            odometerImg: odo.odometerImg
+        } //user diambil dari pref
         fetch(url, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Identity': identity ? identity : '' },
+            headers: {'Content-Type': 'application/json', 'Identity': identity ? identity : ''},
             body: JSON.stringify(data)
         })
             .then(res => res.json())
@@ -424,21 +176,23 @@ const FormUpdateOdo: React.FC = () => {
                     if (result.status === "SUCCESS") {
                         showConfirm({
                             //simpan unit id ke pref
-                            subHeader: "Pembatalan Permintaan Bahan Bakar Unit berhasil!",
+                            subHeader: "Permintaan Update Odometer berhasil!",
+                            backdropDismiss: false,
                             buttons: [
                                 {
                                     text: 'OK',
                                     cssClass: 'alert-button-confirm',
                                     handler: () => {
-                                        loadDetail(sendId, token);
+                                        // loadDetail(sendId, token);
+                                        history.goBack();
                                     }
                                 },
                             ],
                         })
                     } else {
                         toast({
-                            message: "Terjadi kesalahan! [" + result.message + "]", duration: 1500, position: "top"
-                        }
+                                message: "Terjadi kesalahan! [" + result.message + "]", duration: 1500, position: "top"
+                            }
                         );
                     }
                 },
@@ -448,130 +202,155 @@ const FormUpdateOdo: React.FC = () => {
                 (error) => {
                     dismiss();
                     toast({
-                        message: "Terjadi kesalahan! [" + error.message + "]", duration: 1500, position: "top"
-                    }
+                            message: "Terjadi kesalahan! [" + error.message + "]", duration: 1500, position: "top"
+                        }
                     );
                 }
             )
+    }
+
+    const sendRequest = (e : any) => {
+        e.preventDefault();
+        if(odo.alasan != null && odo.alasan.length > 20){
+            presentAlert({
+                subHeader: 'Anda yakin untuk mengirim permintaan ini?',
+                backdropDismiss: false,
+                buttons: [
+                    {
+                        text: 'Tidak',
+                        cssClass: 'alert-button-cancel',
+                    },
+                    {
+                        text: 'Ya',
+                        cssClass: 'alert-button-confirm',
+                        handler: () => {
+                            kirimData();
+                        }
+                    },
+                ],
+            })
+        } else {
+            toast({
+                    message: "Alasan minimal 20 karakter!", duration: 1500, position: "top"
+                }
+            );
+        }
     };
 
-    // @ts-ignore
-    // @ts-ignore
-    // @ts-ignore
     return (
         <IonPage>
-            {isLoaded ?
-                <>
-                    <IonContent fullscreen>
-                        <IonRefresher slot="fixed" onIonRefresh={doRefresh}>
-                            <IonRefresherContent></IonRefresherContent>
-                        </IonRefresher>
-                        <div className="bg-white flex flex-col min-h-screen justify-between">
+            <IonContent fullscreen>
+                <IonRefresher slot="fixed" onIonRefresh={doRefresh}>
+                    <IonRefresherContent></IonRefresherContent>
+                </IonRefresher>
+                <div className=" bg-white flex flex-col min-h-screen justify-between">
 
-                            {/* === Start Form  === */}
+                    {/* === Start Form  === */}
+                    <form onSubmit={sendRequest}>
+                    <div>
+                        <ListHeader title={"Form Update Odometer"} isReplace={false} link={""} addButton={false} />
+                        <div className="p-6">
                             <div>
-                                <DetailHeader title={"Permintaan Update Odometer"} link="" approval={reqFuel != null ? reqFuel['status'] : ""}></DetailHeader>
-
-                                <div className="p-3">
-                                    <div className="pt-6">
-                                        <label className="block text-sm text-gray-400">
-                                            Tanggal Permintaan
-                                        </label>
-                                        <div>
-                                            {reqFuel != null ? moment(reqFuel["tanggal"]).format('DD MMM yyyy').toString() : "-"}
-                                        </div>
-                                    </div>
-                                    {(reqFuel != null && reqFuel["status"] !== "READY") &&
-                                        <div className="mt-4">
-                                            <label className="block text-sm text-gray-400">
-                                                No. Permintaan
-                                            </label>
-                                            <div>
-                                                {reqFuel != null ? reqFuel["nomor"] : "-"}
-                                            </div>
-                                        </div>
-                                    }
-                                    <div className="mt-4">
-                                        <label className="block text-sm text-gray-400">
-                                            No. Lambung
-                                        </label>
-                                        <div>
-                                            {reqFuel != null ? reqFuel["pegawaiUnit"]["unit"]["noLambung"] : "-"}
-                                        </div>
-                                    </div>
-
-                                    <div className="mt-4">
-                                        <label className="block text-sm text-gray-400">
-                                            No. Polisi
-                                        </label>
-                                        <div>
-                                            {reqFuel != null ? reqFuel["pegawaiUnit"]["unit"]["noPol"] : "-"}
-                                        </div>
-                                    </div>
-
-                                    {(reqFuel != null && reqFuel["status"] !== "READY") &&
-                                        <>
-                                        <div className="mt-4">
-                                            <label className="block text-sm text-gray-400">
-                                                Odometer sebelum permintaan
-                                            </label>
-                                            <div>
-                                                {reqFuel != null ? reqFuel["odometerPengisianSebelumnya"] : "N/A"} Km
-                                            </div>
-                                        </div>
-
-                                        <div className="mt-4">
-                                            <label className="block text-sm text-gray-400">
-                                                Odometer saat permintaan
-                                            </label>
-                                            <div>
-                                                {reqFuel != null ? reqFuel["odometerPermintaan"] : "N/A"} Km
-                                            </div>
-                                        </div>
-                                        </>
-                                    }
-                                    {(reqFuel != null && reqFuel["liter"] != null) &&
-                                        <div className="mt-4">
-                                            <label className="block text-sm text-gray-400">
-                                                Jumlah pengisian
-                                            </label>
-                                            <div>
-                                                {reqFuel != null ? reqFuel["liter"] : "N/A"} Liter
-                                            </div>
-                                        </div>
-                                    }
-
-                                    {(reqFuel != null && (reqFuel["status"] === "READY")) &&
-                                        <div className="mt-4">
-                                            <div onClick={handleOpen}
-                                                className="inline-flex w-full justify-between rounded-lg bg-white border border-gray-800 text-gray-900 text-sm px-4 py-2">
-                                                Daftar Fuel Station
-                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                                                    className="w-5 h-5">
-                                                    <path fill-rule="evenodd"
-                                                        d="M16.28 11.47a.75.75 0 010 1.06l-7.5 7.5a.75.75 0 01-1.06-1.06L14.69 12 7.72 5.03a.75.75 0 011.06-1.06l7.5 7.5z"
-                                                        clip-rule="evenodd" />
-                                                </svg>
-                                            </div>
-                                        </div>
-                                    }
+                                <label className="block text-sm text-gray-400">
+                                    No. Lambung
+                                </label>
+                                <div>
+                                    {unit ? unit['noLambung'] : "-"}
                                 </div>
                             </div>
-                            {/* === End Form === */}
-                            <div className='p-6 items-end bg-white'>
-                                <button onClick={btnBatal} className="w-full items-center mx-auto rounded-md bg-indigo-500 px-3 py-2 text-sm font-bold text-white">
-                                    KIRIM
-                                </button>
+
+                            <div className="mt-4">
+                                <label className="block text-sm text-gray-400">
+                                    No. Polisi
+                                </label>
+                                <div>
+                                    {unit ? unit['noPol'] : "-"}
+                                </div>
+                            </div>
+
+                            <div className="mt-4">
+                                <label className="block text-sm text-gray-400">
+                                    Kilometer Terakhir
+                                </label>
+                                <div>
+                                    {lastRedeem != null ? lastRedeem['odometerPengisian'] : "0"} Km
+                                </div>
+                            </div>
+
+                            <div className="mt-4">
+                                <label htmlFor='odometer' className="block text-sm text-gray-400">
+                                    Kilometer Aktual
+                                </label>
+                                <div className="border-b border-gray-300 py-2">
+                                    <input
+                                        defaultValue={"0123 tes"}
+                                        onChange={(event) => setOdo({...odo, odometerPerbaikan: event.target.value})}
+                                        required
+                                        type="number"
+                                        name="odometer"
+                                        id="odometer"
+                                        className="block w-full"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="mt-4">
+                                <label htmlFor='odometer' className="block text-sm text-gray-400">
+                                    Foto Odometer
+                                </label>
+                                {photo ?
+                                    <><div className="group block rounded-lg aspect-auto bg-gray-100 overflow-hidden">
+                                        <img className="object-cover pointer-events-none" src={`data:image/jpeg;base64,${photo.base64String}`} ></img>
+                                    </div></>
+                                    :
+                                    <div className="rounded-md border-2 border-dashed border-gray-300 py-10">
+                                        <><div className="flex justify-center">
+                                            <button onClick={() => {
+                                                takePhoto();
+                                            }}
+                                                    className="items-center rounded-full bg-slate-800 px-3 py-3 text-white">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                                                    <path fill-rule="evenodd" d="M1 8a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 018.07 3h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0016.07 6H17a2 2 0 012 2v7a2 2 0 01-2 2H3a2 2 0 01-2-2V8zm13.5 3a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM10 14a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
+                                                </svg>
+                                            </button>
+                                        </div><p className="mt-1 text-xs text-center text-gray-500">Ambil Foto</p></>
+                                    </div>
+                                }
+                            </div>
+                            <div className="mt-4">
+                                <label htmlFor='odometer' className="block text-sm text-gray-400">
+                                    Alasan
+                                </label>
+                                <TextareaExpand
+                                    onChange={(event) => setOdo({...odo, alasan: event.target.value})}
+                                    className="block w-full border-b border-gray-300 py-2"
+                                    id="keterangan"
+                                    name="keterangan"
+                                    required
+                                />
                             </div>
                         </div>
+                    </div>
+                    {/* === End Form === */}
+                    <div className='p-6 items-end bg-white'>
+                        <button
+                                className="w-full items-center mx-auto rounded-md bg-emerald-500 px-3 py-2 text-sm font-bold text-white">
+                            KIRIM
+                        </button>
+                    </div>
+                    </form>
+                </div>
 
-                    </IonContent>
+            </IonContent>
+            {/* {isLoaded ?
+                <>
+                    
                 </>
                 : <>
                     {
                         <SkeletonDetail />
                     }
-                </>}
+                </>} */}
         </IonPage>
 
     );
@@ -579,6 +358,7 @@ const FormUpdateOdo: React.FC = () => {
 };
 
 export default FormUpdateOdo;
+
 function classNames(arg0: string, arg1: string): string | undefined {
     throw new Error('Function not implemented.');
 }

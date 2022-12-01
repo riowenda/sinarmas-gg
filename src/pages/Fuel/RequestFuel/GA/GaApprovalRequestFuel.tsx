@@ -17,12 +17,12 @@ import { useTranslation, initReactI18next } from "react-i18next";
 import React, { useCallback, useEffect, useState } from "react";
 import {
     API_URI,
-    BASE_API_URL, FUEL_REQ_UNIT_APPROVAL_URI, FUEL_REQ_UNIT_GA_FORGIVEN_URL, FUEL_REQ_UNIT_URI,
+    FUEL_REQ_UNIT_APPROVAL_URI, FUEL_REQ_UNIT_GA_FORGIVEN_URL, FUEL_REQ_UNIT_URI, IMAGE_FUEL_URI,
     pref_identity, pref_pegawai_id,
     pref_user_id, TEMP_UNIT_APPROVAL_URI, TEMP_UNIT_URI,
 } from "../../../../constant/Index";
 import {useHistory, useLocation, useParams} from "react-router-dom";
-import { getPref } from "../../../../helper/preferences";
+import { getPref } from "../../../../helper/Preferences";
 import TextareaExpand from 'react-expanding-textarea';
 import moment from "moment";
 import UserCardWithUnit from "../../../Layout/UserCardWithUnit";
@@ -30,6 +30,7 @@ import {Capacitor} from "@capacitor/core";
 import {App} from "@capacitor/app";
 import SkeletonDetail from '../../../Layout/SkeletonDetail';
 import DetailHeader from "../../../../components/Header/DetailHeader";
+import {BaseAPI} from "../../../../api/ApiManager";
 
 const obj = {id:"", pegawaiUnit: {id: "", unit: {id: "", noLambung: "", noPol: ""}}, nomor: "", tanggal: null, liter: null, odometerPermintaan: null, odometerPermintaanImg: null, odometerPengisianSebelumnya: null, odometerPengisian: null, odometerPengisianImg: null, status: null, fuelStasiun: null, fuelMan: null, riwayats: [], permintaanDataImg: null, pengisianDataImg: null}
 const peg = {id:"", name:"", nik:"", foto:""};
@@ -116,7 +117,7 @@ const GaApprovalRequestFuel: React.FC = () => {
     };
 
     const loadDataPermintaan = (id: any) => {
-        const url = BASE_API_URL + API_URI + FUEL_REQ_UNIT_URI + "/" + id;
+        const url = BaseAPI() + API_URI + FUEL_REQ_UNIT_URI + "/" + id;
         fetch(url)
             .then(res => res.json())
             .then(
@@ -179,6 +180,7 @@ const GaApprovalRequestFuel: React.FC = () => {
         if (allowToPush) {
             presentAlert({
                 subHeader: keterangan,
+                backdropDismiss: false,
                 buttons: [
                     {
                         text: 'Batal',
@@ -199,8 +201,9 @@ const GaApprovalRequestFuel: React.FC = () => {
     const sendRequestApprovement = (status: any) => {
         const loading = present({
             message: 'Memproses ' + status === 'REJECTED' ? 'penolakan' : 'persetujuan' + ' ...',
+            backdropDismiss: false
         })
-        const url = BASE_API_URL + API_URI + FUEL_REQ_UNIT_URI + FUEL_REQ_UNIT_APPROVAL_URI;
+        const url = BaseAPI() + API_URI + FUEL_REQ_UNIT_URI + FUEL_REQ_UNIT_APPROVAL_URI;
         const body = {kupon:{id:getId}, status:status, approveType: "GA", komentar:approv.komentar, tanggal: (new Date()), pegawai: {id:pegId}};
         fetch(url, {
             method: 'POST',
@@ -218,6 +221,7 @@ const GaApprovalRequestFuel: React.FC = () => {
                         showConfirm({
                             //simpan unit id ke pref
                             subHeader: ('Tidak dapat memproses ' + keterangan),
+                            backdropDismiss: false,
                             buttons: [
                                 {
                                     text: 'OK',
@@ -245,6 +249,7 @@ const GaApprovalRequestFuel: React.FC = () => {
         showConfirm({
             //simpan unit id ke pref
             subHeader: '' + ("Berhasil memproses " + (status === "REJECTED" ? "Penolakan." : "Persetujuan.")) + '',
+            backdropDismiss: false,
             buttons: [
                 {
                     text: 'OK',
@@ -260,6 +265,7 @@ const GaApprovalRequestFuel: React.FC = () => {
     const acceptAmpunan = () => {
         presentAlert({
             subHeader: "Anda yakin untuk menyelesaikan ampunan ini?",
+            backdropDismiss: false,
             buttons: [
                 {
                     text: 'Batal',
@@ -279,8 +285,9 @@ const GaApprovalRequestFuel: React.FC = () => {
     const kirimAmpunan = () => {
         const loading = present({
             message: 'Memproses persetujuan ampunan ...',
+            backdropDismiss: false
         })
-        const url = BASE_API_URL + API_URI + FUEL_REQ_UNIT_URI + FUEL_REQ_UNIT_GA_FORGIVEN_URL;
+        const url = BaseAPI() + API_URI + FUEL_REQ_UNIT_URI + FUEL_REQ_UNIT_GA_FORGIVEN_URL;
         const body = {id:getId, ga:pegId, komentar:forgiven.komentar};
         fetch(url, {
             method: 'POST',
@@ -295,6 +302,7 @@ const GaApprovalRequestFuel: React.FC = () => {
                         showConfirm({
                             //simpan unit id ke pref
                             subHeader: "Persetujuan ampunan berhasil!",
+                            backdropDismiss: false,
                             buttons: [
                                 {
                                     text: 'OK',
@@ -310,6 +318,7 @@ const GaApprovalRequestFuel: React.FC = () => {
                         showConfirm({
                             //simpan unit id ke pref
                             subHeader: "Tidak dapat memproses persetujuan!",
+                            backdropDismiss: false,
                             buttons: [
                                 {
                                     text: 'OK',
@@ -388,7 +397,7 @@ const GaApprovalRequestFuel: React.FC = () => {
 
                             <div className="mt-4">
                                 <label className="block text-sm text-gray-400">
-                                    {items.status === "PROPOSED" ? "Odometer pengisian sebelumnya" : "Odometer awal"}
+                                    Odometer pengisian sebelumnya
                                 </label>
                                 <div>
                                     {items.odometerPengisianSebelumnya} Km
@@ -397,36 +406,30 @@ const GaApprovalRequestFuel: React.FC = () => {
 
                             <div className="mt-4">
                                 <label htmlFor='odometer' className="block text-sm text-gray-400">
-                                    {items.status === "PROPOSED" ? "Odometer saat permintaan" : "Odometer aktual"}
+                                    Odometer saat permintaan
                                 </label>
                                 <div>
                                     {items.odometerPermintaan} Km
                                 </div>
                             </div>
 
-                            {items.status !== "PROPOSED" &&
+                            {(items.status !== "PROPOSED" && items.odometerPengisian != null) &&
                             <div className="mt-4">
                                 <label className="block text-sm text-gray-400">
                                     Odometer saat pengisian
                                 </label>
                                 <div>
-                                    {items.odometerPermintaan} Km
+                                    {items.odometerPengisian} Km
                                 </div>
                             </div>
                             }
 
-                            <div className="mt-4">
+                            <div hidden={items.status !== "PROPOSED" ? false : false} className="mt-4">
                                 <label htmlFor='odometer' className="block text-sm text-gray-400">
                                     Foto Odometer
                                 </label>
-                                <div hidden={items.status !== "PROPOSED" ? true : false} className="group block rounded-lg aspect-auto bg-gray-100 overflow-hidden">
-                                    <img className="object-cover pointer-events-none"
-                                         src={`${items.permintaanDataImg}`}></img>
-                                </div>
-                                <div hidden={items.status !== "PROPOSED" ? false : true} className="group block rounded-lg aspect-auto bg-gray-100 overflow-hidden">
-                                    {items.pengisianDataImg != null &&
-                                        <img className="object-cover pointer-events-none" src={`${items.pengisianDataImg}`}></img>
-                                    }
+                                <div className="group block rounded-lg aspect-auto bg-gray-100 overflow-hidden">
+                                    <img className="object-cover pointer-events-none" src={`${BaseAPI()}${API_URI}${IMAGE_FUEL_URI}${items.odometerPengisianImg != null ? items.odometerPengisianImg : items.odometerPermintaanImg}`} ></img>
                                 </div>
                             </div>
 
@@ -450,10 +453,16 @@ const GaApprovalRequestFuel: React.FC = () => {
                                         <div className='font-bold'> {alasanAmpunan != null ? alasanAmpunan["status"] : ""} </div>
                                         <div className='italic pl-3'> {alasanAmpunan != null ? alasanAmpunan["komentar"] : ""} </div>
                                     </div>
-                                    <div hidden={komentarAmpunan == null ? true : false}>
-                                        <div className='font-bold'> {komentarAmpunan != null ? "["+komentarAmpunan["pegawai"]["name"]+"] "+komentarAmpunan["status"] : ""} </div>
-                                        <div className='italic pl-3'> {komentarAmpunan != null ? komentarAmpunan["komentar"] : ""} </div>
-                                    </div>
+                                    {komentarAmpunan != null &&
+                                        <div hidden={komentarAmpunan == null ? true : false}>
+                                            {komentarAmpunan['pegawai'] != null &&
+                                                <div
+                                                    className='font-bold'>{ "["+komentarAmpunan["pegawai"]["name"]+ "] " + komentarAmpunan["status"] } </div>
+                                            }
+                                            <div
+                                                className='italic pl-3'> {komentarAmpunan != null ? komentarAmpunan["komentar"] : ""} </div>
+                                        </div>
+                                    }
                                 </div>
                             }
 

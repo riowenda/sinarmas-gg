@@ -1,27 +1,15 @@
 import './HeaderUser.css';
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import "../../components/Translate";
-import {useHistory, useLocation} from "react-router-dom";
-import { getJsonPref, getPref, removePref, setPref } from "../../helper/preferences";
-import {
-    API_URI,
-    BASE_API_URL,
-    PEGAWAI_UNIT_CRUD_URI, PEGAWAI_UNIT_RELEASED_URI, pref_identity,
+import {useHistory} from "react-router-dom";
+import { getJsonPref, getPref} from "../../helper/Preferences";
+import {pref_identity,
     pref_json_pegawai_info_login, pref_pegawai_unit_id,
     pref_unit, pref_unit_id
 } from "../../constant/Index";
 import {
     IonBackButton,
-    useIonAlert,
-    useIonLoading,
-    useIonToast,
-    useIonViewDidEnter, useIonViewDidLeave,
-    useIonViewWillEnter,
-    useIonViewWillLeave
 } from "@ionic/react";
-import {Capacitor} from "@capacitor/core";
-import {App} from "@capacitor/app";
 
 interface HeaderUserProps {
     link?: string;
@@ -58,15 +46,6 @@ const HeaderUser: React.FC<HeaderUserProps> = (link) => {
     useEffect(() => {
         loadDataPref();
     }, []);
-
-    const btnBack = () => {
-        if(link != null && link.link !== "") {
-            // @ts-ignore
-            history.push(link.link);
-        } else {
-            history.goBack();
-        }
-    }
 
     return (
         <>

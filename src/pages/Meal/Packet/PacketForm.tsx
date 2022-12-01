@@ -16,7 +16,7 @@ import Select from 'react-select'
 import React, { useRef, useState, useCallback } from "react";
 import { useHistory, useParams } from "react-router-dom";
 // import { } from "@heroicons/react/24/outline";
-import {getJsonPref, getPref} from "../../../helper/preferences";
+import {getJsonPref, getPref} from "../../../helper/Preferences";
 import ListHeader from "../../../components/Header/ListHeader";
 
 import {
@@ -27,6 +27,35 @@ import {
   MEAL_PACKET,
   MEAL_PACKET_SAVE
 } from "../../../constant/Index";
+
+interface MealPacket {
+  id: number,
+  user_id: number,
+  user_name: string,
+  packet_category_id: number,
+  packet_category_name: string,
+  request_date: string,
+  shift_id: number,
+  shift_name: string,
+  menu_lists: {
+    [key: string]: string | number
+    // Tipe: string,
+    // Nasi: string,
+    // 'Menu Utama': string,
+    // 'Hidangan Kedua': string,
+    // Sayuran: string,
+    // Pelengkap: string,
+    // Penutup: string,
+    // Harga: number
+  }[],
+  price: number | null,
+  status: string,
+  reason: string | null,
+  handled_at: string | null,
+  deleted_at: string | null,
+  created_at: string | null,
+  updated_at: string | null,
+}
 
 const BASE_API_URL = 'http://182.253.66.235:8000';
 const API_URI = '';
@@ -73,24 +102,34 @@ const MealRequestForm: React.FC = () => {
 
   const [visitorType, setVisitorType] = useState<string>();
   const [shiftActivities, setShiftActivities] = useState(() => shifts.map((x) => false));
-  const [data, setData] = useState(() => ({
-    id: '',
-    user_id: '',
+  const [data, setData] = useState<MealPacket>({
+    id: 0,
+    user_id: 0,
     user_name: '',
-    packet_category_id: '',
+    packet_category_id: 0,
     packet_category_name: '',
     request_date: '',
-    shift_id: '',
+    shift_id: 0,
     shift_name: '',
-    menu_lists: '',
-    price: '',
+    menu_lists: [{
+      Tipe: '',
+      Nasi: '',
+      'Menu Utama': '',
+      'Hidangan Kedua': '',
+      Sayuran: '',
+      Pelengkap: '',
+      Penutup: '',
+      Harga: 0
+      // [key: string]: string | number
+    }],
+    price: 0,
     status: '',
     reason: '',
     handled_at: '',
     deleted_at: '',
     created_at: '',
     updated_at: '',
-  }))
+  })
 
   const doRefresh = (event: CustomEvent<RefresherEventDetail>) => {
     setTimeout(() => {
@@ -296,7 +335,7 @@ const MealRequestForm: React.FC = () => {
 
         <div className="bg-red-700">
 
-          <ListHeader title={"Buat Pesanan"} isReplace={false} />
+          <ListHeader title={"Detail Paket"} isReplace={false} />
 
           <div className="bg-white">
           {/*<div className="bg-white rounded-t-3xl px-2 pt-2 pb-6">*/}
@@ -324,11 +363,46 @@ const MealRequestForm: React.FC = () => {
                 */}
               </div>
 
+              <label htmlFor="visitorType" className="block mt-3 text-sm text-gray-900">Detail Paket :</label>
+              {data.menu_lists.map(( obj, index ) => {
+                
+                const items = [];
+                for (let key in obj) {
+                  if (obj.hasOwnProperty(key)) {
+                    items.push(<tr key={key}>
+                      <td className="p-1 border">{key}</td>
+                      <td className="p-1 border">{obj[key]}</td>
+                    </tr>)
+                  }
+                }
+
+                return (<table className="border-collapse w-full my-3 bg-gray-50">{items}</table>)
+              })}
+
+              {/*
+              <table>
+                {data.menu_lists.map((value, key) => ({
+                  <tr>
+                    <td>{key}</td>
+                    <td>{value}</td>
+                  </tr>
+                )})
+              </table>
+              */}
+
             </div>
 
             <div className='p-6 items-end bg-white'>
               <button className="w-full items-center mx-auto rounded-md bg-emerald-500 px-3 py-2 text-sm font-bold text-white" onClick={doSubmit}>
-                Buat Pesanan
+                Submit
+              </button>
+
+              <button className="w-full text-center items-center rounded bg-gray-200 px-2.5 py-3 text-xs font-bold mt-5">
+                <span className="text-red-700">Draf</span>
+              </button>
+
+              <button className="w-full text-center items-center rounded bg-gray-200 px-2.5 py-3 text-xs font-bold mt-5">
+                <span className="text-red-700">Batal</span>
               </button>
             </div>
           </div>

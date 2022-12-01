@@ -1,0 +1,31 @@
+.react-dropdown-tree-select .dropdown {
+    width: 100%;
+}
+
+.react-dropdown-tree-select .dropdown .dropdown-trigger {
+    width: 100%;
+}
+
+.tag-list {
+    width: 100%;
+}
+
+.tag-item .search {
+    border: none;
+    outline: none;
+    border-bottom: 0;
+    width: 100%;
+}
+
+.react-dropdown-tree-select .dropdown .dropdown-trigger.arrow.bottom:after {
+    display: none;
+}
+
+.react-dropdown-tree-select .dropdown .dropdown-trigger.arrow.top:after {
+    display: none;
+}
+
+
+.react-dropdown-tree-select .dropdown .dropdown-content {
+    width: 100%;
+}

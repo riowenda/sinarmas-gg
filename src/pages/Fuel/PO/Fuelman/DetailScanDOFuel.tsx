@@ -12,38 +12,28 @@ import {
 } from '@ionic/react';
 
 import { RefresherEventDetail } from '@ionic/core';
-import { useTranslation, initReactI18next, ReactI18NextChild} from "react-i18next";
-import React, {useCallback, useEffect, useRef, useState} from "react";
-import ActionSheet from "actionsheet-react";
+import { useTranslation} from "react-i18next";
+import React, {useState} from "react";
 import {
     API_URI,
-    BASE_API_URL,
-    FUEL_REQ_UNIT_APPROVAL_URI,
-    FUEL_REQ_UNIT_URI, IMAGE_FUEL_URI,
-    PO_DO_APPROVEMENT_LOGISTIC_URI, PO_DO_CONFIRMATION_FUELMAN_URI,
+    FUEL_STATION_TRANSACTION_BY_NOMOR_URI, IMAGE_FUEL_URI,
+    PO_DO_CONFIRMATION_FUELMAN_URI,
     PO_DO_DETAIL_URI,
-    PO_URI, pref_fuel_station_id,
+    PO_URI,
     pref_identity,
     pref_json_pegawai_info_login,
     pref_pegawai_id,
     pref_token,
-    pref_unit,
-    TEMP_UNIT_APPROVAL_URI,
-    TEMP_UNIT_URI,
+    pref_unit
 } from "../../../../constant/Index";
 import {useHistory, useLocation, useParams} from "react-router-dom";
-import {getJsonPref, getPref} from "../../../../helper/preferences";
+import {getJsonPref, getPref} from "../../../../helper/Preferences";
 import moment from "moment";
-import SVGStopCloseCheckCircle from "../../../Layout/SVGStopCloseCheckCircle";
 import SkeletonDetail from '../../../Layout/SkeletonDetail';
 import DetailHeader from '../../../../components/Header/DetailHeader';
-import TextareaExpand from 'react-expanding-textarea';
-import QRCodeWithLogo from "../../../../components/QRCodeWithLogo/QRCodeWithLogo";
-import {PO} from "../../../../api/PODOFuelAPI/PO";
 import {QualityListAPI} from "../../../../api/MDForFuel/QualityList";
-import {Camera, CameraResultType, CameraSource} from "@capacitor/camera";
-import update from "immutability-helper";
 import keterangan from "../../../GACare/components/Keterangan";
+import {BaseAPI} from "../../../../api/ApiManager";
 
 const userInfo = {name: "", nik: "", imageUrl: ""}
 const userUnit = {id: "", noPol: "", noLambung: "", vendor: {name: ""}, jenisUnit: {name: ""}};
@@ -63,7 +53,9 @@ const DetailScanDOFuel: React.FC = () => {
     const [showConfirm] = useIonAlert();
     const [isLoaded, setIsLoaded] = useState(false);
     const [txt, setTxt] = useState("");
+    const [token, setToken] = useState("");
     const [quality, setQuality] = useState<any>([]);
+    const [stok, setStok] = useState<any>();
     const {t} = useTranslation();
     const location = useLocation();
 
@@ -101,7 +93,7 @@ const DetailScanDOFuel: React.FC = () => {
     function doRefresh(event: CustomEvent<RefresherEventDetail>) {
         console.log('Begin async operation');
         setIsLoaded(false);
-        loadDetail(sendId);
+        loadDetail(token, sendId);
         setTimeout(() => {
             console.log('Async operation has ended');
             event.detail.complete();
@@ -110,8 +102,8 @@ const DetailScanDOFuel: React.FC = () => {
 
     const loadDataPref = () => {
         // @ts-ignore
-        // const dataId = history.location.state.detail;
-        const dataId = '10b1b6f2-7958-4a12-9e4a-def49806342e';
+        const dataId = history.location.state.detail;
+        // const dataId = '4f884854-a5f5-454c-a4ef-ded0deecc967';
         setSendId(dataId);
 
         getJsonPref(pref_json_pegawai_info_login).then(res => {
@@ -120,12 +112,15 @@ const DetailScanDOFuel: React.FC = () => {
         getJsonPref(pref_unit).then(rest => {
             setUnit(rest);
         });
-        getPref(pref_pegawai_id).then(res => {
-            setPegId(res);
-            sendConfirm(res, dataId);
-            // @ts-ignore
-            loadDetail(dataId);
-        });
+        getPref(pref_token).then(r => {
+            setToken(r);
+            getPref(pref_pegawai_id).then(res => {
+                setPegId(res);
+                sendConfirm(res, dataId);
+                // @ts-ignore
+                loadDetail(r, dataId);
+            });
+        })
         getPref(pref_identity).then(res => {
             setIdentity(res);
         });
@@ -135,15 +130,16 @@ const DetailScanDOFuel: React.FC = () => {
         loadDataPref();
     }
 
-    const loadDetail = (id: any) => {
+    const loadDetail = (token: any, id: any) => {
         // @ts-ignore
-        const urlContents = BASE_API_URL + API_URI + PO_URI + PO_DO_DETAIL_URI + "/" + id;
-        //const url = BASE_API_URL + API_URI + P2H_ITEM_URI;
+        const urlContents = BaseAPI() + API_URI + PO_URI + PO_DO_DETAIL_URI + "/" + id;
+        //const url = BaseAPI() + API_URI + P2H_ITEM_URI;
         // console.log("URL: " + urlContents);
 
         fetch(urlContents, {
             method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         })
             .then(res => res.json())
             .then(
@@ -151,9 +147,11 @@ const DetailScanDOFuel: React.FC = () => {
                     if (result.status === "SUCCESS") {
                         setReqFuel(result.data);
                         const now = new Date();
-                        getPref(pref_token).then(res => {
-                            loadDataMDQuality(res, result.data);
-                        });
+
+                        loadDataMDQuality(result.data);
+
+                        let nomor = result.data.nomor;
+                        loadFuelTransaction(token, nomor);
                     }
                     setIsLoaded(true);
                 },
@@ -164,8 +162,29 @@ const DetailScanDOFuel: React.FC = () => {
             );
     }
 
-    const loadDataMDQuality = (token: string, doss: any) => {
-        let data = QualityListAPI(token).then(result => {
+    const loadFuelTransaction = (token: string, nomor : string) => {
+        // @ts-ignore
+        const urlContents = BaseAPI() + API_URI + FUEL_STATION_TRANSACTION_BY_NOMOR_URI + "/" + nomor;
+        fetch(urlContents, {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        })
+            .then(res => res.json())
+            .then(
+                (result) => {
+                    if (result.status === "SUCCESS") {
+                        setStok(result.data);
+                    }
+                },
+                (error) => {
+                    //setIsLoaded(true);
+                    //setError(error);
+                }
+            );
+    }
+
+    const loadDataMDQuality = (doss: any) => {
+        let data = QualityListAPI().then(result => {
             let item = result;
             let evidence: { id: string; value: string; file: string; data: string; nama: string; isEvidence: boolean; }[] = [];
             // @ts-ignore
@@ -194,7 +213,7 @@ const DetailScanDOFuel: React.FC = () => {
     }
 
     const sendConfirm = (pegId: any, doId: any) => {
-        const url = BASE_API_URL + API_URI + PO_URI + PO_DO_CONFIRMATION_FUELMAN_URI;
+        const url = BaseAPI() + API_URI + PO_URI + PO_DO_CONFIRMATION_FUELMAN_URI;
         const datas = { do: doId, fuelman:pegId} //user diambil dari pref
         fetch(url, {
             method: 'POST',
@@ -212,6 +231,7 @@ const DetailScanDOFuel: React.FC = () => {
                         showConfirm({
                             //simpan unit id ke pref
                             subHeader: keterangan,
+                            backdropDismiss: false,
                             buttons: [
                                 {
                                     text: 'OK',
@@ -260,7 +280,7 @@ const DetailScanDOFuel: React.FC = () => {
 
                                     <div className="mt-4">
                                         <label className="block text-sm text-gray-400">
-                                            No. PO
+                                            PO ID
                                         </label>
                                         <div>
                                             <strong>{reqFuel['po']['nomor']}</strong>
@@ -268,10 +288,34 @@ const DetailScanDOFuel: React.FC = () => {
                                     </div>
                                     <div className="mt-4">
                                         <label className="block text-sm text-gray-400">
-                                            No. DO
+                                            No. PO
+                                        </label>
+                                        <div>
+                                            <strong>{reqFuel['po']['ref']}</strong>
+                                        </div>
+                                    </div>
+                                    <div className="mt-4">
+                                        <label className="block text-sm text-gray-400">
+                                            DO ID
                                         </label>
                                         <div>
                                             {reqFuel['nomor']}
+                                        </div>
+                                    </div>
+                                    <div className="mt-4">
+                                        <label className="block text-sm text-gray-400">
+                                            No. DO
+                                        </label>
+                                        <div>
+                                            {reqFuel['ref']}
+                                        </div>
+                                    </div>
+                                    <div className="mt-4">
+                                        <label className="block text-sm text-gray-400">
+                                            No. GR
+                                        </label>
+                                        <div>
+                                            {reqFuel['gr_nomor']}
                                         </div>
                                     </div>
                                     <div className="mt-4">
@@ -326,7 +370,7 @@ const DetailScanDOFuel: React.FC = () => {
                                                 <div className="ml-6 mt-2">
                                                     {(item['file'] != null && item['file'] !== "") &&
                                                         <><div className="group block rounded-lg aspect-auto bg-gray-100 overflow-hidden">
-                                                            <img className="object-cover pointer-events-none" src={`${BASE_API_URL}${API_URI}${IMAGE_FUEL_URI}${item['file']}`} ></img>
+                                                            <img className="object-cover pointer-events-none" src={`${BaseAPI()}${API_URI}${IMAGE_FUEL_URI}${item['file']}`} ></img>
                                                         </div></>
                                                     }
                                                 </div>
@@ -342,7 +386,7 @@ const DetailScanDOFuel: React.FC = () => {
                                     <div>
                                         {reqFuel['keterangan'] != null ?
                                             <>
-                                            {reqFuel['pemeriksa']['name']} :<br/>
+                                            {reqFuel['pemeriksa'] != null ? reqFuel['pemeriksa']['name'] : "N/A"} :<br/>
                                             {reqFuel['keterangan']}
                                             </>
                                             :
@@ -370,14 +414,14 @@ const DetailScanDOFuel: React.FC = () => {
                                     <label className="block text-sm text-gray-400">
                                         Last Stok
                                     </label>
-                                    <div>txt_last_stok liter</div>
+                                    <div>{stok != null ? stok['stokTerakhir'] : "N/A"} liter</div>
                                 </div>
                                 <div className="mt-4">
                                     <label className="block text-sm text-gray-400">
                                         Updated Stok
                                     </label>
                                     <div>
-                                        txt_updated_stok liter
+                                        {stok != null ? stok['stockTerupdate'] : "N/A"} liter
                                     </div>
                                 </div>
                             </div>

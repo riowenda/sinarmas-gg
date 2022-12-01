@@ -19,7 +19,6 @@ import React, {useEffect, useRef, useState} from "react";
 import { defineCustomElements } from "@ionic/pwa-elements/loader";
 import {
     API_URI,
-    BASE_API_URL,
     PEGAWAI_UNIT_CRUD_URI,
     pref_user_id,
     pref_identity,
@@ -27,7 +26,7 @@ import {
     TEMP_UNIT_CREATE_URI, PEGAWAI_UNIT_BY_USER_URI, pref_pegawai_id, pref_token
 } from "../../../constant/Index";
 import {useHistory, useLocation, useParams} from "react-router-dom";
-import {getPref} from "../../../helper/preferences";
+import {getPref} from "../../../helper/Preferences";
 import moment from 'moment';
 import {Camera, CameraResultType, CameraSource} from "@capacitor/camera";
 import {Capacitor} from "@capacitor/core";
@@ -41,6 +40,7 @@ import {VendorListModalAPI} from "../../../api/MDForFuel/VendorList";
 import ListHeader from "../../../components/Header/ListHeader";
 import SelectItem from "../../../components/SelectWithSearchInModal/SelectItem";
 import {ChevronDownIcon, ClockIcon, MagnifyingGlassCircleIcon} from "@heroicons/react/24/solid";
+import {BaseAPI} from "../../../api/ApiManager";
 
 //stuktur object dari backend untuk mempermudah maping
 const obj = {pegawai: {id: ""}, jenis: {id:"", name:""}, vendor: {id:"", name:""}, type: {id:"", name:""}, spesifikasi: {id:"", name:""}, entity: {id: "", name:""}, no_poll: "", odometer: "", base64: "", odoImgFileName: "", sistemKerja: null, tanggal: new Date()}
@@ -106,7 +106,7 @@ const FormRequestTempUnit: React.FC = () => {
     }
 
     const loadDataPegawaiUnitSebelumnya = (dataId : string) => {
-        const url = BASE_API_URL + API_URI + PEGAWAI_UNIT_CRUD_URI + PEGAWAI_UNIT_BY_USER_URI + "/" + dataId;
+        const url = BaseAPI() + API_URI + PEGAWAI_UNIT_CRUD_URI + PEGAWAI_UNIT_BY_USER_URI + "/" + dataId;
         fetch(url, {
             method: 'GET'
         })
@@ -150,25 +150,24 @@ const FormRequestTempUnit: React.FC = () => {
             // setIsLoaded(true);
         } );
         getPref(pref_identity).then(res => {setIdentity(res)});
-        getPref(pref_token).then(res => {
-            SistemKerjaListModalAPI(res).then((res) => {
-                setSistemKerja(res);
-            });
-            DivisiListModalAPI(res).then((res) => {
-                setDivisi(res);
-            });
-            JenisKendaraanListModalAPI(res).then((res) => {
-                setJenis(res);
-            });
-            SpesifikasiListModalAPI(res).then((res) => {
-                setSpesifikasi(res);
-            });
-            TipeUnitListModalAPI(res).then((res) => {
-                setTipe(res);
-            });
-            VendorListModalAPI(res).then((res) => {
-                setVendor(res);
-            });
+
+        SistemKerjaListModalAPI().then((res) => {
+            setSistemKerja(res);
+        });
+        DivisiListModalAPI().then((res) => {
+            setDivisi(res);
+        });
+        JenisKendaraanListModalAPI().then((res) => {
+            setJenis(res);
+        });
+        SpesifikasiListModalAPI().then((res) => {
+            setSpesifikasi(res);
+        });
+        TipeUnitListModalAPI().then((res) => {
+            setTipe(res);
+        });
+        VendorListModalAPI().then((res) => {
+            setVendor(res);
         });
 
     }
@@ -182,9 +181,10 @@ const FormRequestTempUnit: React.FC = () => {
         if(photo){
             const loading = present({
                 message: 'Memproses permintaan ...',
+                backdropDismiss: false
             })
             // console.log(unit);
-            const url = BASE_API_URL + API_URI + TEMP_UNIT_URI + TEMP_UNIT_CREATE_URI;
+            const url = BaseAPI() + API_URI + TEMP_UNIT_URI + TEMP_UNIT_CREATE_URI;
             // const data = {pegawai: {id: ""}, jenis: {id:""}, vendor: {id:""}, type: {id:""}, spesifikasi: {id:""}, entity: {id: ""}, no_poll: "", odometer: ""}
             fetch(url, {
                 method: 'POST',
@@ -202,6 +202,7 @@ const FormRequestTempUnit: React.FC = () => {
                                 //simpan unit id ke pref
                                 header: 'Ditolak oleh sistem',
                                 subHeader: result.message,
+                                backdropDismiss: false,
                                 buttons: [
                                     {
                                         text: 'OK',
@@ -214,6 +215,7 @@ const FormRequestTempUnit: React.FC = () => {
                             showConfirm({
                                 //simpan unit id ke pref
                                 subHeader: 'Tidak dapat memproses permintaan unit sementara',
+                                backdropDismiss: false,
                                 buttons: [
                                     {
                                         text: 'OK',
@@ -248,6 +250,7 @@ const FormRequestTempUnit: React.FC = () => {
         showConfirm({
             //simpan unit id ke pref
             subHeader: 'Berhasil memproses permintaan unit sementara',
+            backdropDismiss: false,
             buttons: [
                 {
                     text: 'OK',

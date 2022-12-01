@@ -1,0 +1,32 @@
+ion-segment-button::part(indicator-background) {
+  background: #fff;
+  margin-bottom: 4px;
+}
+
+/* Material Design styles */
+ion-segment-button.md::part(native) {
+  color: #fca5a5;
+}
+
+.segment-button-checked.md::part(native) {
+  color: #fff;
+  font-weight: bold;
+}
+
+ion-segment-button.md::part(indicator-background) {
+  height: 2px;
+}
+
+/* iOS styles */
+ion-segment-button.ios::part(native) {
+  color: #fff;
+}
+
+.segment-button-checked.ios::part(native) {
+  color: #fff;
+  font-weight: bold;
+}
+
+ion-segment-button.ios::part(indicator-background) {
+  border-radius: 20px;
+}

@@ -1,5 +1,6 @@
 import React, {useState, useEffect, useRef} from "react";
 import { useHistory, useParams } from "react-router-dom";
+import { getJsonPref, getPref } from "../../../helper/Preferences";
 import {
     IonButton,
     IonButtons,
@@ -26,7 +27,16 @@ import {
     useIonToast,
     useIonViewDidEnter,
   } from "@ionic/react";
-
+  import {
+    // BASE_API_URL,
+    // API_URI,
+    PEGAWAI_UNIT_CRUD_URI, PEGAWAI_UNIT_RELEASED_URI,
+    pref_json_pegawai_info_login, pref_pegawai_unit_id,
+    pref_unit, pref_unit_id,
+    pref_identity,
+    pref_user_id,
+    pref_user_role
+  } from "../../../constant/Index";
 import {IonReactRouter} from "@ionic/react-router";
 import { RefresherEventDetail } from '@ionic/core';
 import {useTranslation, initReactI18next} from "react-i18next";
@@ -53,7 +63,7 @@ const MenuVvipView: React.FC = () => {
 
     const [items, setItems] = useState<any>();
     useIonViewDidEnter(() => {
-        loadDataMealReq(1);
+        loadDataPref();
     });
 
     function doRefresh(event: CustomEvent<RefresherEventDetail>) {
@@ -72,12 +82,25 @@ const MenuVvipView: React.FC = () => {
     }
       
     
-      
+      const loadDataPref = () => {
+        getJsonPref(pref_json_pegawai_info_login).then((res) => {
+          setPegawai(res);
+          // console.log(res);
+        });
+        getJsonPref(pref_unit).then((restUnit) => {
+          setUnit(restUnit);
+        });
+        getPref(pref_user_role).then((restRole) => {
+          setRole(restRole);
+        });
+        // getPref(pref_identity).then(res => { setIdentity(res) });
+        getPref(pref_pegawai_unit_id).then(res => { setPegUnitId(res); loadDataMealReq(res); });
+      }
       const history = useHistory();
     const btnBack = () => {
     history.push("/meal/menuvvip");
     }
-    const loadDataMealReq = (user: any) => {
+      const loadDataMealReq = (user: any) => {
         const url = BASE_API_URL + API_URI + '/vviprequests' +'/'+ params.id;
         fetch(url).then(res => res.json()).then(
           (result) => {
@@ -239,7 +262,7 @@ const MenuVvipView: React.FC = () => {
                 
             {items && (
                 
-                <div className="bg-white rounded-t-3xl px-2 pt-2 pb-6">
+                <div className="bg-white px-2 pt-2 pb-6">
                     <div className="px-4 py-4">
                         <h3 className="font-bold py-2">Status</h3>
                         <div className="flex justify-between items-center overflow-hidden rounded-lg bg-teal-500 text-white border border-1 border-gray-200 text-sm">
@@ -298,7 +321,7 @@ const MenuVvipView: React.FC = () => {
                             <label className="ml-3">Harga Paket</label>
                             <div className="ml-3 mr-2 col-span-12">
                                 <IonInput className="block w-full border border-1 border-gray-300 rounded-md border-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-1"
-                                readonly={isGa ? true:false} placeholder="Harga Paket"
+                                disabled={isGa ? true:false} placeholder="Harga Paket"
                                 value={price} onIonChange={(e) => setPrice(e.target.value)}/>
                             </div>
                             <br/>
@@ -342,7 +365,7 @@ const MenuVvipView: React.FC = () => {
                             </div>
                             )}
 
-                            <IonModal id="example-modal" ref={modal} trigger="open-modal" className="" initialBreakpoint={0.5} breakpoints={[0, 0.25, 0.5, 0.75]}>
+                            <IonModal id="example-modal" ref={modal} trigger="open-modal" className="" initialBreakpoint={0.75} breakpoints={[0, 0.25, 0.5, 0.75]}>
                                 <IonContent className="mr-3 ml-3 mt-3">
                                     <div className="m-3">
                                     <textarea rows={3} className="block w-full border border-1 border-gray-300 rounded-md border-gray-400 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-1"

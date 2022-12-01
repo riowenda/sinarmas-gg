@@ -1,14 +1,10 @@
 import ApiManager from "../ApiManager"
 import {API_URI, MD_FUEL_STATION_AVAILABLE, MD_FUEL_STATION_URI} from "../../constant/Index";
 
-export const FuelStationListModalAPI = async (token: string) => {
+export const FuelStationListModalAPI = async () => {
     try {
         const result = await ApiManager(API_URI+MD_FUEL_STATION_URI, {
-            method: "GET",
-            headers: {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
+            method: "GET"
         })
         return result.data
     } catch (error) {
@@ -16,14 +12,21 @@ export const FuelStationListModalAPI = async (token: string) => {
     }
 }
 
-export const FuelStationAvailableListAPI = async (token: string) => {
+export const FuelStationAvailableListAPI = async () => {
     try {
         const result = await ApiManager(API_URI+MD_FUEL_STATION_AVAILABLE, {
             method: "GET",
-            headers: {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
+        })
+        return result.data
+    } catch (error) {
+        return error
+    }
+}
+
+export const FuelStationAPI = async (id: string) => {
+    try {
+        const result = await ApiManager(API_URI+MD_FUEL_STATION_URI+"/"+id, {
+            method: "GET",
         })
         return result.data
     } catch (error) {

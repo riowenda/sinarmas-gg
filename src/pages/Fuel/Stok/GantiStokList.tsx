@@ -12,20 +12,19 @@ import {
 
 import { RefresherEventDetail } from '@ionic/core';
 import { useTranslation } from "react-i18next";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
     API_URI,
-    BASE_API_URL,
+    DO_REQ_LIST_BY_STATION_URI, DO_REQ_URI, pref_fuel_station_id,
     pref_identity,
-    pref_user_id, TEMP_UNIT_GET_ALL_REQUEST_USER_URI,
-    TEMP_UNIT_URI,
+    pref_user_id
 } from "../../../constant/Index";
 import { useHistory, useLocation } from "react-router-dom";
-import { getPref } from "../../../helper/preferences";
-import {Capacitor} from "@capacitor/core";
+import { getPref } from "../../../helper/Preferences";
 import ListHeader from "../../../components/Header/ListHeader";
 import moment from "moment";
 import PStatus from "../PO/components/PStatus";
+import {BaseAPI} from "../../../api/ApiManager";
 
 const GantiStokList: React.FC = () => {
     const location = useLocation();
@@ -35,6 +34,7 @@ const GantiStokList: React.FC = () => {
     const [items, setItems] = useState([]);
     const { t } = useTranslation();
     const [userId, setUserId] = useState();
+    const [stasiunId, setStasiunId] = useState();
     const [identity, setIdentity] = useState<string>();
     const [oriData, setOriData] = useState();
     const [skeleton] = useState(Array(5).fill(0));
@@ -68,7 +68,7 @@ const GantiStokList: React.FC = () => {
     function doRefresh(event: CustomEvent<RefresherEventDetail>) {
         console.log('Begin async operation');
         setIsLoaded(!isLoaded ? isLoaded : !isLoaded);
-        loadDataPermintaan(userId);
+        loadDataPermintaan(stasiunId);
         setTimeout(() => {
             console.log('Async operation has ended');
             event.detail.complete();
@@ -81,10 +81,14 @@ const GantiStokList: React.FC = () => {
             setUserId(res);
             loadDataPermintaan(res);
         });
+        getPref(pref_fuel_station_id).then(res => {
+            setStasiunId(res);
+            loadDataPermintaan(res);
+        })
     }
 
-    const loadDataPermintaan = (user: any) => {
-        const url = BASE_API_URL + API_URI + TEMP_UNIT_URI + TEMP_UNIT_GET_ALL_REQUEST_USER_URI + "/" + user;
+    const loadDataPermintaan = (stasiun_id: any) => {
+        const url = BaseAPI() + API_URI + DO_REQ_URI + DO_REQ_LIST_BY_STATION_URI + "/" + stasiun_id;
         fetch(url)
             .then(res => res.json())
             .then(
@@ -120,7 +124,7 @@ const GantiStokList: React.FC = () => {
             pathname: "/fuel/ganti-stok/detail/" + id,
             state: { detail: id }
         });
-        // console.log('dipilih ',)
+        console.log('dipilih ',id)
     };
 
     if (error) {
@@ -130,17 +134,16 @@ const GantiStokList: React.FC = () => {
     return (
         <div className="bg-gradient-to-r from-red-700 to-red-500">
             <IonPage className="bg-gradient-to-r from-red-700 to-red-500">
-                <IonContent fullscreen className="bg-gradient-to-r from-red-700 to-red-500 bg-danger h-auto">
+                {/* === Start Header ===*/}
+                <ListHeader title={t("ganti_stok")} isReplace={false} link={"/fuel/ganti-stok/create"} addButton={true} />
+                {/* === End Header ===*/}
+                <IonContent className="bg-gradient-to-r from-red-700 to-red-500 bg-danger h-auto">
                     <IonRefresher slot="fixed" onIonRefresh={doRefresh}>
                         <IonRefresherContent></IonRefresherContent>
                     </IonRefresher>
-                    <div className="bg-white flex flex-col min-h-screen justify-between">
+                    <div className="bg-white flex flex-col justify-between">
                         {/* === start form === */}
                         <div>
-                            {/* === Start Header ===*/}
-                            <ListHeader title={"Penggantian Stok"} isReplace={false} link={"/fuel/ganti-stok/create"} addButton={true} />
-                            {/* === End Header ===*/}
-
                             {/* === Start List  === */}
                             <div className="bg-white">
                                 <div className="px-3 pt-4">
@@ -150,20 +153,20 @@ const GantiStokList: React.FC = () => {
                                                 items.map((req, index) => {
                                                     return (
                                                         <div key={req['id']} onClick={event => btnPilih(req["id"])}
-                                                             className="px-4 py-2 my-2 rounded-lg border border-1 border-gray-300">
-
-                                                            <div className="flex justify-between text-sm">
-                                                                <div className="w-full">
-                                                                    <p className='font-bold'>{req['nomor'] !== "" ? req['nomor'] : "-"}</p>
-                                                                    <p className='text-gray-500'>{moment(req['tanggal']).format('DD MMM yyyy').toString()}</p>
-                                                                    <p className='text-gray-500'>{req['fuelStasiun']['nama']}</p>
+                                                             className="px-4 py-4 my-2 rounded-lg border border-1 border-gray-300">
+                                                            <div>
+                                                                <div className="flex justify-between">
+                                                                    <p className='font-bold'>{req['nomor']} - {req['ref']}</p>
+                                                                    <p className='text-gray-500'>{moment(req['tanggalRencana']).format('DD MMM yyyy').toString()}</p>
                                                                 </div>
-                                                                <div className="w-1/4 text-end">
+                                                                <div className="flex justify-between">
+                                                                    <p className='text-gray-500'>{req['fuelStasiun']['nama']}</p>
                                                                     <PStatus status={req['status']} title={req['status']} />
-                                                                    <p className='text-gray-500'>{req['jumlah']} liter</p>
+                                                                </div>
+                                                                <div>
+                                                                    <p className='text-gray-500'>{req['jumlahRencana']} liter</p>
                                                                 </div>
                                                             </div>
-
                                                         </div>
                                                     )
                                                 })

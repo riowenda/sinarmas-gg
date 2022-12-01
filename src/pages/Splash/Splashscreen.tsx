@@ -5,9 +5,28 @@ import {
 import { useHistory } from "react-router-dom";
 import React from "react";
 import packageJson from '../../../package.json';
-import {getPref} from "../../helper/preferences";
-import {pref_is_login} from "../../constant/Index";
+import {
+    getFuelMenu,
+    getJsonPref,
+    getPref,
+    setIdentityPref,
+    setPref,
+    setPrefLng,
+    setTokenPref
+} from "../../helper/Preferences";
+import {
+    AUTH_FUEL_MANAGER,
+    AUTH_FUEL_STATION,
+    FB_NOTIF_TOPIC_PUBLIC, pref_app_version,
+    pref_is_login, pref_json_token_identity,
+    pref_lng,
+    pref_open_notif,
+    pref_token_fbnotif
+} from "../../constant/Index";
 import {App as CapacitorApp} from "@capacitor/app";
+import {PushNotifications} from "@capacitor/push-notifications";
+import {setPermPref} from "../../helper/PermanentPreferences";
+import {privacyDisable} from "../../helper/PrivacyScreenConf";
 
 
 const Splashscreen: React.FC = () => {
@@ -16,30 +35,71 @@ const Splashscreen: React.FC = () => {
     const ionRouter = useIonRouter();
     document.addEventListener('ionBackButton', (ev: any) => {
         ev.detail.register(-1, () => {
-            if (!ionRouter.canGoBack() || history.location.pathname === "/login") {
+            if (!ionRouter.canGoBack() || history.location.pathname === "/login" || history.location.pathname === "/dashboard" || history.location.pathname === "/homepage-fuel") {
+                console.log("Exit App")
                 CapacitorApp.exitApp();
             }
         });
     });
 
     useIonViewWillEnter(() => {
+        privacyDisable().then(r => r);
+        // AddListenerNotifications().then(l => { });
+        // GetDeliveredNotifications().then(n => { });
+        getPref(pref_lng).then(l => {
+            console.log("default lng "+l);
+            if(l == null){
+                setPref(pref_lng, "id");
+                setPrefLng("id");
+            } else {
+                setPrefLng(l);
+            }
+        })
     });
 
     /* Proses animasi selsai dan sudah sepenuhnya masuk halaman,
     jika load data dilakukan disini sebaiknya diberikan loading screen agar lebih maksimal */
     useIonViewDidEnter(() => {
+        registerFCM();
+        setPermPref(pref_app_version, packageJson.version).then(data => data);
+        getJsonPref(pref_json_token_identity).then(data => {
+            if(data != null){
+                setTokenPref(data.token);
+                setIdentityPref(data.identity);
+            }
+        });
         getPref(pref_is_login).then(r => {
-            console.log("rrr "+r);
+            console.log("####################### is login "+r);
             setTimeout(function() {
                 if (r != null && r == true) {
-                    //sukses arahkan ke dashboard
-                    history.replace("/dashboard");
+                    getFuelMenu().then(data => {
+                        if(data.includes(AUTH_FUEL_STATION) || data.includes(AUTH_FUEL_MANAGER)){
+                            history.replace("/homepage-fuel");
+                        } else {
+                            //sukses arahkan ke dashboard
+                            history.replace("/dashboard");
+                        }
+                    });
                 } else {
                     history.replace("/login");
                 }
-            }, 5000);
+            }, 3000);
         });
     });
+
+    const registerFCM = () => {
+        console.log("--->>>>>>>>>>>>>>LISTENER NOTIFICATION")
+        PushNotifications.addListener('registration', token => {
+            console.info('--->>>>>>>>>>>>>>Registration token: ', token.value);
+
+            //simpan token firebase
+            setPermPref(pref_token_fbnotif, token.value).then(t=>{});
+        });
+
+        PushNotifications.addListener('registrationError', err => {
+            console.error('--->>>>>>>>>>>>>>Registration error: ', err.error);
+        });
+    }
 
     return (
         <IonPage>

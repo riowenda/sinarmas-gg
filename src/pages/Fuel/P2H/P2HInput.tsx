@@ -10,37 +10,36 @@ import {
 } from '@ionic/react';
 
 import './P2HInput.css';
-import { RefresherEventDetail } from '@ionic/core';
-import { useTranslation, initReactI18next, ReactI18NextChild } from "react-i18next";
-import React, { useState } from "react";
+import {RefresherEventDetail} from '@ionic/core';
+import {useTranslation, initReactI18next, ReactI18NextChild} from "react-i18next";
+import React, {useState} from "react";
 import {
-    API_URI,
-    BASE_API_URL,
-    P2H_ITEM_URI, P2H_CRUD_URI, pref_user_id, pref_identity, pref_unit, pref_unit_id
+    API_URI, P2H_ITEM_URI, P2H_CRUD_URI, pref_user_id, pref_identity, pref_unit, pref_unit_id, pref_pegawai_unit_id
 } from "../../../constant/Index";
 import {useHistory, useLocation} from "react-router-dom";
 import HeaderUser from "../../Dashboard/HeaderUser";
-import { getPref } from "../../../helper/preferences";
-
+import {getPref} from "../../../helper/Preferences";
+import {BaseAPI} from "../../../api/ApiManager";
+import {P2HExistingAPI, P2HExistingNowNotRejectedAPI} from "../../../api/P2HAPI";
 
 
 const P2HInput: React.FC = () => {
     const [userId, setUserId] = useState();
     const [identity, setIdentity] = useState<string>();
     const [unit, setUnit] = useState();
+    const [pegUnitId, setPegUnitId] = useState("");
     const [error, setError] = useState(null);
     const [presentAlert] = useIonAlert();
     const [showSuccess] = useIonAlert();
+    const [toast] = useIonToast();
     const [present, dismiss] = useIonLoading();
     const [isLoaded, setIsLoaded] = useState(false);
     const [items, setItems] = useState<any[]>([]);
-    const [contents, setContents] = useState([]);
     const [showConfirm] = useIonAlert();
-    const [radioName, setRadioName] = useState(null);
     const history = useHistory();
-    const { t } = useTranslation();
+    const [countItem, setCountItem] = useState(0);
+    const {t} = useTranslation();
     const [presentToast] = useIonToast();
-    const location = useLocation();
 
     /* BEGIN LIFECYCLE APPS */
 
@@ -74,24 +73,52 @@ const P2HInput: React.FC = () => {
         });
         getPref(pref_unit_id).then(res => {
             setUnit(res);
+
         });
         getPref(pref_identity).then(res => {
             setIdentity(res);
         });
+        getPref(pref_pegawai_unit_id).then(puid => {
+            setPegUnitId(puid);
+            checkExistingP2h(puid);
+        });
 
     }
+
     function doRefresh(event: CustomEvent<RefresherEventDetail>) {
         console.log('Begin async operation');
-
+        loadData();
         setTimeout(() => {
             console.log('Async operation has ended');
             event.detail.complete();
         }, 2000);
     }
 
+    const checkExistingP2h = (puId: string) => {
+        P2HExistingNowNotRejectedAPI(puId).then(res => {
+            let msg = res.message;
+            if (msg === "" && res.status === "SUCCESS" && res.data.status !== "REJECTED") {
+                showConfirm({
+                    subHeader: "P2H untuk unit ini sudah ada!",
+                    backdropDismiss: false,
+                    buttons: [
+                        {
+                            text: 'OK',
+                            cssClass: 'alert-button-confirm',
+                            handler: () => {
+                                history.goBack();
+                            }
+                        },
+                    ],
+                })
+            }
+            console.log(res);
+        });
+    }
+
     const loadData = () => {
         loadDataPref();
-        const url = BASE_API_URL + API_URI + P2H_ITEM_URI;
+        const url = BaseAPI() + API_URI + P2H_ITEM_URI;
         console.log("URL: " + url);
         fetch(url, {
             method: 'GET'
@@ -101,7 +128,14 @@ const P2HInput: React.FC = () => {
                 (result) => {
                     console.log("OK: " + result['data']);
                     setItems(result['data']);
-                    setIsLoaded(true);
+                    let l = 0;
+                    let item = result['data'];
+                    item.map((p2h: { [x: string]: any; }) => {
+                        // @ts-ignore
+                        let i = p2h['konten'].filter((x: { [x: string]: { [x: string]: null; }; }) => x['isActive'] == true);
+                        l = l + i.length;
+                    })
+                    setCountItem(l);
                 },
                 (error) => {
                     setIsLoaded(true);
@@ -131,7 +165,7 @@ const P2HInput: React.FC = () => {
             //history.push("/fuel/p2h/p2hlist");
         }
     };
-    
+
 
     if (error) {
         return <div>Error: {error}</div>;
@@ -139,7 +173,7 @@ const P2HInput: React.FC = () => {
     const radioArray: { konten_id: string; nilai: string; }[] | null = [];
 
 
-    function displayRadioValue() {
+    const displayRadioValue = () => {
         // @ts-ignore
         //document.getElementById("result").innerHTML = "";
         const ele = document.getElementsByTagName('input');
@@ -158,7 +192,7 @@ const P2HInput: React.FC = () => {
 
         let no = 0;
         for (let i = 0; i < ele.length; i++) {
-            console.log("ele: ", ele[i]);
+            // console.log("ele: ", ele[i]);
             if (ele[i].type == "radio" && ele[i].className == "rdtSDT") {
 
                 if (ele[i].checked) {
@@ -175,12 +209,14 @@ const P2HInput: React.FC = () => {
                 }
             }
         }
+        return no;
     }
     const showAlertConfirmed = (response: any, wait: any) => {
         dismiss();
         showConfirm({
             //simpan unit id ke pref
             subHeader: '' + (wait === "true" ? 'Tambah P2H tidak berhasil!' : response) + '',
+            backdropDismiss: false,
             buttons: [
                 {
                     text: 'OK',
@@ -194,15 +230,31 @@ const P2HInput: React.FC = () => {
         })
     }
 
-    const handleSubmits = async (event: any) => {
+    const handleSubmits = (event: any) => {
         event.preventDefault();
-        displayRadioValue();
-        const url = BASE_API_URL + API_URI + P2H_CRUD_URI;
-        event.preventDefault();
-        console.log("Sudi Tet: ", identity);
+        let item = displayRadioValue();
+        let allowPush = false;
+
+        if (Number(item) == countItem) {
+            allowPush = true;
+        } else {
+            toast({
+                    message: "Semua item pengecekan harus diisi", duration: 1500, position: "top"
+                }
+            );
+        }
+
+        if (allowPush) {
+            submit();
+        }
+
+    }
+
+    const submit = async () => {
+        const url = BaseAPI() + API_URI + P2H_CRUD_URI;
         if (unit !== null && unit !== '') {
 
-            const rHeader = { 'Content-Type': 'application/json', 'Identity': identity != null ? identity : '' }
+            const rHeader = {'Content-Type': 'application/json', 'Identity': identity != null ? identity : ''}
             const dataJson = {
                 pegawai: {
                     id: userId
@@ -238,7 +290,6 @@ const P2HInput: React.FC = () => {
             showAlertConfirmed();
 
         }
-
     }
 
 
@@ -250,7 +301,7 @@ const P2HInput: React.FC = () => {
                     <IonRefresherContent></IonRefresherContent>
                 </IonRefresher>
                 <div className="bg-red-700">
-                    <HeaderUser link={"/fuel/p2h/p2hlist"} />
+                    <HeaderUser link={"/fuel/p2h/p2hlist"}/>
                     <div className="bg-white p-2 ">
                         <div className="px-4 py-4">
                             <h3 className="font-bold">Pemeriksaan dan Pemeliharaan Harian</h3>
@@ -261,7 +312,7 @@ const P2HInput: React.FC = () => {
                                 {items.map((p2h, index) => {
                                     return (
                                         <div key={p2h['id']}
-                                            className="divide-y divide-gray-200 overflow-hidden rounded-lg border border-1 border-gray-300 bg-white mt-2 mb-1">
+                                             className="divide-y divide-gray-200 overflow-hidden rounded-lg border border-1 border-gray-300 bg-white mt-2 mb-1">
                                             <div className="px-4 py-5 p-6 text-sm">
                                                 <h3 className="text-md font-bold text-gray-900 pb-2">{p2h['judul']}</h3>
                                                 <p className="text-justify">{p2h['keterangan']}</p>
@@ -272,11 +323,15 @@ const P2HInput: React.FC = () => {
                                                                 {contents['konten']}
                                                             </span>
                                                             <span className="text-right text-gray-900">
-                                                                <input className="rdtSDT" type="radio" name={'' + contents['id']} id={'' + contents['id']} value="true" />
+                                                                <input className="rdtSDT" type="radio"
+                                                                       name={'' + contents['id']}
+                                                                       id={'' + contents['id']} value="true"/>
                                                                 <label className="ml-2 text-gray-500"> Ya</label>
                                                             </span>
                                                             <span className="text-right text-gray-900">
-                                                                <input className="rdtSDT" type="radio" name={'' + contents['id']} id={'' + contents['id']} value="false" />
+                                                                <input className="rdtSDT" type="radio"
+                                                                       name={'' + contents['id']}
+                                                                       id={'' + contents['id']} value="false"/>
                                                                 <label className="ml-2 text-gray-500"> Tidak</label>
                                                             </span>
                                                         </div>
@@ -287,7 +342,8 @@ const P2HInput: React.FC = () => {
                                     )
                                 })}
                                 <div className="py-6 bg-white">
-                                    <input type="submit" value="Kirim" className="items-center w-full mx-auto rounded-md bg-blue-500 px-3 py-2 text-sm font-bold text-white" />
+                                    <input type="submit" value="Kirim"
+                                           className="items-center w-full mx-auto rounded-md bg-blue-500 px-3 py-2 text-sm font-bold text-white"/>
                                 </div>
                             </form>
                         </div>

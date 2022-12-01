@@ -23,9 +23,17 @@
       "useDialog": true
     },
     "PushNotifications": {
-      "presentationOptions": ["badge", "sound", "alert"],
+      "presentationOptions": ["badge", "sound"],
       "splashImmersive": false,
       "backgroundColor": "#ffffffff"
+    },
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_icon_config_sample",
+      "iconColor": "#488AFF",
+      "sound": "beep.wav"
+    },
+    "PrivacyScreen": {
+      "enable": false
     }
   }
 }

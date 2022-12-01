@@ -16,16 +16,16 @@ import { RefresherEventDetail } from '@ionic/core';
 import { useTranslation, initReactI18next } from "react-i18next";
 import React, {useEffect, useState } from "react";
 import {
-    API_URI,
-    BASE_API_URL, FUEL_REQ_UNIT_CREATE_URI, FUEL_REQ_UNIT_URI, FUEL_REQ_USER_LAST_REDEM, pref_identity,
-    pref_json_pegawai_info_login, pref_pegawai_unit_id, pref_unit, TEMP_UNIT_CREATE_URI, TEMP_UNIT_URI
+    API_URI, FUEL_REQ_UNIT_CREATE_URI, FUEL_REQ_UNIT_URI, FUEL_REQ_USER_LAST_REDEM, pref_identity,
+    pref_json_pegawai_info_login, pref_pegawai_unit_id, pref_token, pref_unit, TEMP_UNIT_CREATE_URI, TEMP_UNIT_URI
 } from "../../../constant/Index";
 import {useHistory, useLocation} from "react-router-dom";
-import {getJsonPref, getPref} from "../../../helper/preferences";
+import {getJsonPref, getPref} from "../../../helper/Preferences";
 import { Camera, CameraResultType, CameraSource } from "@capacitor/camera";
-import {Capacitor} from "@capacitor/core";
-import {App} from "@capacitor/app";
 import ListHeader from "../../../components/Header/ListHeader";
+import {FuelCouponList} from "../../../api/KuponAPI/FuelCouponList";
+import {BaseAPI} from "../../../api/ApiManager";
+import {P2HExistingAPI, P2HExistingNowNotRejectedAPI} from "../../../api/P2HAPI";
 
 const userInfo = { name: "", nik: "", imageUrl: "" }
 const userUnit = { id: "", noPol: "", noLambung: "", vendor: { name: "" }, jenisUnit: { name: "" } };
@@ -42,6 +42,7 @@ const FormRequestFuel: React.FC = () => {
     const [showConfirm] = useIonAlert();
     const [lastOdo, setLastOdo] = useState<any>("N/A");
     const { t } = useTranslation();
+    const [token, setToken] = useState("");
     const location = useLocation();
 
     /* BEGIN LIFECYCLE APPS */
@@ -86,30 +87,80 @@ const FormRequestFuel: React.FC = () => {
         getJsonPref(pref_unit).then(rest => {
             setUnit(rest);
         });
+        getPref(pref_token).then(tkn => {
+            setToken(tkn);
+        });
         getPref(pref_identity).then(res => {setIdentity(res);});
         getPref(pref_pegawai_unit_id).then(rest => {
             if(rest == null || rest === ""){
                 showConfirm({
                     //simpan unit id ke pref
                     subHeader: "Silahkan memilih unit terlebih dahulu!",
+                    backdropDismiss: false,
                     buttons: [
                         {
                             text: 'OK',
                             cssClass: 'alert-button-confirm',
                             handler: () => {
-                                history.push("/fuel/unit/ganti");
+                                history.replace("/fuel/unit/ganti");
                             }
                         },
                     ],
                 })
             } else {
-                loadDataLastRequest(rest);
+                findExisting(rest);
+            }
+        });
+    }
+
+    const checkExistingP2h = (puId: string) => {
+        P2HExistingNowNotRejectedAPI(puId).then(res => {
+            let msg = res.message;
+            if (msg === "" && res.status === "SUCCESS" && res.data.status === "PROPOSED") {
+                showConfirm({
+                    subHeader: "P2H masih menuggu persetujuan!",
+                    backdropDismiss: false,
+                    buttons: [
+                        {
+                            text: 'OK',
+                            cssClass: 'alert-button-confirm',
+                            handler: () => {
+                                history.goBack();
+                            }
+                        },
+                    ],
+                })
+            } else if (msg !== ""){
+                showConfirm({
+                    subHeader: "Harap mengisi P2H terlebih dahulu!",
+                    backdropDismiss: false,
+                    buttons: [
+                        {
+                            text: 'OK',
+                            cssClass: 'alert-button-confirm',
+                            handler: () => {
+                                history.replace("/fuel/p2h/p2hinput");
+                            }
+                        },
+                    ],
+                })
+            }
+        });
+    }
+
+    const findExisting = (puId: any) => {
+        FuelCouponList(puId).then((data) => {
+            if (data.status === "SUCCESS" && data.message === "") {
+                showOkConfirm("Harap melakukan penyelesaian kupon sebelumnya!");
+            } else {
+                checkExistingP2h(puId);
+                loadDataLastRequest(puId);
             }
         });
     }
 
     const loadDataLastRequest = (user: any) => {
-        const url = BASE_API_URL + API_URI + FUEL_REQ_UNIT_URI + FUEL_REQ_USER_LAST_REDEM + "/" + user;
+        const url = BaseAPI() + API_URI + FUEL_REQ_UNIT_URI + FUEL_REQ_USER_LAST_REDEM + "/" + user;
         fetch(url)
             .then(res => res.json())
             .then(
@@ -166,68 +217,16 @@ const FormRequestFuel: React.FC = () => {
     const sendRequest = (e : any) => {
         e.preventDefault();
         if(photo){
-            const loading = present({
-                message: 'Memproses permintaan ...',
-            })
-            // console.log(unit);
-            const url = BASE_API_URL + API_URI + FUEL_REQ_UNIT_URI + FUEL_REQ_UNIT_CREATE_URI;
-            // const data = {pegawai: {id: ""}, jenis: {id:""}, vendor: {id:""}, type: {id:""}, spesifikasi: {id:""}, entity: {id: ""}, no_poll: "", odometer: ""}
-            fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Identity': identity ? identity :''},
-                body: JSON.stringify(data)
-            })
-                .then(res => res.json())
-                .then(
-                    (result) => {
-                        dismiss();
-                        if(result.status === 'SUCCESS'){
-                            showConfirm({
-                                //simpan unit id ke pref
-                                subHeader: "Permintaan Bahan Bakar Unit berhasil diajukan!",
-                                buttons: [
-                                    {
-                                        text: 'OK',
-                                        cssClass: 'alert-button-confirm',
-                                        handler: () => {
-                                            history.goBack();
-                                            // history.push("/fuel/req-fuel/daftar-permintaan");
-                                        }
-                                    },
-                                ],
-                            })
-                        } else if(result.status === 'VALIDATION'){ // ditolak oleh sistem
-                            dismiss();
-                            if(result.message === 'Harap melakukan p2h'){
-                                showAlertConfirmed();
-                            } else if (result.message.includes("Max")) {
-                                showAlertMaxOdo();
-                            } else {
-                                showOkConfirm(result.message);
-                            }
-
-                        } else if(result.status === 'FAILED'){ // ditolak oleh sistem
-                            dismiss();
-
-                        } else {
-                            dismiss();
-                            toast( {
-                                    message: "Terjadi kesalahan!", duration: 1500, position: "top"
-                                }
-                            );
-                        }
-                    },
-                    // Note: it's important to handle errors here
-                    // instead of a catch() block so that we don't swallow
-                    // exceptions from actual bugs in components.
-                    (error) => {
-                        dismiss();
-                        toast( {
-                                message: "Terjadi kesalahan! ["+error.message+"]", duration: 1500, position: "top"
-                            }
-                        );
+            let odo = data.odometerPermintaan;
+            let last = lastOdo != null && lastOdo !== 'N/A' ? lastOdo : 0;
+            if(Number(odo) < Number(last)){
+                toast( {
+                        message: "Odometer tidak boleh kurang dari/sama dengan odometer permintaan sebelumnya ataupun 0!", duration: 1500, position: "top"
                     }
-                )
+                );
+            } else {
+                sendData();
+            }
         } else {
             toast( {
                     message: "Foto harus disertakan", duration: 1500, position: "top"
@@ -237,14 +236,86 @@ const FormRequestFuel: React.FC = () => {
 
     };
 
+    const sendData = () => {
+        const loading = present({
+            message: 'Memproses permintaan ...',
+            backdropDismiss: false
+        })
+        // console.log(unit);
+        const url = BaseAPI() + API_URI + FUEL_REQ_UNIT_URI + FUEL_REQ_UNIT_CREATE_URI;
+        // const data = {pegawai: {id: ""}, jenis: {id:""}, vendor: {id:""}, type: {id:""}, spesifikasi: {id:""}, entity: {id: ""}, no_poll: "", odometer: ""}
+        fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization' : `Bearer ${token}`, 'Identity': identity ? identity : '' },
+            body: JSON.stringify(data)
+        })
+            .then(res => res.json())
+            .then(
+                (result) => {
+                    dismiss();
+                    if(result.status === 'SUCCESS'){
+                        showConfirm({
+                            //simpan unit id ke pref
+                            subHeader: "Permintaan Bahan Bakar Unit berhasil diajukan!",
+                            backdropDismiss: false,
+                            buttons: [
+                                {
+                                    text: 'OK',
+                                    cssClass: 'alert-button-confirm',
+                                    handler: () => {
+                                        history.goBack();
+                                        // history.push("/fuel/req-fuel/daftar-permintaan");
+                                    }
+                                },
+                            ],
+                        })
+                    } else if(result.status === 'VALIDATION'){ // ditolak oleh sistem
+                        dismiss();
+                        if(result.message === 'Harap melakukan p2h'){
+                            showAlertConfirmed();
+                        } else if (result.message.includes("Max")) {
+                            showAlertMaxOdo();
+                        } else {
+                            showOkConfirm(result.message);
+                        }
+
+                    } else if(result.status === 'FAILED'){ // ditolak oleh sistem
+                        dismiss();
+
+                    } else {
+                        dismiss();
+                        toast( {
+                                message: "Terjadi kesalahan!", duration: 1500, position: "top"
+                            }
+                        );
+                    }
+                },
+                // Note: it's important to handle errors here
+                // instead of a catch() block so that we don't swallow
+                // exceptions from actual bugs in components.
+                (error) => {
+                    dismiss();
+                    toast( {
+                            message: "Terjadi kesalahan! ["+error.message+"]", duration: 1500, position: "top"
+                        }
+                    );
+                }
+            )
+    }
+
     const showOkConfirm = (msg : any) => {
         showConfirm({
             //simpan unit id ke pref
             subHeader: msg,
+            backdropDismiss: false,
             buttons: [
                 {
                     text: 'OK',
                     cssClass: 'alert-button-confirm',
+                    handler: () => {
+                        history.goBack();
+                        // history.push("/fuel/homepage");
+                    }
                 },
             ],
         })
@@ -255,6 +326,7 @@ const FormRequestFuel: React.FC = () => {
         showConfirm({
             //simpan unit id ke pref
             subHeader: 'Anda belum mengisi form P2H, isi sekarang?',
+            backdropDismiss: false,
             buttons: [
                 {
                     text: 'Batal',
@@ -280,6 +352,7 @@ const FormRequestFuel: React.FC = () => {
         showConfirm({
             //simpan unit id ke pref
             subHeader: 'Odometer unit pada unit ini tidak wajar, harap ganti unit atau minta GA update!',
+            backdropDismiss: false,
             buttons: [
                 {
                     text: 'Minta GA Update',
@@ -311,92 +384,92 @@ const FormRequestFuel: React.FC = () => {
 
                     {/* === Start Form  === */}
                     <form onSubmit={sendRequest}>
-                    <div>
-                        {/* === Start Header === */}
-                        <ListHeader title={"Form Permintaan Bahan Bakar"} isReplace={false} link={""} addButton={false} />
-                        {/* === End Header ===*/}
+                        <div>
+                            {/* === Start Header === */}
+                            <ListHeader title={"Form Permintaan Bahan Bakar"} isReplace={false} link={""} addButton={false} />
+                            {/* === End Header ===*/}
 
-                        <div className="p-6">
-                            <div>
-                                <label className="block text-sm text-gray-400">
-                                    No. Lambung
-                                </label>
+                            <div className="p-6">
                                 <div>
-                                    {unit ? unit['noLambung'] : "-"}
-                                </div>
-                            </div>
-
-                            <div className="mt-4">
-                                <label className="block text-sm text-gray-400">
-                                    No. Polisi
-                                </label>
-                                <div>
-                                    {unit ? unit['noPol'] : "-"}
-                                </div>
-                            </div>
-
-                            <div className="mt-4">
-                                <label className="block text-sm text-gray-400">
-                                    Odometer pengisian sebelumnya
-                                </label>
-                                <div>
-                                    {lastOdo ? lastOdo : "N/A"} Km
-                                </div>
-                            </div>
-
-                            <div className="mt-4">
-                                <label htmlFor='odometer' className="block text-sm text-gray-400">
-                                    Odometer Saat Permintaan
-                                </label>
-                                <div className="border-b border-gray-300 py-2">
-                                    <input
-                                        defaultValue={data.odometerPermintaan}
-                                        onChange={(event) => setData({...data, odometerPermintaan: Number(event.target.value)})}
-                                        required
-                                        type="number"
-                                        name="odometer"
-                                        id="odometer"
-                                        className="block w-full"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="mt-4">
-                                <label htmlFor='odometer' className="block text-sm text-gray-400">
-                                    Foto Odometer
-                                </label>
-                                {photo ?
-                                    <><div className="group block rounded-lg aspect-auto bg-gray-100 overflow-hidden">
-                                        <img className="object-cover pointer-events-none" src={`data:image/jpeg;base64,${photo.base64String}`} ></img>
-                                    </div></>
-                                    :
-                                    <div className="rounded-md border-2 border-dashed border-gray-300 py-10">
-                                        <><div className="flex justify-center">
-                                            <button onClick={() => {
-                                                takePhoto();
-                                            }}
-                                                className="items-center rounded-full bg-slate-800 px-3 py-3 text-white">
-                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-                                                    <path fill-rule="evenodd" d="M1 8a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 018.07 3h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0016.07 6H17a2 2 0 012 2v7a2 2 0 01-2 2H3a2 2 0 01-2-2V8zm13.5 3a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM10 14a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
-                                                </svg>
-                                            </button>
-                                        </div><p className="mt-1 text-xs text-center text-gray-500">Ambil Foto</p></>
+                                    <label className="block text-sm text-gray-400">
+                                        No. Lambung
+                                    </label>
+                                    <div>
+                                        {unit ? unit['noLambung'] : "-"}
                                     </div>
-                                }
+                                </div>
+
+                                <div className="mt-4">
+                                    <label className="block text-sm text-gray-400">
+                                        No. Polisi
+                                    </label>
+                                    <div>
+                                        {unit ? unit['noPol'] : "-"}
+                                    </div>
+                                </div>
+
+                                <div className="mt-4">
+                                    <label className="block text-sm text-gray-400">
+                                        Odometer pengisian sebelumnya
+                                    </label>
+                                    <div>
+                                        {lastOdo ? lastOdo : "N/A"} Km
+                                    </div>
+                                </div>
+
+                                <div className="mt-4">
+                                    <label htmlFor='odometer' className="block text-sm text-gray-400">
+                                        Odometer Saat Permintaan
+                                    </label>
+                                    <div className="border-b border-gray-300 py-2">
+                                        <input
+                                            defaultValue={data.odometerPermintaan}
+                                            onChange={(event) => setData({...data, odometerPermintaan: Number(event.target.value)})}
+                                            required
+                                            type="number"
+                                            name="odometer"
+                                            id="odometer"
+                                            className="block w-full"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="mt-4">
+                                    <label htmlFor='odometer' className="block text-sm text-gray-400">
+                                        Foto Odometer
+                                    </label>
+                                    {photo ?
+                                        <><div className="group block rounded-lg aspect-auto bg-gray-100 overflow-hidden">
+                                            <img className="object-cover pointer-events-none" src={`data:image/jpeg;base64,${photo.base64String}`} ></img>
+                                        </div></>
+                                        :
+                                        <div className="rounded-md border-2 border-dashed border-gray-300 py-10">
+                                            <><div className="flex justify-center">
+                                                <button onClick={() => {
+                                                    takePhoto();
+                                                }}
+                                                        className="items-center rounded-full bg-slate-800 px-3 py-3 text-white">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                                                        <path fill-rule="evenodd" d="M1 8a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 018.07 3h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0016.07 6H17a2 2 0 012 2v7a2 2 0 01-2 2H3a2 2 0 01-2-2V8zm13.5 3a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM10 14a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" />
+                                                    </svg>
+                                                </button>
+                                            </div><p className="mt-1 text-xs text-center text-gray-500">Ambil Foto</p></>
+                                        </div>
+                                    }
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    {/*<button onClick={btnDetailReqFuel}>*/}
-                    {/*    Detail*/}
-                    {/*</button>*/}
-                    {/* === End Form === */}
+                        {/*<button onClick={btnDetailReqFuel}>*/}
+                        {/*    Detail*/}
+                        {/*</button>*/}
+                        {/* === End Form === */}
 
-                    {/* === Footer button ===*/}
-                    <div className='p-6 items-end bg-white'>
-                        <button className="w-full items-center mx-auto rounded-md bg-emerald-500 px-3 py-2 text-sm font-bold text-white">
-                            KIRIM
-                        </button>
-                    </div>
+                        {/* === Footer button ===*/}
+                        <div className='p-6 items-end bg-white'>
+                            <button className="w-full items-center mx-auto rounded-md bg-emerald-500 px-3 py-2 text-sm font-bold text-white">
+                                KIRIM
+                            </button>
+                        </div>
                     </form>
                 </div>
 

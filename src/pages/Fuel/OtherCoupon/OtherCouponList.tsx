@@ -12,26 +12,20 @@ import {
 
 import './OtherCouponList.css';
 import { RefresherEventDetail } from '@ionic/core';
-import { useTranslation, initReactI18next } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import React, { useState } from "react";
 import {
     API_URI,
-    BASE_API_URL,
     pref_identity,
-    pref_user_id,
-    pref_user_role,
-    FUEL_REQ_UNIT_URI,
-    FUEL_REQ_USER_LIST_URI,
     pref_pegawai_unit_id,
-    FUEL_REQ_USER_LAST_REDEM,
     OTHER_COUPON_URI, OTHER_COUPON_USER_LIST_URI, pref_pegawai_id
 } from "../../../constant/Index";
 import {useHistory, useLocation} from "react-router-dom";
-import { getPref } from "../../../helper/preferences";
+import { getPref } from "../../../helper/Preferences";
 import moment from "moment";
-import {Capacitor} from "@capacitor/core";
-import {App} from "@capacitor/app";
 import ListHeader from "../../../components/Header/ListHeader";
+import PStatus from "../PO/components/PStatus";
+import {BaseAPI} from "../../../api/ApiManager";
 
 const OtherCouponList: React.FC = () => {
     const history = useHistory();
@@ -42,7 +36,6 @@ const OtherCouponList: React.FC = () => {
     const [pegUnitId, setPegUnitId] = useState();
     const [peg, setPeg] = useState();
     const [identity, setIdentity] = useState<string>();
-    const [role, setRole] = useState();
     const [oriData, setOriData] = useState();
     const location = useLocation();
     const [skeleton] = useState(Array(5).fill(0));
@@ -88,13 +81,10 @@ const OtherCouponList: React.FC = () => {
         getPref(pref_identity).then(res => { setIdentity(res) });
         getPref(pref_pegawai_unit_id).then(res => { setPegUnitId(res);});
         getPref(pref_pegawai_id).then(res => { setPeg(res); loadDataPermintaan(res)});
-        getPref(pref_user_role).then(restRole => {
-            setRole(restRole);
-        });
     }
 
     const loadDataPermintaan = (user: any) => {
-        const url = BASE_API_URL + API_URI + OTHER_COUPON_URI + OTHER_COUPON_USER_LIST_URI + "/" + user;
+        const url = BaseAPI() + API_URI + OTHER_COUPON_URI + OTHER_COUPON_USER_LIST_URI + "/" + user;
         fetch(url)
             .then(res => res.json())
             .then(
@@ -148,48 +138,33 @@ const OtherCouponList: React.FC = () => {
 
     return (
         <IonPage>
+            {/* Header */}
+            <ListHeader title={t('header.daftar_fuel_lain')} isReplace={false} link={"/fuel/req-other/create-form"} addButton={true} />
+            {/* end Header */}
             <IonContent fullscreen>
                 <IonRefresher slot="fixed" onIonRefresh={doRefresh}>
                     <IonRefresherContent></IonRefresherContent>
                 </IonRefresher>
                 <div className="bg-red-700 ">
-                    {/* Header */}
-                    <ListHeader title={"Daftar Permintaan Bahan Bakar Non Unit"} isReplace={false} link={"/fuel/req-other/create-form"} addButton={true} />
-                    {/* end Header */}
-
                     {/* === Start List  === */}
                     <div className="bg-white">
-                        <div className="px-3 pt-4">
+                        <div className="px-3 pt-3">
                             {isLoaded ?
                                 <>
                             {items != null ? items.map((req, index) => {
                                 return (
                                     <div onClick={() => btnDetailReqFuel(req['id'], req['status'])} key={req['id']}
-                                        className="px-4 py-2 my-2 rounded-lg border border-1 border-gray-300">
+                                        className="px-4 py-4 my-2 rounded-lg border border-1 border-gray-300">
                                         <div>
-                                            <div className="flex min-w-0 flex-1 justify-between space-x-4">
-                                                <div>
-                                                    <p className="text-base font-bold text-gray-900">{req['tujuan']['nama']}</p>
-                                                    <p className="text-sm text-gray-900">{req['liter']} liter</p>
-                                                    <p className="text-sm text-gray-900">{req['penjaga']['name']}</p>
-                                                </div>
-                                                <div className="whitespace-nowrap text-center text-sm text-gray-500">
-                                                    <p className="text-sm text-gray-900">{moment(req['tanggalPermintaan']).format('DD MMM yyyy').toString()}</p>
-                                                    {(req['status'] === 'PROPOSED' || req['status'] === 'FILLED') &&
-                                                        <span className="text-blue-600 font-bold">{req['status']}</span>
-                                                    }
-                                                    {(req['status'] === 'REJECTED' || req['status'] === 'CANCELED') &&
-                                                        <span className="text-red-600 font-bold">{req['status']}</span>
-                                                    }
-                                                    {(req['status'] === 'FORGIVENESS' || req['status'] === 'ONHOLD') &&
-                                                        <span className="text-red-600 font-bold">{req['status']}</span>
-                                                    }
-                                                    {(req['status'] === 'APPROVED' || req['status'] === 'READY' || req['status'] === 'CLOSED') &&
-                                                        <span className="text-green-600 font-bold">{req['status']}</span>
-                                                    }
-                                                </div>
+                                            <div className="flex justify-between">
+                                                <p className="font-bold text-gray-900">{req['tujuan']['nama']}</p>
+                                                <p className="text-sm text-gray-900">{moment(req['tanggalPermintaan']).format('DD MMM yyyy').toString()}</p>
                                             </div>
-
+                                            <div className="flex justify-between">
+                                                <p className="text-sm text-gray-900">{req['liter']} liter</p>
+                                                <PStatus title={req['status']} status={req['status']}/>
+                                            </div>
+                                            <div><p className="text-sm text-gray-900">{req['penjaga']['name']}</p></div>
                                         </div>
                                     </div>
                                 )

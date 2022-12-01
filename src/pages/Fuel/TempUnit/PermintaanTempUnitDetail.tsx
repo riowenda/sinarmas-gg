@@ -18,21 +18,16 @@ import React, { useEffect, useState } from "react";
 import { defineCustomElements } from "@ionic/pwa-elements/loader";
 import {
     API_URI,
-    BASE_API_URL,
     pref_user_id,
     pref_identity,
-    TEMP_UNIT_URI,
-    PEGAWAI_UNIT_CRUD_URI,
-    TEMP_UNIT_APPROVAL_URI,
-    PEGAWAI_UNIT_BY_USER_URI
+    TEMP_UNIT_URI, IMAGE_FUEL_URI
 } from "../../../constant/Index";
 import { useHistory, useLocation, useParams } from "react-router-dom";
-import { getPref } from "../../../helper/preferences";
+import { getPref } from "../../../helper/Preferences";
 import moment from 'moment';
-import { Capacitor } from "@capacitor/core";
-import { App } from "@capacitor/app";
 import SkeletonDetail from '../../Layout/SkeletonDetail';
 import DetailHeader from "../../../components/Header/DetailHeader";
+import {BaseAPI} from "../../../api/ApiManager";
 
 //stuktur object dari backend untuk mempermudah maping
 const obj = { pegawai: { id: "", name: "", nik: "", foto: "" }, jenis: { id: "", name: "" }, vendor: { id: "", name: "" }, type: { id: "", name: "" }, spesifikasi: { id: "", name: "" }, entity: { id: "", name: "" }, no_poll: "", sistemKerja:"", odometer: "", base64: "", odoImgFileName: "", status: "", dataFile: "", keterangans: "", daftarAlasan: [] }
@@ -104,7 +99,7 @@ const PermintaanTempUnitDetail: React.FC = () => {
         // @ts-ignore
         setGetId(dataId);
         // @ts-ignore
-        const url = BASE_API_URL + API_URI + TEMP_UNIT_URI + "/" + dataId;
+        const url = BaseAPI() + API_URI + TEMP_UNIT_URI + "/" + dataId;
         fetch(url, {
             method: 'GET'
         })
@@ -267,7 +262,7 @@ const PermintaanTempUnitDetail: React.FC = () => {
                                             Foto Odometer
                                         </label>
                                         <div className="group block rounded-lg aspect-auto bg-gray-100 overflow-hidden">
-                                            <img className="object-cover pointer-events-none" src={`${unit.dataFile}`} ></img>
+                                            <img className="object-cover pointer-events-none" src={`${BaseAPI()}${API_URI}${IMAGE_FUEL_URI}${unit.odoImgFileName}`} ></img>
                                         </div>
                                     </div>
 

@@ -19,16 +19,17 @@ import { useTranslation } from "react-i18next";
 import React, { useEffect, useState } from "react";
 import {
     API_URI,
-    BASE_API_URL,
     pref_identity,
     pref_user_id, TEMP_UNIT_GET_ALL_REQUEST_USER_URI,
     TEMP_UNIT_URI,
 } from "../../../constant/Index";
 import { useHistory, useLocation } from "react-router-dom";
-import { getPref } from "../../../helper/preferences";
+import { getPref } from "../../../helper/Preferences";
 import {Capacitor} from "@capacitor/core";
 import ListHeader from "../../../components/Header/ListHeader";
 import moment from "moment";
+import PStatus from "../PO/components/PStatus";
+import {BaseAPI} from "../../../api/ApiManager";
 
 const PermintaanTempUnitList: React.FC = () => {
     const location = useLocation();
@@ -87,7 +88,7 @@ const PermintaanTempUnitList: React.FC = () => {
     }
 
     const loadDataPermintaan = (user: any) => {
-        const url = BASE_API_URL + API_URI + TEMP_UNIT_URI + TEMP_UNIT_GET_ALL_REQUEST_USER_URI + "/" + user;
+        const url = BaseAPI() + API_URI + TEMP_UNIT_URI + TEMP_UNIT_GET_ALL_REQUEST_USER_URI + "/" + user;
         fetch(url)
             .then(res => res.json())
             .then(
@@ -142,17 +143,16 @@ const PermintaanTempUnitList: React.FC = () => {
     return (
         <div className="bg-gradient-to-r from-red-700 to-red-500">
             <IonPage className="bg-gradient-to-r from-red-700 to-red-500">
-                <IonContent fullscreen className="bg-gradient-to-r from-red-700 to-red-500 bg-danger h-auto">
+                {/* === Start Header ===*/}
+                <ListHeader title={t('header.daftar_sementara')} isReplace={false} link={"/fuel/temp-unit/create"} addButton={true} />
+                {/* === End Header ===*/}
+                <IonContent className="bg-gradient-to-r from-red-700 to-red-500 bg-danger h-auto">
                     <IonRefresher slot="fixed" onIonRefresh={doRefresh}>
                         <IonRefresherContent></IonRefresherContent>
                     </IonRefresher>
-                    <div className="bg-white flex flex-col min-h-screen justify-between">
+                    <div className="bg-white flex flex-col justify-between">
                         {/* === start form === */}
                         <div>
-                            {/* === Start Header ===*/}
-                            <ListHeader title={"Daftar Permintaan Unit Sementara"} isReplace={false} link={"/fuel/temp-unit/create"} addButton={true} />
-                            {/* === End Header ===*/}
-
                             {/* === Start List  === */}
                             <div className="bg-white">
                                 <div className="px-3 pt-4">
@@ -161,41 +161,28 @@ const PermintaanTempUnitList: React.FC = () => {
                                             {items.map((req, index) => {
                                                 return (
                                                     <div onClick={() => btnPilih(req['id'])} key={req['id']}
-                                                        className="px-4 py-2 my-2 rounded-lg border border-1 border-gray-300">
+                                                        className="px-4 py-4 my-2 rounded-lg border border-1 border-gray-300">
                                                         <div>
                                                             <div className="flex justify-between">
                                                                 <p className="font-bold">{req['no_poll']}</p>
-                                                                {req['status'] === 'PROPOSED' &&
-                                                                    <p className="inline-flex text-sm font-semibold text-blue-600">
-                                                                        {req['status']}
-                                                                    </p>
-                                                                }
-                                                                {req['status'] === 'REJECTED' &&
-                                                                    <p className="inline-flex text-sm font-semibold text-red-600">
-                                                                        {req['status']}
-                                                                    </p>
-                                                                }
-                                                                {req['status'] === 'APPROVED' &&
-                                                                    <p className="inline-flex text-sm font-semibold text-green-600">
-                                                                        {req['status']}
-                                                                    </p>
-                                                                }
-                                                            </div>
-                                                            <div className="flex justify-between">
-                                                                <p className="text-sm text-gray-500">{req['odometer']} - {req['jenis']['name']}</p>
-                                                                {/*<span className="text-green-600 font-bold">APPROVED</span>*/}
                                                                 <p className="text-sm text-gray-900">{moment(req['tanggal']).format('DD MMM yyyy').toString()}</p>
                                                             </div>
-                                                            <p className="text-sm text-gray-500">{req['vendor']['name']}</p>
-                                                            {(req['keterangan'] !== null && req['keterangan'] !== '') &&
-                                                                <div className="mt-2 sm:flex sm:justify-between">
-                                                                    <div className="sm:flex">
-                                                                        <p className="flex items-center italic text-sm text-black-50">
-                                                                            {req['keterangan']}
-                                                                        </p>
+                                                            <div className="flex justify-between">
+                                                                <p className="text-sm text-gray-500">{req['odometer']} km - {req['jenis']['name']}</p>
+                                                                <PStatus title={req['status']} status={req['status']}/>
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-sm text-gray-500">{req['vendor']['name']}</p>
+                                                                {(req['keterangan'] !== null && req['keterangan'] !== '') &&
+                                                                    <div className="mt-2 sm:flex sm:justify-between">
+                                                                        <div className="sm:flex">
+                                                                            <p className="flex items-center italic text-sm text-black-50">
+                                                                                {req['keterangan']}
+                                                                            </p>
+                                                                        </div>
                                                                     </div>
-                                                                </div>
-                                                            }
+                                                                }
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 )

@@ -1,0 +1,16 @@
+.modal-handle {
+    left: 0px;
+    right: 0px;
+    top: 5px;
+    border-radius: 8px;
+    margin-left: auto;
+    margin-right: auto;
+    position: absolute;
+    width: 36px;
+    height: 5px;
+    transform: translateZ(0px);
+    border: 0px;
+    background: #c0c0be;
+    cursor: pointer;
+    z-index: 11;
+}

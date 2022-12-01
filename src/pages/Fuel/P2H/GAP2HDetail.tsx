@@ -14,19 +14,16 @@ import { RefresherEventDetail } from '@ionic/core';
 import { useTranslation, initReactI18next, ReactI18NextChild } from "react-i18next";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
-    API_URI,
-    BASE_API_URL,
-    P2H_ITEM_URI, P2H_CRUD_URI, pref_user_id, pref_unit_id, pref_identity, P2H_APPROVAL_URI
+    API_URI, P2H_ITEM_URI, P2H_CRUD_URI, pref_user_id, pref_unit_id, pref_identity, P2H_APPROVAL_URI
 } from "../../../constant/Index";
 import { useHistory, useLocation, useParams } from "react-router-dom";
 import { OverlayEventDetail } from '@ionic/core/components';
-import { getPref } from "../../../helper/preferences";
+import { getPref } from "../../../helper/Preferences";
 import TextareaExpand from "react-expanding-textarea";
 import UserCardWithUnit from "../../Layout/UserCardWithUnit";
-import { Capacitor } from "@capacitor/core";
-import { App } from "@capacitor/app";
 import SkeletonDetail from '../../Layout/SkeletonDetail';
 import DetailHeader from '../../../components/Header/DetailHeader';
+import {BaseAPI} from "../../../api/ApiManager";
 
 const Identity = "f8c3ca0e-f2e4-4cbd-9a48-e5f9905f420b";
 //const getId = '8c1ffa34-a9de-4c76-b853-22c582d86315';
@@ -152,8 +149,8 @@ const GAP2HDetail: React.FC = () => {
         // @ts-ignore
         setGetId(dataId);
         // @ts-ignore
-        const urlContents = BASE_API_URL + API_URI + P2H_CRUD_URI + "/" + dataId;
-        const url = BASE_API_URL + API_URI + P2H_ITEM_URI;
+        const urlContents = BaseAPI() + API_URI + P2H_CRUD_URI + "/" + dataId;
+        const url = BaseAPI() + API_URI + P2H_ITEM_URI;
         console.log("URL: " + url);
         fetch(url, {
             method: 'GET'
@@ -191,7 +188,7 @@ const GAP2HDetail: React.FC = () => {
     }
 
     const handleSetuju = async () => {
-        const url = BASE_API_URL + API_URI + P2H_APPROVAL_URI;
+        const url = BaseAPI() + API_URI + P2H_APPROVAL_URI;
         const rHeader = { 'Content-Type': 'application/json', 'Identity': identity != null ? identity : '' }
         // @ts-ignore
         const komentar = document.getElementById('keterangan').value;
@@ -224,7 +221,7 @@ const GAP2HDetail: React.FC = () => {
 
     }
     const handleTolak = async () => {
-        const url = BASE_API_URL + API_URI + P2H_APPROVAL_URI;
+        const url = BaseAPI() + API_URI + P2H_APPROVAL_URI;
         const rHeader = { 'Content-Type': 'application/json', 'Identity': identity != null ? identity : '' }
         // @ts-ignore
         const komentar = document.getElementById('keterangan').value;

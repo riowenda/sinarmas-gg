@@ -1,6 +1,7 @@
 import React, {useState, useEffect} from "react";
 import moment from "moment";
 import { useHistory } from "react-router-dom";
+import { getJsonPref, getPref } from "../../../helper/Preferences";
 import {
     IonBadge,
     IonButton,
@@ -17,8 +18,20 @@ import {
     IonText,
     useIonViewDidEnter,
   } from "@ionic/react";
+  import {
+    // BASE_API_URL,
+    // API_URI,
+    PEGAWAI_UNIT_CRUD_URI, PEGAWAI_UNIT_RELEASED_URI,
+    pref_json_pegawai_info_login, pref_pegawai_unit_id,
+    pref_unit, pref_unit_id,
+    pref_identity,
+    pref_user_id,
+    pref_user_role,
+    MEAL_REQ_SELF
+  } from "../../../constant/Index";
 import {IonReactRouter} from "@ionic/react-router";
 import { RefresherEventDetail } from '@ionic/core';
+import {useTranslation, initReactI18next} from "react-i18next";
 import { receiptOutline, restaurantOutline } from "ionicons/icons";
 import ListHeader from "../../../components/Header/ListHeader";
 import BadgeStatus from "../../../components/Badge/BadgeStatus";
@@ -43,7 +56,7 @@ const MenuVvipHome: React.FC = () => {
     const [items, setItems] = useState([]);
     useIonViewDidEnter(() => {
         console.log("Begin async operation");
-        loadDataMealReq(1);
+        loadDataPref();
     });
 
     function doRefresh(event: CustomEvent<RefresherEventDetail>) {
@@ -64,7 +77,22 @@ const MenuVvipHome: React.FC = () => {
         history.push("/meal/menuvvip/form");
       }
     
-     
+      const loadDataPref = () => {
+        getJsonPref(pref_json_pegawai_info_login).then((res) => {
+          setPegawai(res);
+          // console.log(res);
+        });
+        getJsonPref(pref_unit).then((restUnit) => {
+          setUnit(restUnit);
+        });
+        getPref(pref_user_role).then((restRole) => {
+          setRole(restRole);
+        });
+    
+    
+        // getPref(pref_identity).then(res => { setIdentity(res) });
+        getPref(pref_pegawai_unit_id).then(res => { setPegUnitId(res); loadDataMealReq(res); });
+      }
     
       const loadDataMealReq = (user: any) => {
         const url = BASE_API_URL + API_URI + '/vviprequests';
@@ -99,14 +127,18 @@ const MenuVvipHome: React.FC = () => {
                             <IonText className="text-lg">Daftar Pesanan</IonText>
                             <IonButton fill="outline" color="tertiary" onClick={btnPengajuan}>Buat Pesanan</IonButton>
                         </div>
-                        <IonList>
+                        <div className="bg-white pt-3 px-2"></div>
                             {items.map((data, index) => {
                             return (
-                            <div className="rounded-lg py-1 mb-3 border border-1 border-gray-300" key={data['id']}>
-                                <IonItem routerLink={"/meal/menuvvip/detailpengajuan/" + data['id']} routerDirection="forward" className="border-0" lines="none">
-                                <div className="p-3 m-1 rounded-md">
-                                    <div className="grid grid-cols-12 gap-4">
-                                        <div className="col-start-1 col-end-6 flex items-center justify-start justify-items-start">
+                              <div 
+                              className="rounded-lg py-1 mb-3 border border-1 border-gray-300 cursor-pointer" 
+                              key={data['id']} 
+                              onClick={() => { history.push("/meal/menuvvip/detailpengajuan/" + data['id']) } }
+                            >
+                              <div className="px-2 py-2">
+                                <div className="relative flex space-x-3">
+                                  <div className="flex min-w-0 flex-1 justify-between space-x-4">
+                                        <div>
                                             <p className="text-base text-gray-900">
                                                 {moment(data['request_date']).format('DD MMM yyyy').toString()}
                                             </p>
@@ -116,11 +148,10 @@ const MenuVvipHome: React.FC = () => {
                                         </div>
                                     </div>
                                 </div>
-                                </IonItem>
+                                </div>
                             </div>
                             )
                             })}
-                        </IonList>
                     </div>
                 </div>
             </div>

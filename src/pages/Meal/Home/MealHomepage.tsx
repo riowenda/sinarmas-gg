@@ -13,7 +13,7 @@ import { useTranslation, initReactI18next } from "react-i18next";
 import React, { useCallback, useRef, useState } from "react";
 import { useHistory, Route } from "react-router-dom";
 // import { IonReactRouter } from "@ionic/react-router";
-import { getJsonPref, getPref } from "../../../helper/preferences";
+import { getJsonPref, getPref } from "../../../helper/Preferences";
 import ListHeader from "../../../components/Header/ListHeader";
 
 import {
@@ -203,13 +203,13 @@ const MealHomepage: React.FC = () => {
                   <h3 className="text-md font-bold text-gray-900">
                     Pesanan Makanan
                   </h3>
-                  <div className="grid grid-cols-2 gap-2 mt-4">
+                  <div className="grid grid-cols-2 gap-2 mt-4 cursor-pointer" onClick={() => history.push("/meal/receive?shiftId=1")}>
                     <span className="inline-flex items-center text-gray-900">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 20 20"
                         fill="currentColor"
-                        className="w-6 h-5 mr-6 text-green-600"
+                        className="w-6 h-5 mr-3 text-green-600"
                       >
                         <path
                           fillRule="evenodd"
@@ -221,13 +221,31 @@ const MealHomepage: React.FC = () => {
                     </span>
                     <span className="text-right text-gray-900">Kantin BIB</span>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 mt-4">
+                  <div className="grid grid-cols-2 gap-2 mt-4 cursor-pointer" onClick={() => history.push("/meal/receive?shiftId=2")}>
+                    <span className="inline-flex items-center text-gray-900">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                        className="w-6 h-5 mr-3 text-green-600"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      Siang
+                    </span>
+                    <span className="text-right text-gray-900">Kantin BIB</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 mt-4 cursor-pointer" onClick={() => history.push("/meal/receive?shiftId=3")}>
                     <span className="inline-flex items-center text-gray-900">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 24 24"
                         fill="currentColor"
-                        className="w-6 h-5 mr-6 text-gray-200"
+                        className="w-6 h-5 mr-3 text-gray-200"
                       >
                         <path
                           fillRule="evenodd"
@@ -235,7 +253,25 @@ const MealHomepage: React.FC = () => {
                           clipRule="evenodd"
                         />
                       </svg>
-                      Siang
+                      Sore
+                    </span>
+                    <span className="text-right text-gray-900">Kantin BIB</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 mt-4 cursor-pointer" onClick={() => history.push("/meal/receive?shiftId=4")}>
+                    <span className="inline-flex items-center text-gray-900">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                        className="w-6 h-5 mr-3 text-gray-200"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm3 10.5a.75.75 0 000-1.5H9a.75.75 0 000 1.5h6z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      Supper
                     </span>
                     <span className="text-right text-gray-900">Kantin BIB</span>
                   </div>

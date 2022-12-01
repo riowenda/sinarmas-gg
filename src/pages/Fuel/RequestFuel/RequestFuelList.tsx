@@ -16,17 +16,20 @@ import { useTranslation, initReactI18next } from "react-i18next";
 import React, { useState } from "react";
 import {
     API_URI,
-    BASE_API_URL,
     pref_identity,
-    pref_user_id,
-    pref_user_role, FUEL_REQ_UNIT_URI, FUEL_REQ_USER_LIST_URI, pref_pegawai_unit_id, FUEL_REQ_USER_LAST_REDEM
+    FUEL_REQ_UNIT_URI,
+    FUEL_REQ_USER_LIST_URI,
+    pref_pegawai_unit_id,
+    AUTH_FUEL_GA, AUTH_FUEL_FINANCE
 } from "../../../constant/Index";
 import {useHistory, useLocation} from "react-router-dom";
-import { getPref } from "../../../helper/preferences";
+import {getFuelMenu, getPref} from "../../../helper/Preferences";
 import moment from "moment";
 import {Capacitor} from "@capacitor/core";
 import {App} from "@capacitor/app";
 import ListHeader from "../../../components/Header/ListHeader";
+import PStatus from "../PO/components/PStatus";
+import {BaseAPI} from "../../../api/ApiManager";
 
 const RequestFuelList: React.FC = () => {
     const history = useHistory();
@@ -81,17 +84,27 @@ const RequestFuelList: React.FC = () => {
     const loadDataPref = () => {
         getPref(pref_identity).then(res => { setIdentity(res) });
         getPref(pref_pegawai_unit_id).then(res => { setPegUnitId(res); loadDataPermintaan(res); });
-        getPref(pref_user_role).then(restRole => {
+        getFuelMenu().then(menu => {
+            let restRole = "";
+
+            if(menu.includes(AUTH_FUEL_GA)){
+                restRole = 'GA';
+            } else if(menu.includes(AUTH_FUEL_FINANCE)){
+                restRole = 'FINANCE';
+            }
+
+            // @ts-ignore
             setRole(restRole);
         });
     }
 
     const loadDataPermintaan = (user: any) => {
-        const url = BASE_API_URL + API_URI + FUEL_REQ_UNIT_URI + FUEL_REQ_USER_LIST_URI + "/" + user;
+        const url = BaseAPI() + API_URI + FUEL_REQ_UNIT_URI + FUEL_REQ_USER_LIST_URI + "/" + user;
         fetch(url)
             .then(res => res.json())
             .then(
                 (result) => {
+                    console.log("result", result)
                     // console.log(result.data);
                     // console.log(result.data);
                     let data = result.data;
@@ -138,48 +151,33 @@ const RequestFuelList: React.FC = () => {
 
     return (
         <IonPage>
-            <IonContent fullscreen>
+            {/* Header */}
+            <ListHeader title={t('header.daftar_fuel')} isReplace={false} link={"/fuel/req-fuel/create-form"} addButton={true} />
+            {/* end Header */}
+            <IonContent >
                 <IonRefresher slot="fixed" onIonRefresh={doRefresh}>
                     <IonRefresherContent></IonRefresherContent>
                 </IonRefresher>
                 <div className="bg-red-700 ">
-                    {/* Header */}
-                    <ListHeader title={"Daftar Permintaan Bahan Bakar"} isReplace={false} link={"/fuel/req-fuel/create-form"} addButton={true} />
-                    {/* end Header */}
-
                     {/* === Start List  === */}
                     <div className="bg-white">
-                        <div className="px-3 pt-4">
+                        <div className="px-3 pt-3">
                             {isLoaded ?
                                 <>
                             {items != null ? items.map((req, index) => {
                                 return (
                                     <div onClick={() => btnDetailReqFuel(req['id'], req['status'])} key={req['id']}
-                                        className="px-4 py-2 my-2 rounded-lg border border-1 border-gray-300">
+                                        className="px-4 py-4 my-2 rounded-lg border border-1 border-gray-300">
                                         <div>
-                                            <div className="flex min-w-0 flex-1 justify-between space-x-4">
-                                                <div>
-                                                    <p className="text-base font-bold text-gray-900">{req['pegawaiUnit']['unit']['noPol']} - {req['pegawaiUnit']['unit']['noLambung']}</p>
-                                                    <p className="text-sm text-gray-900">{req['pegawaiUnit']['unit']['jenisUnit']['name']} - {req['pegawaiUnit']['unit']['tipeUnit']['name']}</p>
-                                                    <p className="text-sm text-gray-900">{req['pegawaiUnit']['unit']['vendor']['name']}</p>
-                                                </div>
-                                                <div className="whitespace-nowrap text-center text-sm text-gray-500">
-                                                    <p className="text-sm text-gray-900">{moment(req['tanggal']).format('DD MMM yyyy').toString()}</p>
-                                                    {(req['status'] === 'PROPOSED' || req['status'] === 'FILLED') &&
-                                                        <span className="text-blue-600 font-bold">{req['status']}</span>
-                                                    }
-                                                    {(req['status'] === 'REJECTED' || req['status'] === 'CANCELED') &&
-                                                        <span className="text-red-600 font-bold">{req['status']}</span>
-                                                    }
-                                                    {(req['status'] === 'FORGIVENESS' || req['status'] === 'ONHOLD') &&
-                                                        <span className="text-red-600 font-bold">{req['status']}</span>
-                                                    }
-                                                    {(req['status'] === 'APPROVED' || req['status'] === 'READY' || req['status'] === 'CLOSED') &&
-                                                        <span className="text-green-600 font-bold">{req['status']}</span>
-                                                    }
-                                                </div>
+                                            <div className="flex justify-between">
+                                                <p className="font-bold text-gray-900">{req['pegawaiUnit']['unit']['noPol']} - {req['pegawaiUnit']['unit']['noLambung']}</p>
+                                                <p className="text-sm text-gray-900">{moment(req['tanggal']).format('DD MMM yyyy').toString()}</p>
                                             </div>
-
+                                            <div className="flex justify-between">
+                                                <p className="text-sm text-gray-900">{req['pegawaiUnit']['unit']['jenisUnit']['name']} - {req['pegawaiUnit']['unit']['tipeUnit']['name']}</p>
+                                                <PStatus title={req['status']} status={req['status']}/>
+                                            </div>
+                                            <div><p className="text-sm text-gray-900">{req['pegawaiUnit']['unit']['vendor']['name']}</p></div>
                                         </div>
                                     </div>
                                 )

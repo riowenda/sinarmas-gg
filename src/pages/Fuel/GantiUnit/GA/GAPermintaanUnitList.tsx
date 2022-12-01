@@ -16,8 +16,7 @@ import { RefresherEventDetail } from '@ionic/core';
 import { useTranslation, initReactI18next } from "react-i18next";
 import React, { useEffect, useState } from "react";
 import {
-    API_URI,
-    BASE_API_URL, TAKEOVER_ALL_GA_URI,
+    API_URI, TAKEOVER_ALL_GA_URI,
 } from "../../../../constant/Index";
 import { useHistory, useLocation } from "react-router-dom";
 import moment from "moment";
@@ -25,6 +24,8 @@ import Select from 'react-select'
 import { Capacitor } from "@capacitor/core";
 import { App } from "@capacitor/app";
 import ListHeader from "../../../../components/Header/ListHeader";
+import PStatus from "../../PO/components/PStatus";
+import {BaseAPI} from "../../../../api/ApiManager";
 
 const Identity = "78fda6a7-0351-4f8f-84ab-d8bebce25d67";
 const rHeader = { 'Content-Type': 'application/json', 'Identity': Identity }
@@ -88,7 +89,7 @@ const GAPermintaanUnitList: React.FC = () => {
     }
 
     const loadData = () => {
-        const url = BASE_API_URL + API_URI + TAKEOVER_ALL_GA_URI;
+        const url = BaseAPI() + API_URI + TAKEOVER_ALL_GA_URI;
         fetch(url, {
             headers: {
                 "Content-Type": "application/json"
@@ -117,7 +118,7 @@ const GAPermintaanUnitList: React.FC = () => {
 
     const handleSelectChange = async (event: any) => {
         console.log("ganti value: ", event.value);
-        const url = BASE_API_URL + API_URI + TAKEOVER_ALL_GA_URI;
+        const url = BaseAPI() + API_URI + TAKEOVER_ALL_GA_URI;
         fetch(url, {
             headers: {
                 "Content-Type": "application/json"
@@ -167,43 +168,36 @@ const GAPermintaanUnitList: React.FC = () => {
         history.push('/ga/fuel/homepage');
     }
 
-    // @ts-ignore
-    // @ts-ignore
-    // @ts-ignore
-    // @ts-ignore
-    // @ts-ignore
-    // @ts-ignore
-    // @ts-ignore
     return (
         <IonPage>
-
-            <IonContent fullscreen>
+            {/* Header */}
+            <ListHeader title={t('header.daftar_ganti')} isReplace={false} link={""} addButton={false} />
+            {/* end Header */}
+            <div className="bg-white px-3 pt-4 divide-y divide-gray-300">
+                <div className='top-0 z-10 mb-3'>
+                    <Select placeholder="Filter" options={options} onChange={event => handleSelectChange(event)} />
+                </div>
+                <div></div>
+            </div>
+            <IonContent>
                 <IonRefresher slot="fixed" onIonRefresh={doRefresh}>
                     <IonRefresherContent></IonRefresherContent>
                 </IonRefresher>
-                <div className="bg-white flex flex-col min-h-screen justify-between">
+                <div className="bg-white flex flex-col justify-between">
                     {/* === start form === */}
                     <div>
-                        {/* Header */}
-                        <ListHeader title={"Daftar Permintaan Ganti Unit"} isReplace={false} link={""} addButton={false} />
-                        {/* end Header */}
-
-
                         {/* === Start DUMMY List  === */}
 
                         <div className="bg-white">
 
-                            <div className="px-3 pt-4 divide-y divide-gray-300">
-                                <div className='mb-3'>
-                                    <Select placeholder="Filter" options={options} onChange={event => handleSelectChange(event)} />
-                                </div>
+                            <div className="px-3">
 
-                                <div className='pt-4'>
+                                <div className='pt-3'>
                                     {isLoaded ?
                                         <>
                                         {items.map((unit, index) => {
                                         return (
-                                            <div onClick={() => btnPilih(unit)} className="px-4 py-2 my-2 rounded-lg border border-1 border-gray-300" key={unit['id']}>
+                                            <div onClick={() => btnPilih(unit)} className="px-4 py-4 my-2 rounded-lg border border-1 border-gray-300" key={unit['id']}>
                                                 <div>
                                                     <div className="flex justify-between">
                                                         <p className="font-bold">{unit['requester']['name']}</p>
@@ -212,15 +206,7 @@ const GAPermintaanUnitList: React.FC = () => {
                                                     </div>
                                                     <div className="flex justify-between">
                                                         <p className="text-sm text-gray-500">{unit['pegawaiUnit']['unit']['noLambung']} - {unit['pegawaiUnit']['unit']['noPol']}</p>
-                                                        {unit['status'] === 'PROPOSED' &&
-                                                            <span className="text-blue-600 font-bold">{unit['status']}</span>
-                                                        }
-                                                        {unit['status'] === 'REJECTED' &&
-                                                            <span className="text-red-600 font-bold">{unit['status']}</span>
-                                                        }
-                                                        {unit['status'] === 'APPROVED' &&
-                                                            <span className="text-green-600 font-bold">{unit['status']}</span>
-                                                        }
+                                                        <PStatus title={unit['status']} status={unit['status']}/>
                                                     </div>
                                                     <p className="text-sm text-gray-500">{unit['pegawaiUnit']['unit']['jenisUnit']['name']}</p>
                                                 </div>

@@ -6,10 +6,8 @@ import { useState } from "react";
 // import { Capacitor } from '@capacitor/core';
 
 export interface Medias {
-    // id: string,
     data?: string,
     fileName?: string,
-    // laporan?: string
 }
 
 export interface MediaReview {
@@ -27,7 +25,7 @@ export function usePhotoGallery() {
         const photo = await Camera.getPhoto({
             resultType: CameraResultType.Base64,
             source: CameraSource.Camera,
-            quality: 100,
+            quality: 30,
 
         })
 

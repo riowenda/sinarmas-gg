@@ -19,7 +19,6 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import ActionSheet from "actionsheet-react";
 import {
     API_URI,
-    BASE_API_URL,
     FUEL_REQ_UNIT_APPROVAL_URI,
     FUEL_REQ_UNIT_CONFIRMATION_URI,
     FUEL_REQ_UNIT_FORGIVENES_URI,
@@ -30,7 +29,7 @@ import {
     pref_unit,
 } from "../../../../constant/Index";
 import { useHistory, useLocation, useParams } from "react-router-dom";
-import { getJsonPref, getPref } from "../../../../helper/preferences";
+import { getJsonPref, getPref } from "../../../../helper/Preferences";
 import QRCodeWithCountDown from "../../../../components/QRCodeWithCountDown/QRCodeWithCountDown";
 import moment from "moment";
 import SVGStopCloseCheckCircle from "../../../Layout/SVGStopCloseCheckCircle";
@@ -40,11 +39,14 @@ import {Camera, CameraResultType, CameraSource} from "@capacitor/camera";
 import TextareaExpand from "react-expanding-textarea";
 import DetailHeader from "../../../../components/Header/DetailHeader";
 import QRCodeWithLogo from "../../../../components/QRCodeWithLogo/QRCodeWithLogo";
+import {encode} from "string-encode-decode";
+import {privacyDisable, privacyEnable} from "../../../../helper/PrivacyScreenConf";
+import {BaseAPI} from "../../../../api/ApiManager";
 
 const userInfo = { name: "", nik: "", imageUrl: "" }
 const userUnit = { id: "", noPol: "", noLambung: "", vendor: { name: "" }, jenisUnit: { name: "" } };
 const sendObj = {id:"", status:"", img:"", filename:"", alasan:""}
-const obj = {id:"", pemohon: {id: "", name:"", nik:"", foto: ""}, nomor: "", tanggalPermintaan: null, liter: null, literPengisian:null, fuelman: {id:"",name:""}, penjaga:{id:"",name:""}, status: "", fuelStasiun: {id:"", nama: ""}, riwayats: []}
+const obj = {id:"", pemohon: {id: "", name:"", nik:"", foto: ""}, tujuan: {id: "", nama:""}, nomor: "", tanggalPermintaan: null, liter: null, literPengisian:null, fuelman: {id:"",name:""}, penjaga:{id:"",name:""}, status: "", fuelStasiun: {id:"", nama: ""}, riwayats: []}
 const RequestOtherCoupon: React.FC = () => {
     const [identity, setIdentity] = useState("");
     const history = useHistory();
@@ -86,6 +88,7 @@ const RequestOtherCoupon: React.FC = () => {
     /* Proses animasi akan dimulai saat akan meninggalkan halaman
     disini cocok untuk melakukan clean up atau sebagainya yang sesuai kebutuhan */
     useIonViewWillLeave(() => {
+        privacyDisable().then(r => r);
         setIsLoaded(false);
     });
 
@@ -131,8 +134,8 @@ const RequestOtherCoupon: React.FC = () => {
 
     const loadDetail = (id: any) => {
         // @ts-ignore
-        const urlContents = BASE_API_URL + API_URI + OTHER_COUPON_URI + "/" + id;
-        //const url = BASE_API_URL + API_URI + P2H_ITEM_URI;
+        const urlContents = BaseAPI() + API_URI + OTHER_COUPON_URI + "/" + id;
+        //const url = BaseAPI() + API_URI + P2H_ITEM_URI;
         // console.log("URL: " + urlContents);
 
         fetch(urlContents, {
@@ -168,6 +171,12 @@ const RequestOtherCoupon: React.FC = () => {
                         const time = now.setTime(now.getTime() + (5 * 60000));
                         let teks = "hrgabib_fuel-other_"+result.data.id+"_"+time;
                         setTxt(teks);
+
+                        if(result.data.status === "READY"){
+                            privacyEnable().then(r => r);
+                        } else {
+                            privacyDisable().then(r => r);
+                        }
                     }
                     setIsLoaded(true);
                 },
@@ -189,6 +198,7 @@ const RequestOtherCoupon: React.FC = () => {
         e.preventDefault();
             presentAlert({
                 subHeader: 'Anda yakin untuk menyelesaikan permintaan ini?',
+                backdropDismiss: false,
                 buttons: [
                     {
                         text: 'Tidak',
@@ -209,6 +219,7 @@ const RequestOtherCoupon: React.FC = () => {
         e.preventDefault();
         presentAlert({
                 subHeader: 'Anda yakin untuk meminta perbaikan jumlah fuel?',
+                backdropDismiss: false,
                 buttons: [
                     {
                         text: 'Tidak',
@@ -226,13 +237,14 @@ const RequestOtherCoupon: React.FC = () => {
     }
 
     const sendConfirmation = (status : any, tipe: any) => {
-        const urlContents = BASE_API_URL + API_URI + OTHER_COUPON_URI + OTHER_COUPON_CONFIRMATION_URI;
-        //const url = BASE_API_URL + API_URI + P2H_ITEM_URI;
+        const urlContents = BaseAPI() + API_URI + OTHER_COUPON_URI + OTHER_COUPON_CONFIRMATION_URI;
+        //const url = BaseAPI() + API_URI + P2H_ITEM_URI;
         // console.log("URL: " + urlContents);
         const data = {id:sendId, status:status, user:pegId}
         let msg = tipe === "perbaikan" ? "Pengajuan perbaikan" : "Penyelesaian permintaan";
         const loading = present({
             message: 'Memproses '+msg+" ...",
+            backdropDismiss: false
         })
         fetch(urlContents, {
             method: 'POST',
@@ -247,6 +259,7 @@ const RequestOtherCoupon: React.FC = () => {
                         showConfirm({
                             //simpan unit id ke pref
                             subHeader: ""+msg+" berhasil dikirim!",
+                            backdropDismiss: false,
                             buttons: [
                                 {
                                     text: 'OK',
@@ -275,6 +288,7 @@ const RequestOtherCoupon: React.FC = () => {
     const btnBatal = () => {
         presentAlert({
             subHeader: 'Anda yakin untuk membatalkan Permintaan Bahan Bakar Non Unit ini?',
+            backdropDismiss: false,
             buttons: [
                 {
                     text: 'Tidak',
@@ -294,8 +308,9 @@ const RequestOtherCoupon: React.FC = () => {
     const sendRequest = () => {
         const loading = present({
             message: 'Memproses pembatalan ...',
+            backdropDismiss: false
         })
-        const url = BASE_API_URL + API_URI + OTHER_COUPON_URI + OTHER_COUPON_APPROVAL_URI;
+        const url = BaseAPI() + API_URI + OTHER_COUPON_URI + OTHER_COUPON_APPROVAL_URI;
         const data = { otherKupon: { id: sendId }, status: "CANCELED", approveType: "USER", komentar: null, tanggal: (new Date()), pegawai: { id: pegId } } //user diambil dari pref
         fetch(url, {
             method: 'POST',
@@ -310,6 +325,7 @@ const RequestOtherCoupon: React.FC = () => {
                         showConfirm({
                             //simpan unit id ke pref
                             subHeader: "Pembatalan Permintaan Bahan Bakar Non Unit berhasil!",
+                            backdropDismiss: false,
                             buttons: [
                                 {
                                     text: 'OK',
@@ -374,7 +390,14 @@ const RequestOtherCoupon: React.FC = () => {
                                             {reqFuel.nomor}
                                         </div>
                                     </div>
-
+                                    <div className="mt-4">
+                                        <label className="block text-sm text-gray-400">
+                                            Permintaan Untuk
+                                        </label>
+                                        <div>
+                                            {reqFuel.tujuan.nama}
+                                        </div>
+                                    </div>
                                     <div className="mt-4">
                                         <label className="block text-sm text-gray-400">
                                             Permintaan Oleh
@@ -457,7 +480,7 @@ const RequestOtherCoupon: React.FC = () => {
                                         {/*<img height={180} width={180} className="mx-auto object-cover object-center rounded-lg pointer-events-none" src={`data:image/png;base64,${photo}`} ></img>*/}
                                         <div className="mx-auto">
                                             {reqFuel != null && reqFuel.id !== "" ?
-                                                <QRCodeWithLogo text={txt} />
+                                                <QRCodeWithLogo text={encode(txt)} />
                                                 : ""}
                                         </div>
                                     </div>

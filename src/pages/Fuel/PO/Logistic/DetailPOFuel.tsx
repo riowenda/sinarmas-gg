@@ -14,21 +14,19 @@ import {
 import { RefresherEventDetail } from '@ionic/core';
 import { useTranslation, initReactI18next } from "react-i18next";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import ActionSheet from "actionsheet-react";
 import {
-    API_URI,
-    BASE_API_URL, FUEL_REQ_UNIT_APPROVAL_URI, FUEL_REQ_UNIT_URI, pref_identity,
-    pref_json_pegawai_info_login, pref_pegawai_id, pref_token,
-    pref_unit, pref_user_role,
+    API_URI, AUTH_FUEL_FINANCE, AUTH_FUEL_GA,
+    FUEL_REQ_UNIT_APPROVAL_URI, FUEL_REQ_UNIT_URI, pref_identity,
+    pref_pegawai_id
 } from "../../../../constant/Index";
 import { useHistory, useLocation, useParams } from "react-router-dom";
-import { getJsonPref, getPref } from "../../../../helper/preferences";
+import {getFuelMenu, getJsonPref, getPref} from "../../../../helper/Preferences";
 import moment from "moment";
-import SVGStopCloseCheckCircle from "../../../Layout/SVGStopCloseCheckCircle";
 import SkeletonDetail from '../../../Layout/SkeletonDetail';
 import DetailHeader from '../../../../components/Header/DetailHeader';
 import {PO} from "../../../../api/PODOFuelAPI/PO";
 import PStatus from "../components/PStatus";
+import {BaseAPI} from "../../../../api/ApiManager";
 
 const userInfo = { name: "", nik: "", imageUrl: "" }
 const userUnit = { id: "", noPol: "", noLambung: "", vendor: { name: "" }, jenisUnit: { name: "" } };
@@ -80,7 +78,7 @@ const DetailPOFuel: React.FC = () => {
     function doRefresh(event: CustomEvent<RefresherEventDetail>) {
         console.log('Begin async operation');
         setIsLoaded(false);
-        loadDataPermintaan(token, sendId);
+        loadDataPermintaan(sendId);
         setTimeout(() => {
             console.log('Async operation has ended');
             event.detail.complete();
@@ -94,16 +92,23 @@ const DetailPOFuel: React.FC = () => {
 
         getPref(pref_identity).then(res => { setIdentity(res) });
         getPref(pref_pegawai_id).then(res => { setPegId(res); });
-        getPref(pref_token).then(res => {
-            loadDataPermintaan(res, dataId);
-        });
-        getPref(pref_user_role).then(r => {
-            setRole(r);
+        loadDataPermintaan(dataId);
+        getFuelMenu().then(menu => {
+            let restRole = "";
+
+            if(menu.includes(AUTH_FUEL_GA)){
+                restRole = 'GA';
+            } else if(menu.includes(AUTH_FUEL_FINANCE)){
+                restRole = 'FINANCE';
+            }
+
+            // @ts-ignore
+            setRole(restRole);
         });
     }
 
-    const loadDataPermintaan = (token: any, id: string) => {
-        let data = PO(token, "detail", id).then(result => {
+    const loadDataPermintaan = (id: string) => {
+        let data = PO("detail", id).then(result => {
             try {
                 if(result.status === "SUCCESS") {
                     let data = result.data;
@@ -147,6 +152,7 @@ const DetailPOFuel: React.FC = () => {
     const btnBatal = () => {
         presentAlert({
             subHeader: 'Anda yakin untuk membatalkan Permintaan Bahan Bakar Unit ini?',
+            backdropDismiss: false,
             buttons: [
                 {
                     text: 'Tidak',
@@ -166,8 +172,9 @@ const DetailPOFuel: React.FC = () => {
     const sendRequest = () => {
         const loading = present({
             message: 'Memproses pembatalan ...',
+            backdropDismiss: false
         })
-        const url = BASE_API_URL + API_URI + FUEL_REQ_UNIT_URI + FUEL_REQ_UNIT_APPROVAL_URI;
+        const url = BaseAPI() + API_URI + FUEL_REQ_UNIT_URI + FUEL_REQ_UNIT_APPROVAL_URI;
         const data = { kupon: { id: sendId }, status: "CANCELED", approveType: "USER", komentar: null, tanggal: (new Date()), pegawai: { id: pegId } } //user diambil dari pref
         fetch(url, {
             method: 'POST',
@@ -182,12 +189,13 @@ const DetailPOFuel: React.FC = () => {
                         showConfirm({
                             //simpan unit id ke pref
                             subHeader: "Pembatalan Permintaan Bahan Bakar Unit berhasil!",
+                            backdropDismiss: false,
                             buttons: [
                                 {
                                     text: 'OK',
                                     cssClass: 'alert-button-confirm',
                                     handler: () => {
-                                        loadDataPermintaan(token, sendId);
+                                        loadDataPermintaan(sendId);
                                     }
                                 },
                             ],
@@ -227,17 +235,25 @@ const DetailPOFuel: React.FC = () => {
 
                         {/* === Start Content  === */}
                         <div>
-                            <DetailHeader title='PO' link='/fuel/po' approval={"PROPOSED"}></DetailHeader>
+                            <DetailHeader title='PO' link='/fuel/po' approval={po['status']}></DetailHeader>
 
 
                             <div className="p-6 bg-white">
 
                                 <div className="mt-4">
                                     <label className="block text-sm text-gray-400">
-                                        No. PO
+                                        PO ID
                                     </label>
                                     <div>
                                         {po['nomor'] !== '' ? po['nomor'] : "-"}
+                                    </div>
+                                </div>
+                                <div className="mt-4">
+                                    <label className="block text-sm text-gray-400">
+                                        No. PO
+                                    </label>
+                                    <div>
+                                        {po['ref'] !== '' ? po['ref'] : "-"}
                                     </div>
                                 </div>
                                 <div className="mt-4">
@@ -256,6 +272,14 @@ const DetailPOFuel: React.FC = () => {
                                         {po['jumlah']} liter
                                     </div>
                                 </div>
+                                <div className="mt-4">
+                                    <label className="block text-sm text-gray-400">
+                                        Tanggal Permintaan
+                                    </label>
+                                    <div>
+                                        {moment(po['tanggal']).format('DD MMM yyyy').toString()}
+                                    </div>
+                                </div>
 
                             </div>
 
@@ -270,11 +294,11 @@ const DetailPOFuel: React.FC = () => {
 
                                             <div className="flex justify-between text-sm">
                                                 <div className="w-full">
-                                                    <p className='font-bold'>{req['nomor'] !== "" ? req['nomor'] : "-"}</p>
+                                                    <p className='font-bold'>{req['nomor'] !== "" ? req['nomor'] : "-"} - {req['ref'] !== "" ? req['ref'] : "-"}</p>
                                                     <p className='text-gray-500'>{req['fuelStasiun']['nama']}</p>
                                                     <p className='text-gray-500'>{po['vendor']['name']}</p>
                                                 </div>
-                                                <div className="w-1/4 text-end">
+                                                <div className="w-1/3 text-end">
                                                     <PStatus status={req['status']} title={req['status']} />
                                                     <p className='text-gray-500'>{req['jumlahRencana']} liter</p>
                                                     <p className='text-gray-500'>{moment(req['tanggalRencana']).format('DD MMM yyyy').toString()}</p>

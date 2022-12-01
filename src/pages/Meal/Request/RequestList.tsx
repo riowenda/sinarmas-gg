@@ -11,8 +11,9 @@ import { useTranslation, initReactI18next } from "react-i18next";
 import React, { useCallback, useState } from "react";
 import moment from "moment";
 import { useHistory } from "react-router-dom";
-import { getPref } from "../../../helper/preferences";
+import { getPref } from "../../../helper/Preferences";
 import ListHeader from "../../../components/Header/ListHeader";
+import BadgeStatus from "../../../components/Badge/BadgeStatus";
 import {
   CursorArrowRaysIcon,
   EnvelopeOpenIcon,
@@ -89,6 +90,20 @@ const MealList: React.FC = () => {
     fetch(url).then(res => res.json()).then(
       (result) => {
         // console.log(result.data);
+
+        result.data = [
+          // { id: 1, request_date: '2022-11-22', status: 'Diantarkan' },
+          // { id: 2, request_date: '2022-11-21', status: 'Diantarkan' },
+          { id: 2, request_date: '2022-11-22', status: 'Proses' },
+          { id: 3, request_date: '2022-11-21', status: 'Selesai' },
+          { id: 3, request_date: '2022-11-20', status: 'Selesai' },
+          { id: 4, request_date: '2022-11-19', status: 'Selesai' },
+          { id: 5, request_date: '2022-11-18', status: 'Selesai' },
+          { id: 6, request_date: '2022-11-17', status: 'Selesai' },
+          { id: 7, request_date: '2022-11-16', status: 'Selesai' },
+          { id: 8, request_date: '2022-11-15', status: 'Selesai' },
+        ]
+
         setItems(result.data);
         setIsLoaded(true);
       },
@@ -163,9 +178,7 @@ const MealList: React.FC = () => {
                           <p className="text-gray-900">{moment(data['request_date']).format('DD MMM yyyy').toString()}</p>
                           {/*<p className="text-sm text-gray-900">PT. Semesta Transportasi Limbah Indonesia</p>*/}
                         </div>
-                        <div className="whitespace-nowrap text-right text-xs bg-green-500 rounded-lg">
-                          <span className="text-white px-2 font-bold">{data['status']}</span>
-                        </div>
+                        <BadgeStatus title={data['status']} />
                       </div>
                     </div>
                   </div>

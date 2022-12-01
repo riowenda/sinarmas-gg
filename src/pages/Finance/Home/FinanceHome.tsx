@@ -11,15 +11,11 @@ import { RefresherEventDetail } from '@ionic/core';
 import { useTranslation } from "react-i18next";
 import React, { useEffect, useState } from "react";
 import {
-    API_URI,
-    BASE_API_URL, P2H_LIST_GA_URI, TEMP_UNIT_ALL_GA_URI,
-    pref_json_pegawai_info_login, TEMP_UNIT_URI, TAKEOVER_ALL_GA_URI,
+    pref_json_pegawai_info_login
 } from "../../../constant/Index";
 import {useHistory, useLocation} from "react-router-dom";
-import { getJsonPref } from "../../../helper/preferences";
+import { getJsonPref } from "../../../helper/Preferences";
 import HeaderGA from "../../Dashboard/HeaderGA";
-import {Capacitor} from "@capacitor/core";
-import {App} from "@capacitor/app";
 
 const user = { name: "", nik: "", imageUrl: "" }
 const FinanceHome: React.FC = () => {

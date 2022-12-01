@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useTranslation,} from "react-i18next";
 import "../../components/Translate";
 import {useHistory, useLocation} from "react-router-dom";
-import { getJsonPref } from "../../helper/preferences";
+import { getJsonPref } from "../../helper/Preferences";
 import {pref_json_pegawai_info_login, pref_unit} from "../../constant/Index";
 import {Capacitor} from "@capacitor/core";
 import {App} from "@capacitor/app";

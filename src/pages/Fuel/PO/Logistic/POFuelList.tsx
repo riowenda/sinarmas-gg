@@ -16,10 +16,10 @@ import React, { useState } from "react";
 import {
     pref_identity,
     pref_user_role,
-    pref_pegawai_id, pref_token
+    pref_pegawai_id, pref_token, AUTH_FUEL_GA, AUTH_FUEL_FINANCE
 } from "../../../../constant/Index";
 import { useHistory, useLocation } from "react-router-dom";
-import { getPref } from "../../../../helper/preferences";
+import {getFuelMenu, getPref} from "../../../../helper/Preferences";
 import ListHeader from "../../../../components/Header/ListHeader";
 import {PO} from "../../../../api/PODOFuelAPI/PO";
 import moment from "moment";
@@ -79,21 +79,27 @@ const POFuelList: React.FC = () => {
     const loadDataPref = () => {
         getPref(pref_identity).then(res => { setIdentity(res) });
         getPref(pref_pegawai_id).then(res => { setPegId(res); });
-        getPref(pref_user_role).then(restRole => {
+        getFuelMenu().then(menu => {
+            let restRole = "";
+
+            if(menu.includes(AUTH_FUEL_GA)){
+                restRole = 'GA';
+            } else if(menu.includes(AUTH_FUEL_FINANCE)){
+                restRole = 'FINANCE';
+            }
+
+            // @ts-ignore
             setRole(restRole);
         });
-        getPref(pref_token).then(res => {
-            loadDataPermintaan(res);
-        });
+        loadDataPermintaan();
     }
 
-    const loadDataPermintaan = (token: any) => {
-        let data = PO(token, "list", "").then(result => {
+    const loadDataPermintaan = () => {
+        let data = PO( "list", "").then(result => {
             // console.log(result);
             if(result){
                 try {
-                    let data = result.filter((x: { [x: string]: { [x: string]: null; }; }) => (x['fuelStasiun'] !== null && x['vendor'] !== null && x['nomor'] !== null));
-                    setPo(data);
+                    setPo(result);
                 } catch (error) {
 
                 }
@@ -115,36 +121,39 @@ const POFuelList: React.FC = () => {
 
     return (
         <IonPage>
+            {/* Header */}
+            <ListHeader title={"Daftar PO"} isReplace={false} link={""} addButton={false} />
+            {/* end Header */}
             <IonContent fullscreen>
                 <IonRefresher slot="fixed" onIonRefresh={doRefresh}>
                     <IonRefresherContent></IonRefresherContent>
                 </IonRefresher>
                 <div className="bg-white ">
-                    {/* Header */}
-                    <ListHeader title={"Daftar PO"} isReplace={false} link={""} addButton={false} />
-                    {/* end Header */}
-
                     {/* === Start List  === */}
                     <div className="bg-white">
-                        <div className="px-3 pt-4">
+                        <div className="px-3 pt-3">
                             {isLoaded ?
                                 <>
                                     {
                                         po.map((req, index) => {
                                             return (
                                                 <div key={req['id']} onClick={event => btnDetail(req["id"])}
-                                                     className="px-4 py-2 my-2 rounded-lg border border-1 border-gray-300">
+                                                     className="px-4 py-4 my-2 rounded-lg border border-1 border-gray-300">
 
-                                                    <div className="flex justify-between text-sm">
-                                                        <div className="w-full">
-                                                            <p className='font-bold'>{req['nomor'] !== "" ? req['nomor'] : "-"}</p>
-                                                            <p className='text-gray-500'>{req['fuelStasiun']['nama']}</p>
-                                                            <p className='text-gray-500'>{req['vendor']['name']}</p>
-                                                        </div>
-                                                        <div className="w-1/4 text-end">
-                                                            <PStatus status={req['status']} title={req['status']} />
-                                                            <p className='text-gray-500'>{req['jumlah']} liter</p>
+                                                    <div>
+                                                        <div className="flex justify-between">
+                                                            <p className='font-bold'>{req['nomor'] !== "" ? req['nomor'] : "-"} - {req['ref'] !== "" ? req['ref'] : "-"}</p>
                                                             <p className='text-gray-500'>{moment(req['tanggal']).format('DD MMM yyyy').toString()}</p>
+                                                        </div>
+                                                        <div className="flex justify-between">
+                                                            <p className='text-gray-500'>{req['fuelStasiun']['nama']}</p>
+                                                            <PStatus status={req['status']} title={req['status']} />
+                                                        </div>
+                                                        <div className="flex justify-between">
+                                                            <p className='text-gray-500 text-right'>{req['jumlah']} liter</p>
+                                                        </div>
+                                                        <div className="flex justify-between">
+                                                            <p className='text-gray-500 pr-2'>{req['vendor']['name']}</p>
                                                         </div>
                                                     </div>
 

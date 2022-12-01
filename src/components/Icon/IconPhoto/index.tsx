@@ -1,16 +1,19 @@
 interface IconPhotoProps {
-    onPress?: () => void
+    onPress?: () => void;
+    color?: string;
+    bg?: boolean;
+    size?: string;
 }
 
-const IconPhoto: React.FC<IconPhotoProps> = ({ onPress }) => {
+const IconPhoto: React.FC<IconPhotoProps> = ({ onPress, color = "#000000", bg, size = "24" }) => {
     return (
-        <div className='p-[10px] bg-gray-300 justify-center items-center flex' onClick={onPress}>
+        <div className={`p-[10px] ${bg && "bg-gray-300"} justify-center items-center flex`} onClick={onPress}>
             <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="24" height="24"
+                width={size} height={size}
                 viewBox="0 0 24 24"
                 fill="none"
-                stroke="#000000"
+                stroke={color}
                 stroke-width="2"
                 stroke-linecap="round"
                 stroke-linejoin="round"

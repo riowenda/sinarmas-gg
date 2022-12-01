@@ -8,6 +8,7 @@ const SelectSearch: React.FC<SelectSearchProps> = ({ onChange, options, onInputC
         <Select
             // defaultValue
             onChange={onChange}
+            // defaultInputValue={"a"}
             options={options}
             styles={customStyles}
             placeholder={placeholder}

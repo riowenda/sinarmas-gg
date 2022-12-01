@@ -3,6 +3,7 @@ import { useHistory } from "react-router-dom";
 import React, {useEffect, useState} from "react";
 import {useTimer} from "react-timer-hook";
 import QRCodeWithLogo from "../QRCodeWithLogo/QRCodeWithLogo";
+import {encode} from "string-encode-decode";
 
 const QRCodeWithCountDown: React.FC<{texts?: string | "", timer?: number | 5}> = ({ texts, timer}) => {
     const sleep = (ms:any) => new Promise(r => setTimeout(r, ms));
@@ -38,12 +39,13 @@ const QRCodeWithCountDown: React.FC<{texts?: string | "", timer?: number | 5}> =
     }
 
     const resetTimer = ()=> {
+        console.log("reset")
         const now = new Date();
         // @ts-ignore
         const time = now.setTime(now.getTime() + (timer * 60000));
         // @ts-ignore
         restart(time);
-        setVal(texts+"_"+time);
+        setVal(encode(texts+"_"+time));
     }
 
     return (

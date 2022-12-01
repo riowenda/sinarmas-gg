@@ -9,19 +9,12 @@ import { RefresherEventDetail } from '@ionic/core';
 import { useTranslation, initReactI18next, ReactI18NextChild } from "react-i18next";
 import React, { useCallback, useEffect, useState } from "react";
 import {
-    API_URI,
-    AUTH_URI,
-    BASE_API_URL,
-    P2H_ITEM_URI,
-    P2H_CRUD_URI,
-    TAKEOVER_UNIT_URI,
-    TAKEOVER_GET_ALL_REQUEST_USER_URI,
     pref_identity,
     pref_user_id,
     TAKEOVER_ALL_USER_URI, pref_pegawai_unit_id, pref_token, pref_pegawai_id
 } from "../../../constant/Index";
 import { useHistory, useParams } from "react-router-dom";
-import { getPref } from "../../../helper/preferences";
+import { getPref } from "../../../helper/Preferences";
 import ListHeader from "../../../components/Header/ListHeader";
 import {DivisiListModalAPI} from "../../../api/MDForFuel/DivisiList";
 import {FuelCouponList} from "../../../api/KuponAPI/FuelCouponList";
@@ -82,30 +75,29 @@ const CouponList: React.FC = () => {
     /* END LIFECYCLE APPS */
 
     const loadData = () => {
-        getPref(pref_token).then(r => {
-            getPref(pref_pegawai_unit_id).then(res => {
-                FuelCouponList(r, res).then((data) => {
-                    if(data.status === "SUCCESS" && data.message === ""){
-                        let fuel = data.data;
-                        if(fuel['status'] !== 'PROPOSED' && fuel['status'] !== 'APPROVED') {
-                            setFuel(data.data);
-                        }
+        getPref(pref_pegawai_unit_id).then(res => {
+            FuelCouponList(res).then((data) => {
+                if(data.status === "SUCCESS" && data.message === ""){
+                    let fuel = data.data;
+                    if(fuel['status'] !== 'PROPOSED' && fuel['status'] !== 'APPROVED') {
+                        setFuel(data.data);
                     }
-                });
-            } );
-            getPref(pref_pegawai_id).then(res => {
-                OtherCouponList(r, res).then((data) => {
-                    if(data.status === "SUCCESS" && data.message === "") {
-                        let other = data.data;
-                        // @ts-ignore
-                        let req = other.filter((x: { [x: string]: { [x: string]: null; }; }) => (x["status"] !== "PROPOSED" && x["status"] !== "APPROVED"));
-                        // @ts-ignore
-                        let sortByDate = req.map((obj: { tanggalPermintaan: string; }) => {return {...obj, date: new Date(obj.tanggalPermintaan)}}).sort((a: { date: Date; }, b: { date: Date; }) => b.date - a.date);
+                }
+            });
+        } );
 
-                        setOtherFuel(sortByDate);
-                        setIsLoaded(true);
-                    }
-                });
+        getPref(pref_pegawai_id).then(res => {
+            OtherCouponList(res).then((data) => {
+                if(data.status === "SUCCESS" && data.message === "") {
+                    let other = data.data;
+                    // @ts-ignore
+                    let req = other.filter((x: { [x: string]: { [x: string]: null; }; }) => (x["status"] !== "PROPOSED" && x["status"] !== "APPROVED" && x["status"] !== "CANCELED" && x["status"] !== "CLOSED"));
+                    // @ts-ignore
+                    let sortByDate = req.map((obj: { tanggalPermintaan: string; }) => {return {...obj, date: new Date(obj.tanggalPermintaan)}}).sort((a: { date: Date; }, b: { date: Date; }) => b.date - a.date);
+
+                    setOtherFuel(sortByDate);
+                    setIsLoaded(true);
+                }
             });
         });
 
@@ -156,7 +148,7 @@ const CouponList: React.FC = () => {
                 <div className='bg-white min-h-screen'>
 
                     {/* Header */}
-                    <ListHeader title={"KuponAPI"} isReplace={false} link={""} addButton={false} />
+                    <ListHeader title={t('header.kupon')} isReplace={false} link={""} addButton={false} />
                     {/* end Header */}
 
                     {/* Start looping kupon */}

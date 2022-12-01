@@ -11,7 +11,7 @@ import { useTranslation, initReactI18next } from "react-i18next";
 import React, { useCallback, useState } from "react";
 import moment from "moment";
 import { useHistory } from "react-router-dom";
-import { getPref } from "../../../helper/preferences";
+import { getPref } from "../../../helper/Preferences";
 import ListHeader from "../../../components/Header/ListHeader";
 import BadgeStatus from "../../../components/Badge/BadgeStatus";
 import {

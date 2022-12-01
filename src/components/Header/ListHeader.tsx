@@ -5,12 +5,13 @@ import {IonBackButton, useIonViewDidEnter, useIonViewWillEnter, useIonViewWillLe
 interface ListHeaderProps {
     title: string,
     link?: string,
+    hide?: boolean | false,
     addButton?: boolean | false,
     isReplace?: boolean | false,
     handleOnPress?: () => void
 }
 
-const ListHeader: React.FC<ListHeaderProps> = ({title, link, handleOnPress, addButton, isReplace}) => {
+const ListHeader: React.FC<ListHeaderProps> = ({title, link, hide, handleOnPress, addButton, isReplace}) => {
     const history = useHistory();
     const [status, setStatus] = useState("");
     const [clas, setClas] = useState("");
@@ -25,7 +26,7 @@ const ListHeader: React.FC<ListHeaderProps> = ({title, link, handleOnPress, addB
     }
 
     return (
-        <div className="py-3 px-1 bg-red-700">
+        <div hidden={hide} className="top-0 z-10 py-3 px-1 bg-red-700">
             <div className="flex">
                 <div slot="start" className="pb-1 w-6 h-6 text-white">
                     <IonBackButton defaultHref="/" />

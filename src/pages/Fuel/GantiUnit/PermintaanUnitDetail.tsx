@@ -15,24 +15,18 @@ import {useTranslation, initReactI18next, ReactI18NextChild} from "react-i18next
 import React, {useCallback, useEffect, useRef, useState} from "react";
 import {
     API_URI,
-    BASE_API_URL,
     pref_user_id,
     pref_identity,
     TAKEOVER_UNIT_URI,
     PEGAWAI_UNIT_CRUD_URI, PEGAWAI_UNIT_APPROVED_URI
 } from "../../../constant/Index";
 import {useHistory, useLocation, useParams} from "react-router-dom";
-import {getPref} from "../../../helper/preferences";
+import {getPref} from "../../../helper/Preferences";
 import TextareaExpand from "react-expanding-textarea";
-import {Capacitor} from "@capacitor/core";
-import {App} from "@capacitor/app";
 import DetailHeader from "../../../components/Header/DetailHeader";
 import UserCardWithUnit from "../../Layout/UserCardWithUnit";
 import SkeletonDetail from "../../Layout/SkeletonDetail";
-
-const Identity = "f8c3ca0e-f2e4-4cbd-9a48-e5f9905f420b";
-//const getId = '8c1ffa34-a9de-4c76-b853-22c582d86315';
-const rHeader = {'Content-Type': 'application/json', 'Identity': Identity}
+import {BaseAPI} from "../../../api/ApiManager";
 
 const Body: React.FC<{
     count: number;
@@ -126,8 +120,7 @@ const PermintaanUnitDetail: React.FC = () => {
         // @ts-ignore
         setGetId(dataId);
         // @ts-ignore
-        const urlContents = BASE_API_URL + API_URI + TAKEOVER_UNIT_URI + "/" + dataId;
-        //const url = BASE_API_URL + API_URI + P2H_ITEM_URI;
+        const urlContents = BaseAPI() + API_URI + TAKEOVER_UNIT_URI + "/" + dataId;
         console.log("URL: " + urlContents);
         fetch(urlContents, {
             method: 'GET'
@@ -176,6 +169,7 @@ const PermintaanUnitDetail: React.FC = () => {
         showSuccess({
             //simpan unit id ke pref
             subHeader: dataUnit,
+            backdropDismiss: false,
             buttons: [
                 {
                     text: 'Isi Form P2H',
@@ -187,81 +181,9 @@ const PermintaanUnitDetail: React.FC = () => {
             ],
         })
     }
-    const handleSetuju = async () => {
-        const url = BASE_API_URL + API_URI + PEGAWAI_UNIT_CRUD_URI + PEGAWAI_UNIT_APPROVED_URI;
-        const rHeader = {'Content-Type': 'application/json', 'Identity': identity != null ? identity : ''}
-        // @ts-ignore
-        const komentar = document.getElementById('keterangan').value;
-        //console.log("isi komentar: ", komentar)
-        const dataJson = {
-            "id": getId,
-            "status": "APPROVED",
-            "user": userId,
-            "keterangan": komentar
-        }
-        fetch(url, {
-            method: 'POST',
-            headers: rHeader,
-            body: JSON.stringify(dataJson)
-        })
-            .then(res => res.json())
-            .then(
-                (result) => {
-                    showResult(result);
-                },
-                (error) => {
-                    dismiss();
-                    presentToast({
-                        message: "error "+error.message + JSON.stringify(dataJson),
-                        duration: 1500,
-                        position: "top"
-                    })
-                    // setError(error);
-                }
-            )
-
-    }
-    const handleTolak = async () => {
-        const url = BASE_API_URL + API_URI + PEGAWAI_UNIT_CRUD_URI + PEGAWAI_UNIT_APPROVED_URI;
-        const rHeader = {'Content-Type': 'application/json', 'Identity': identity != null ? identity : ''}
-        // @ts-ignore
-        const komentar = document.getElementById('keterangan').value;
-        //console.log("isi komentar: ", komentar)
-        const dataJson = {
-            "id": getId,
-            "status": "REJECTED",
-            "user": userId,
-            "keterangan": komentar
-        }
-        fetch(url, {
-            method: 'POST',
-            headers: rHeader,
-            body: JSON.stringify(dataJson)
-        })
-            .then(res => res.json())
-            .then(
-                (result) => {
-                    showResult(result);
-                },
-                (error) => {
-                    dismiss();
-                    presentToast({
-                        message: "error "+error.message + JSON.stringify(dataJson),
-                        duration: 1500,
-                        position: "top"
-                    })
-                    // setError(error);
-                }
-            )
-
-    }
 
     if (error) {
         return <div>Error: {error}</div>;
-    }
-
-    const toList = () => {
-        history.push('/fuel/unit/daftar-permintaan');
     }
 
     // @ts-ignore

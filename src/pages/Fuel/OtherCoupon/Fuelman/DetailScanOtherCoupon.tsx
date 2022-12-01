@@ -1,6 +1,5 @@
 import {
     IonContent,
-    IonFooter,
     IonPage,
     IonRefresher,
     IonRefresherContent,
@@ -14,31 +13,25 @@ import {
 
 import './DetailScanOtherCoupon.css';
 import { RefresherEventDetail } from '@ionic/core';
-import { useTranslation, initReactI18next } from "react-i18next";
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import ActionSheet from "actionsheet-react";
+import { useTranslation } from "react-i18next";
+import React, { useRef, useState } from "react";
 import {
     API_URI,
-    BASE_API_URL,
-    FUEL_REQ_FUELMAN_FILL_URI,
-    FUEL_REQ_UNIT_APPROVAL_URI,
-    FUEL_REQ_UNIT_URI, OTHER_COUPON_FUELMAN_FILL_URI,
+    OTHER_COUPON_FUELMAN_FILL_URI,
     OTHER_COUPON_URI, pref_fuel_station_id,
     pref_identity,
-    pref_json_pegawai_info_login,
     pref_pegawai_id,
-    pref_unit,
 } from "../../../../constant/Index";
 import {useHistory, useLocation, useParams} from "react-router-dom";
-import {getJsonPref, getPref} from "../../../../helper/preferences";
+import {getPref} from "../../../../helper/Preferences";
 import moment from "moment";
-import UserCardWithUnit from "../../../Layout/UserCardWithUnit";
 import DetailHeader from "../../../../components/Header/DetailHeader";
+import {BaseAPI} from "../../../../api/ApiManager";
 
 const userInfo = { name: "", nik: "", imageUrl: "" }
 const userUnit = { id: "", noPol: "", noLambung: "", vendor: { name: "" }, jenisUnit: { name: "" } };
 const send = {id:"", fuelman:"", liter:null}
-const obj = {id:"", pemohon: {id: "", name:"", nik:"", foto: ""}, nomor: "", tanggalPermintaan: null, liter: null, literPengisian:null, fuelman: {id:"",name:""}, penjaga:{id:"",name:""}, status: "", fuelStasiun: {id:"", nama: ""}, riwayats: []}
+const obj = {id:"", tujuan: {id:"", nama:""}, pemohon: {id: "", name:"", nik:"", foto: ""}, nomor: "", tanggalPermintaan: null, liter: null, literPengisian:null, fuelman: {id:"",name:""}, penjaga:{id:"",name:""}, status: "", fuelStasiun: {id:"", nama: ""}, riwayats: []}
 const DetailScanOtherCoupon: React.FC = () => {
     const [getId, setGetId] = useState<string>();
     const [identity, setIdentity] = useState("");
@@ -111,7 +104,7 @@ const DetailScanOtherCoupon: React.FC = () => {
     const loadData = () => {
         // @ts-ignore
         let id = history.location.state.detail;
-        // let id = "31c67a44-f317-40b7-b300-551b8d4f838a";
+        // let id = "35c998e9-6ed4-4a37-8416-0bff00be8ab1";
         setGetId(id);
         // console.log("sini ",id);
         loadDataPref(id);
@@ -120,8 +113,8 @@ const DetailScanOtherCoupon: React.FC = () => {
     const loadDetail = (id:any) => {
         console.log("okj "+id);
         // @ts-ignore
-        const urlContents = BASE_API_URL + API_URI + OTHER_COUPON_URI + "/" + id;
-        //const url = BASE_API_URL + API_URI + P2H_ITEM_URI;
+        const urlContents = BaseAPI() + API_URI + OTHER_COUPON_URI + "/" + id;
+        //const url = BaseAPI() + API_URI + P2H_ITEM_URI;
         // console.log("URL: " + urlContents);
 
         fetch(urlContents, {
@@ -165,29 +158,38 @@ const DetailScanOtherCoupon: React.FC = () => {
 
     const btnSelesai = (e : any) => {
         e.preventDefault();
-        presentAlert({
-            subHeader: 'Anda yakin untuk menyelesaikan pengisian Bahan Bakar Non Unit ini?',
-            buttons: [
-                {
-                    text: 'Tidak',
-                    cssClass: 'alert-button-cancel',
-                },
-                {
-                    text: 'Ya',
-                    cssClass: 'alert-button-confirm',
-                    handler: () => {
-                        sendRequest();
-                    }
-                },
-            ],
-        })
+        if(Number(filled.literPengisian) > Number(reqFuel.liter)){
+            toast( {
+                    message: "Jumlah Fuel (liter) pengisian tidak boleh melebihi jumlah liter permintaan", duration: 1500, position: "top"
+                }
+            );
+        } else {
+            presentAlert({
+                subHeader: 'Anda yakin untuk menyelesaikan pengisian Bahan Bakar Non Unit ini?',
+                backdropDismiss: false,
+                buttons: [
+                    {
+                        text: 'Tidak',
+                        cssClass: 'alert-button-cancel',
+                    },
+                    {
+                        text: 'Ya',
+                        cssClass: 'alert-button-confirm',
+                        handler: () => {
+                            sendRequest();
+                        }
+                    },
+                ],
+            })
+        }
     }
 
     const sendRequest = () => {
         const loading = present({
             message: 'Memproses penyelesaian ...',
+            backdropDismiss: false
         })
-        const url = BASE_API_URL + API_URI + OTHER_COUPON_URI + OTHER_COUPON_FUELMAN_FILL_URI;
+        const url = BaseAPI() + API_URI + OTHER_COUPON_URI + OTHER_COUPON_FUELMAN_FILL_URI;
         const data = {id:getId, fuelman:pegId, liter:filled.literPengisian, stasiun: stasiunId} //user diambil dari pref
         fetch(url, {
             method: 'POST',
@@ -202,6 +204,7 @@ const DetailScanOtherCoupon: React.FC = () => {
                         showConfirm({
                             //simpan unit id ke pref
                             subHeader: "Pengisian Bahan Bakar Non Unit berhasil!",
+                            backdropDismiss: false,
                             buttons: [
                                 {
                                     text: 'OK',
@@ -273,6 +276,15 @@ const DetailScanOtherCoupon: React.FC = () => {
 
                             <div className="mt-4">
                                 <label className="block text-sm text-gray-400">
+                                    Permintaan Untuk
+                                </label>
+                                <div>
+                                    {reqFuel.tujuan.nama}
+                                </div>
+                            </div>
+
+                            <div className="mt-4">
+                                <label className="block text-sm text-gray-400">
                                     Permintaan Oleh
                                 </label>
                                 <div>
@@ -322,7 +334,8 @@ const DetailScanOtherCoupon: React.FC = () => {
                                 </label>
                                 <div className="border-b border-gray-300 py-2">
                                     <input
-                                        defaultValue={filled.literPengisian != null ? filled.literPengisian : ""}
+                                        // defaultValue={reqFuel != null && reqFuel.literPengisian != null ? reqFuel.literPengisian : ""}
+                                        placeholder={reqFuel.literPengisian != null ? ("Isi sebelumnya "+ reqFuel.literPengisian + " liter") : ""}
                                         onChange={(event) => setFilled({...filled, literPengisian: event.target.value})}
                                         required
                                         type="number"

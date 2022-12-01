@@ -6,22 +6,18 @@ import {
 } from '@ionic/react';
 
 import { RefresherEventDetail } from '@ionic/core';
-import { useTranslation, initReactI18next, ReactI18NextChild } from "react-i18next";
-import React, { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import React, { useEffect, useState } from "react";
 import {
     API_URI,
-    AUTH_URI,
-    BASE_API_URL,
-    P2H_ITEM_URI,
-    P2H_CRUD_URI,
     TAKEOVER_UNIT_URI,
-    TAKEOVER_GET_ALL_REQUEST_USER_URI,
     pref_identity,
     pref_user_id,
     TAKEOVER_ALL_USER_URI
 } from "../../../../constant/Index";
 import { useHistory, useParams } from "react-router-dom";
-import { getPref } from "../../../../helper/preferences";
+import { getPref } from "../../../../helper/Preferences";
+import {BaseAPI} from "../../../../api/ApiManager";
 
 
 const OtherCouponList: React.FC = () => {
@@ -58,7 +54,7 @@ const OtherCouponList: React.FC = () => {
     }, [])
 
     const loadDataPermintaan = (user: any) => {
-        const url = BASE_API_URL + API_URI + TAKEOVER_UNIT_URI + TAKEOVER_ALL_USER_URI + "/" + user;
+        const url = BaseAPI() + API_URI + TAKEOVER_UNIT_URI + TAKEOVER_ALL_USER_URI + "/" + user;
         fetch(url)
             .then(res => res.json())
             .then(

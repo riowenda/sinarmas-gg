@@ -1,6 +1,6 @@
 import ApiManager from "../ApiManager"
 
-export const VendorUpdateAPI = async (token: string, identity: string, data: {
+export const VendorUpdateAPI = async (data: {
     id: string,
     isActive: boolean,
     identity: string,
@@ -9,11 +9,6 @@ export const VendorUpdateAPI = async (token: string, identity: string, data: {
     try {
         const result = await ApiManager('/api/vendors/update', {
             method: "PUT",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-                identity: identity
-            },
             data: data
         })
 

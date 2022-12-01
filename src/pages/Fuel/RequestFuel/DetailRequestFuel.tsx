@@ -18,23 +18,21 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import ActionSheet from "actionsheet-react";
 import {
     API_URI,
-    BASE_API_URL,
     FUEL_REQ_UNIT_APPROVAL_URI,
-    FUEL_REQ_UNIT_URI,
-    OTHER_COUPON_APPROVAL_URI,
-    OTHER_COUPON_URI,
+    FUEL_REQ_UNIT_URI, IMAGE_FUEL_URI,
     pref_identity,
     pref_json_pegawai_info_login,
     pref_pegawai_id, pref_token,
     pref_unit,
 } from "../../../constant/Index";
 import { useHistory, useLocation, useParams } from "react-router-dom";
-import { getJsonPref, getPref } from "../../../helper/preferences";
+import { getJsonPref, getPref } from "../../../helper/Preferences";
 import moment from "moment";
 import SVGStopCloseCheckCircle from "../../Layout/SVGStopCloseCheckCircle";
 import SkeletonDetail from '../../Layout/SkeletonDetail';
 import DetailHeader from "../../../components/Header/DetailHeader";
 import {FuelStationAvailableListAPI} from "../../../api/MDForFuel/FuelStation";
+import {BaseAPI} from "../../../api/ApiManager";
 
 const userInfo = { name: "", nik: "", imageUrl: "" }
 const userUnit = { id: "", noPol: "", noLambung: "", vendor: { name: "" }, jenisUnit: { name: "" } };
@@ -107,13 +105,16 @@ const FormRequestFuel: React.FC = () => {
         getPref(pref_pegawai_id).then(res => {
             setPegId(res);
         });
-        getPref(pref_identity).then(res => {
-            setIdentity(res);
-        });
         getPref(pref_token).then(res => {
             setToken(res);
-            loadStation(res);
         });
+
+        getPref(pref_identity).then(i => {
+            setIdentity(i);
+        });
+
+        loadStation();
+
     }
 
     const loadData = () => {
@@ -127,9 +128,7 @@ const FormRequestFuel: React.FC = () => {
 
     const loadDetail = (id: any) => {
         // @ts-ignore
-        const urlContents = BASE_API_URL + API_URI + FUEL_REQ_UNIT_URI + "/" + id;
-        //const url = BASE_API_URL + API_URI + P2H_ITEM_URI;
-        // console.log("URL: " + urlContents);
+        const urlContents = BaseAPI() + API_URI + FUEL_REQ_UNIT_URI + "/" + id;
 
         fetch(urlContents, {
             method: 'GET'
@@ -156,8 +155,8 @@ const FormRequestFuel: React.FC = () => {
             );
     }
 
-    const loadStation = (token : any) => {
-        FuelStationAvailableListAPI(token).then((res) => {
+    const loadStation = () => {
+        FuelStationAvailableListAPI().then((res) => {
             setFuelStation(res.data);
         });
     }
@@ -182,6 +181,7 @@ const FormRequestFuel: React.FC = () => {
     const btnBatal = () => {
         presentAlert({
             subHeader: 'Anda yakin untuk membatalkan Permintaan Bahan Bakar Unit ini?',
+            backdropDismiss: false,
             buttons: [
                 {
                     text: 'Tidak',
@@ -201,8 +201,9 @@ const FormRequestFuel: React.FC = () => {
     const sendRequest = () => {
         const loading = present({
             message: 'Memproses pembatalan ...',
+            backdropDismiss: false
         })
-        const url = BASE_API_URL + API_URI + FUEL_REQ_UNIT_URI + FUEL_REQ_UNIT_APPROVAL_URI;
+        const url = BaseAPI() + API_URI + FUEL_REQ_UNIT_URI + FUEL_REQ_UNIT_APPROVAL_URI;
         const data = { kupon: { id: sendId }, status: "CANCELED", approveType: "USER", komentar: null, tanggal: (new Date()), pegawai: { id: pegId } } //user diambil dari pref
         fetch(url, {
             method: 'POST',
@@ -217,6 +218,7 @@ const FormRequestFuel: React.FC = () => {
                         showConfirm({
                             //simpan unit id ke pref
                             subHeader: "Pembatalan Permintaan Bahan Bakar Unit berhasil!",
+                            backdropDismiss: false,
                             buttons: [
                                 {
                                     text: 'OK',
@@ -277,6 +279,15 @@ const FormRequestFuel: React.FC = () => {
 
                                     <div className="mt-4">
                                         <label className="block text-sm text-gray-400">
+                                            No. Permintaan
+                                        </label>
+                                        <div>
+                                            {reqFuel != null ? reqFuel["nomor"] : "-"}
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-4">
+                                        <label className="block text-sm text-gray-400">
                                             No. Lambung
                                         </label>
                                         <div>
@@ -295,7 +306,7 @@ const FormRequestFuel: React.FC = () => {
 
                                     <div className="mt-4">
                                         <label className="block text-sm text-gray-400">
-                                            Odo Meter pengisian sebelumnya
+                                            Odometer pengisian sebelumnya
                                         </label>
                                         <div>
                                             {reqFuel != null ? reqFuel["odometerPengisianSebelumnya"] : "N/A"} Km
@@ -304,10 +315,19 @@ const FormRequestFuel: React.FC = () => {
 
                                     <div className="mt-4">
                                         <label className="block text-sm text-gray-400">
-                                            Odo saat permintaan
+                                            Odometer saat permintaan
                                         </label>
                                         <div>
                                             {reqFuel != null ? reqFuel["odometerPermintaan"] : "N/A"} Km
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-4">
+                                        <label className="block text-sm text-gray-400">
+                                            Foto Odometer saat permintaan
+                                        </label>
+                                        <div className="group block rounded-lg aspect-auto bg-gray-100 overflow-hidden">
+                                            <img className="object-cover pointer-events-none" src={`${BaseAPI()}${API_URI}${IMAGE_FUEL_URI}${reqFuel != null ? reqFuel["odometerPermintaanImg"] : ""}`} ></img>
                                         </div>
                                     </div>
 

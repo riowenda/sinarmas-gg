@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from "react";
 import {useHistory} from "react-router-dom";
 import {IonBackButton, useIonViewDidEnter, useIonViewWillEnter, useIonViewWillLeave} from "@ionic/react";
+import {useTranslation} from "react-i18next";
 
 interface DetailHeaderProps {
     title: string,
@@ -11,6 +12,7 @@ interface DetailHeaderProps {
 
 const DetailHeader: React.FC<DetailHeaderProps> = ({title, approval, link, handleOnPress}) => {
     const history = useHistory();
+    const {t} = useTranslation();
     const [status, setStatus] = useState("");
     const [clas, setClas] = useState("");
 
@@ -27,6 +29,8 @@ const DetailHeader: React.FC<DetailHeaderProps> = ({title, approval, link, handl
                     } else if(approval === "DONE"){
                         return  "py-3 px-1 bg-emerald-500";
                     } else if(approval === "CLOSED"){
+                        return  "py-3 px-1 bg-emerald-500";
+                    } else if(approval === "RECEIVED"){
                         return  "py-3 px-1 bg-emerald-500";
                     } else if(approval === "READY"){ // emerald end
                         return  "py-3 px-1 bg-emerald-500";
@@ -67,41 +71,7 @@ const DetailHeader: React.FC<DetailHeaderProps> = ({title, approval, link, handl
                     {/*          d="M19.5 12h-15m0 0l6.75 6.75M4.5 12l6.75-6.75"/>*/}
                     {/*</svg>*/}
                     <div className="pl-6 py-2 flex justify-center w-full items-center text-white">
-                        <h3 className="text-base font-bold text-white">{title} {(() => {
-                            if(approval === "APPROVED"){ // emerald start
-                                return  "Approved";
-                            } else if(approval === "DONE"){
-                                return  "Done";
-                            } else if(approval === "CLOSED"){
-                                return  "Closed";
-                            } else if(approval === "READY"){ // emerald end
-                                return  "Ready";
-                            } else if(approval === "REJECTED"){ // red start
-                                return  "Rejected";
-                            } else if(approval === "CANCELED"){ // red end
-                                return  "Canceled";
-                            } else if(approval === "PROPOSED"){ // blue start
-                                return  "Proposed";
-                            } else if(approval === "OPENED"){
-                                return  "Opened";
-                            } else if(approval === "FILLED"){
-                                return  "Filled";
-                            } else if(approval === "PROCESSED"){ // blue end
-                                return  "Processed";
-                            } else if(approval === "ONHOLD"){ // amber start
-                                return  "On Hold";
-                            } else if(approval === "FORGIVENESS"){
-                                return  "Forgiveness";
-                            } else if(approval === "REFILL"){
-                                return  "Refill";
-                            } else if(approval === "RELEASED"){
-                                return  "Released";
-                            } else if(approval === "REOPENED"){ // amber end
-                                return  "Re Opened";
-                            } else {
-                                return  approval;
-                            }
-                        })()}</h3>
+                        <h3 className="text-base font-bold text-white">{title} {t(approval)}</h3>
                     </div>
                     <div className="p-2 float-right text-white">
                         <div className='w-8 h-8'></div>

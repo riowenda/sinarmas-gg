@@ -21,7 +21,7 @@ import { RefresherEventDetail } from '@ionic/core';
 import { useTranslation, initReactI18next } from "react-i18next";
 import "../../components/Translate";
 import {Redirect, Route, useHistory, useLocation} from "react-router-dom";
-import { getJsonPref, getPref } from "../../helper/preferences";
+import { getJsonPref, getPref } from "../../helper/Preferences";
 import { pref_json_pegawai_info_login, pref_unit, pref_user_role } from "../../constant/Index";
 
 import { triangle, ellipse, square } from 'ionicons/icons';
